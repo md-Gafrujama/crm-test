@@ -1,5 +1,5 @@
 const allowedOrigins = [
-  'https://crm-test-eyrb.vercel.app/login',
+  'https://crm-test-eyrb.vercel.app',
   'http://localhost:5173',
   // 'https://our-crm-website.vercel.app'
 ];

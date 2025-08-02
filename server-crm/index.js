@@ -10,7 +10,7 @@ const app = express();
 app.use(compression());
 
 app.use(cors({
-  origin: [ 'http://localhost:5173','https://our-crm-website-99fa.vercel.app'], // Removed trailing slash
+  origin: [ 'http://localhost:5173','https://crm-test-eyrb.vercel.app'], // Removed trailing slash
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
