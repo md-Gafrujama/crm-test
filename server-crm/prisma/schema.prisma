@@ -1,0 +1,157 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  firstName       String
+  lastName        String
+  username        String   @unique
+  email           String   @unique
+  hashedPassword  String
+  phoneNumber     String?
+  role            String
+  userType        String?
+  photo           String?
+  assignedWork    String?
+  statusOfWork    String?
+  statusOfAccount String?
+  locked          Boolean  @default(false)
+  loggedInTime    DateTime?
+  lastLoggedIn    DateTime?
+  about           String?
+  skills          String[]
+  lockedAt       DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  otps            OTP[]
+}
+
+model OTP {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  email           String   
+  genOTP          String   
+  givenOTP        String[] 
+  attempts        Int      
+  statusOfAccount String?
+  createdAt       DateTime @default(now())
+  expiresAt       DateTime
+
+  user            User?    @relation(fields: [email], references: [email], onDelete: Cascade)
+}
+
+model Employee {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  firstName      String
+  lastName       String
+  username       String   @unique
+  email          String   @unique
+  phoneNumber    String   @unique
+  whatsAppPhone  String?  
+  joiningDate    DateTime
+  status         String   
+  department     String
+  role           String
+  photo          String?  
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+}
+
+
+model company {  
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  firstName      String  
+  lastName       String 
+  email          String   @unique
+  phone          String   @unique
+  hashedPassword       String  
+  companyName    String?   @unique
+  GSTNumber      String   @unique
+  plan           String
+  agreeToterms   Boolean 
+  timeZone       String? 
+  couponCode     String?  
+  remainingDays   Int
+  paidStatus    Boolean
+  role           String
+  noOfUsers      Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Lead {
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  uid                 String
+  cid                 String
+  title               String
+  username            String?
+  customerFirstName   String
+  customerLastName    String
+  emailAddress        String
+  phoneNumber         String
+  companyName         String
+  jobTitle            String
+  topicOfWork         String
+  industry            String
+  status              String
+  serviceInterestedIn String
+  closingDate         DateTime
+  notes               String?
+
+  rootId              String?   
+  versionNumber       Int      @default(1)
+  isCurrentVersion    Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+
+model Alertsandremainder {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  uid         String
+  cid         String
+  topic       String
+  remainder   String
+  date        DateTime
+  time        String
+  description String
+}
+
+model Qb2b{
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  customerName String
+  customerEmail String
+  customerNumber String
+  comment String
+}
+
+model compare{
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  firstName String
+  lastName String
+  comment String
+}
+
+model qb2bLeads{
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  customerName String
+  emailAddress String
+  phoneNumber  String
+  serviceInterestedIn String
+  needs     String
+  promotion String
+  createdAt DateTime @default(now())
+}
