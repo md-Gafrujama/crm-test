@@ -29,39 +29,40 @@ const employeeProfile = {
             const dataToUpdate = req.body;
 
             const updateEmployee = await prisma.Employee.update({
-                where:{id:empId},
-                data:dataToUpdate,
-            })
+                where: { id: empId },
+                data: dataToUpdate,
+            });
 
             res.status(200).json(updateEmployee);
-        }
-        catch (error) {
+        } catch (error) {
+            console.error(error);  
             res.status(500).json({
-                message: "There is an error",
-                error
-            })
+                message: "There was an error updating the employee.",
+                error: error.message || error,
+            });
         }
     },
 
-    async deleteEmployee(Req, res) {
+    async deleteEmployee(req, res) {
         try {
             const empId = req.params.id;
-            
-            await prisma.user.delete({
-                where:{id:userId},
+
+            await prisma.Employee.delete({
+                where: { id: empId },
             });
 
             res.status(200).json({
-                message:"Employee has been deleted."
-            })
-        }
-        catch (error) {
+                message: "Employee has been deleted.",
+            });
+        } catch (error) {
+            console.error(error); 
             res.status(500).json({
-                message: "There is an error",
-                error
-            })
+                message: "There was an error deleting the employee.",
+                error: error.message || error,
+            });
         }
     }
+
 
 }
 

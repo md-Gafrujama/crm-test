@@ -13,6 +13,5 @@ router.get("/marketing",jwtTokenMiddleware,employee.getMarketing)
 router.get("/saas",jwtTokenMiddleware,employee.getSaas)
 router.get("/technology",jwtTokenMiddleware,employee.getTechnologies)
 router.delete("/:id",jwtTokenMiddleware,employee.delEmployee);
-router.put("/:id",jwtTokenMiddleware,employee.updateEmployee);
 
 export default router;

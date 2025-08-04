@@ -36,7 +36,7 @@ async function sendWhatsAppMessage(topic, time, description) {
   }
 }
 
-cron.schedule("*/1 * * * *", async () => {
+cron.schedule("*/5 * * * *", async () => {
   const start = Date.now();
 
   try {
