@@ -1,11 +1,11 @@
-import { useState, useEffect ,useRef} from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_BASE_URL } from '../../../config/api';
 import { useTheme } from '../../../hooks/use-theme';
 import { toast } from 'react-toastify';
 
-const EditUser = ({ userId, onUpdate, onDelete, onClose ,isOpen}) => {
+const EditUser = ({ userId, onUpdate, onDelete, onClose }) => {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [error, setError] = useState('');
@@ -15,40 +15,7 @@ const EditUser = ({ userId, onUpdate, onDelete, onClose ,isOpen}) => {
   const [isLocked, setIsLocked] = useState(user?.locked || false);
   const [isLoading, setIsLoading] = useState(false);
   const { theme } = useTheme();
-  const panelRef = useRef(null);
 
-
-
-  // closing panel
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (panelRef.current && !panelRef.current.contains(event.target)) {
-          onClose();
-        }
-      };
-  
-      if (isOpen) {
-        document.addEventListener('mousedown', handleClickOutside);
-      }
-  
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, [isOpen, onClose]);
-
-      // Prevent scrolling when panel is open
-      useEffect(() => {
-        if (isOpen) {
-          document.body.style.overflow = 'hidden';
-        } else {
-          document.body.style.overflow = 'auto';
-        }
-    
-        return () => {
-          document.body.style.overflow = 'auto';
-        };
-      }, [isOpen]);
-    
 
 
   useEffect(() => {
@@ -240,23 +207,21 @@ const handleUnlock = async () => {
   if (loading) return <div>Loading...</div>;
   if (error) return <div className="text-red-600">{error}</div>;
   if (!user) return null;
-  if (!isOpen) return null;
 
   return (
     <>
-      <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
-        onClick={onClose}
-      />
-       <div 
-        ref={panelRef}
-        className={`fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-slate-800 z-50 transform transition-transform duration-300 ease-in-out ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
-      <div className="h-full flex flex-col">
-    
-      <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl  transition-all">
+      <div className="flex justify-between items-center dark:bg-slate-800 border-b p-4">
+        <h2 className="text-base font-semibold dark:text-gray-400 ">Edit User</h2>
+        <button
+          onClick={onClose}
+          className="text-gray-500 hover:text-gray-200"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <form onSubmit={handleSubmit} className="max-w-md mx-auto flex flex-col gap-4 p-6 dark:bg-slate-800 shadow-lg">
         {/* First Name */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-400 mb-1" htmlFor="firstName">
@@ -375,10 +340,18 @@ const handleUnlock = async () => {
           {deleting ? 'Deleting...' : 'Delete User'}
         </button>
       </form>
-      </div>
-      </div>
     </>
   );
 };
 
 export default EditUser;
+
+
+
+
+
+
+
+
+
+
