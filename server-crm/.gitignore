@@ -1,3 +1,4 @@
 node_modules/
 package-locak.json
 .env
+prisma/
