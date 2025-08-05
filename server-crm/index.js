@@ -38,14 +38,17 @@ connectDB();
   app.use("/api/forgetPass1",forgetPass1);
   app.use("/api/forgetPass2",forgetPass2);
 
+  import company from "./api/company/companie.routes.js";
+  import otpForCompany from "./api/company/otp.routes.js";
+  app.use("/api/registerComp",company);
+  app.use("/api/companyOTP",otpForCompany)
+
   import allUser  from "./api/customer/allUsers.routes.js";
-  import company from "./api/customer/companie.routes.js";
   import recentActivities from "./api/customer/recentActivities.api.js";
   import addUser from "./api/customer/user.routes.js";
   import userData  from "./api/customer/userData.routes.js";
   import editUser from "./api/customer/editProfile.routes.js"
   app.use("/api/allUser",allUser);
-  app.use("/api/addComp",company);
   app.use("/api/recent",recentActivities);
   app.use("/api/addUser",addUser);
   app.use("/api/usersData",userData);

@@ -22,28 +22,28 @@ async function checking(mail) {
 }
 
 async function mailer(mailling, otp) {
-    // const transporter = nodemailer.createTransport({
-    //     service: "gmail",
-    //     auth: {
-    //         user: process.env.EMAIL,
-    //         pass: process.env.PASSWORD,
-    //     },
-    //     connectionTimeout: 1 * 60 * 1000,
-    //     socketTimeout: 1 * 60 * 1000,
-    // });
+    const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+            user: process.env.EMAIL,
+            pass: process.env.PASSWORD,
+        },
+        connectionTimeout: 1 * 60 * 1000,
+        socketTimeout: 1 * 60 * 1000,
+    });
 
-    // try {
-    //     await transporter.sendMail({
-    //         from: process.env.EMAIL,
-    //         to: mailling,
-    //         subject: "Verify it's you....",
-    //         text: `Your OTP is ${otp}`,
-    //     });
-    //     console.log("Message sent");
-    // } catch (error) {
-    //     console.log("Error sending mail:", error);
-    //     throw error;
-    // }
+    try {
+        await transporter.sendMail({
+            from: process.env.EMAIL,
+            to: mailling,
+            subject: "Verify it's you....",
+            text: `Your OTP is ${otp}`,
+        });
+        console.log("Message sent");
+    } catch (error) {
+        console.log("Error sending mail:", error);
+        throw error;
+    }
     console.log(otp)
 }
 
@@ -60,3 +60,11 @@ export async function sendVerificationMail(mailling, otp) {
     }
 }
 
+export async function sendVerificationMailforRegisteringCompany(mailling, otp) {
+    try {
+        await mailer(mailling, otp);
+        return { success: true, status: 200, message: "OTP sent successfully" };
+    } catch (error) {
+        return { success: false, status: 500, message: "Failed to send OTP", error: error.message };
+    }
+}

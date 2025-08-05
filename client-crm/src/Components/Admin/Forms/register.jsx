@@ -1,244 +1,155 @@
-
-// scrollable form with a image
 import { toast } from "react-toastify";
-import { useNavigate } from 'react-router-dom';
-import React, { useState, lazy, Suspense } from 'react';
-import { LazyLoadImage } from 'react-lazy-load-image-component';
-import 'react-lazy-load-image-component/src/effects/blur.css';
+import { useNavigate } from "react-router-dom";
+import React, { useState, lazy, Suspense } from "react";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 import axios from "axios";
-import { API_BASE_URL } from '../../../config/api'; 
-import { Header } from '../common/Header';
-import { Sidebar,useSidebar } from '../common/sidebar';
+import { API_BASE_URL } from "../../../config/api";
 import { useTheme } from "../../../hooks/use-theme";
 
-// Lazy loaded components
-const PhoneInput = lazy(() => import('react-phone-input-2'));
-const TimezoneSelect = lazy(() => import('react-timezone-select'));
-const EyeIcon = lazy(() => import('lucide-react').then(module => ({ default: module.Eye })));
-const EyeSlashIcon = lazy(() => import('lucide-react').then(module => ({ default: module.EyeOff })));
+const EyeIcon = lazy(() => import("lucide-react").then((module) => ({ default: module.Eye })));
+const EyeSlashIcon = lazy(() => import("lucide-react").then((module) => ({ default: module.EyeOff })));
 
-// Lazy loaded styles
-const loadStyles = () => {
-  import('react-phone-input-2/lib/style.css');
-};
-
-const Register = () => {
+const RecruiterRegister = () => {
+  const [step, setStep] = useState(1); // 1 = form, 2 = OTP verify
+  const [otp, setOtp] = useState("");
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    customPassword: '',
-    companyName: '',
-    gstNumber: '',
-    plan: '',
-    agreeToTerms: false
+    firstName: "",          // new first name field
+    lastName: "",           // new last name field
+    username: "",
+    companyName: "",
+    email: "",
+    countryCode: "+1",      // default country code (USA)
+    phoneNumber: "",        // new phone number field
+    password: "",
+    confirmPassword: "",
+    agreeToTerms: false,
   });
-  const [showCouponInput, setShowCouponInput] = useState(false);
-  const [couponCode, setCouponCode] = useState('');
-  const [selectedTimezone, setSelectedTimezone] = useState('Asia/Kolkata'); 
+
+  const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
-  const { theme, setTheme } = useTheme();
-  
-  const [errors, setErrors] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    password: '',
-    customPassword: '',
-    plan: '',
-    agreeToTerms: ''
-  });
+  const { theme } = useTheme();
 
-    const validateForm = () => {
-    let valid = true;
-    const newErrors = {
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      password: '',
-      customPassword: '',
-      plan: '',
-      agreeToTerms: ''
-    };
-
-    // First Name validation
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
-      valid = false;
-    }
-
-    // Last Name validation
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
-      valid = false;
-    }
-
-    // Email validation
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-      valid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-      valid = false;
-    }
-
-    // Phone validation
-    if (!formData.phone) {
-      newErrors.phone = 'Phone number is required';
-      valid = false;
-    } else if (formData.phone.length < 10) {
-      newErrors.phone = 'Phone number must be at least 10 digits';
-      valid = false;
-    }
-
-    // Password validation
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-      valid = false;
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-      valid = false;
-    }
-
-    // Confirm Password validation
-    if (!formData.customPassword) {
-      newErrors.customPassword = 'Please confirm your password';
-      valid = false;
-    } else if (formData.password !== formData.customPassword) {
-      newErrors.customPassword = 'Passwords do not match';
-      valid = false;
-    }
-
-    // Plan validation
-    if (!formData.plan) {
-      newErrors.plan = 'Please select a plan';
-      valid = false;
-    }
-
-    // Terms validation
-    if (!formData.agreeToTerms) {
-      newErrors.agreeToTerms = 'You must agree to the terms';
-      valid = false;
-    }
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
+    if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
+    if (!formData.username.trim()) newErrors.username = "Username is required";
+    if (!formData.companyName.trim()) newErrors.companyName = "Company name is required";
+    if (!formData.email.trim()) newErrors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+      newErrors.email = "Please enter a valid email address";
+    if (!formData.phoneNumber.trim()) newErrors.phoneNumber = "Phone number is required";
+    else if (!/^\d{7,15}$/.test(formData.phoneNumber.trim()))
+      newErrors.phoneNumber = "Please enter a valid phone number (7-15 digits)";
+    if (!formData.password) newErrors.password = "Password is required";
+    else if (formData.password.length < 8) newErrors.password = "Password must be at least 8 characters";
+    if (!formData.confirmPassword) newErrors.confirmPassword = "Please confirm your password";
+    else if (formData.password !== formData.confirmPassword)
+      newErrors.confirmPassword = "Passwords do not match";
+    if (!formData.agreeToTerms) newErrors.agreeToTerms = "You must agree to the terms";
 
     setErrors(newErrors);
-    return valid;
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     }));
-    
+
     if (errors[name]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [name]: ''
+        [name]: "",
       }));
     }
   };
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  
-  if (!validateForm()) {
-    const firstErrorField = Object.keys(errors).find(key => errors[key]);
-    if (firstErrorField) {
-      document.querySelector([name="${firstErrorField}"])?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'center'
-      });
-    }
-    return;
-  }
+  const handleNext = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
-  const formDataToLog = {
-    firstName: formData.firstName,
-    lastName: formData.lastName,
-    email: formData.email,
-    phone: formData.phone,
-    password: formData.password,
-    customPassword: formData.customPassword, 
-    companyName: formData.companyName,
-    gstNumber: formData.gstNumber,
-    plan: formData.plan,
-    agreeToTerms: formData.agreeToTerms,
-    timezone: selectedTimezone,
-    couponCode: couponCode,
-  };
-  console.log("Form submitted:", formDataToLog);
+    setIsSubmitting(true);
+    try {
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/companyOTP/sendOTP`,
+        {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          username: formData.username,
+          companyName: formData.companyName,
+          email: formData.email,
+          phone: formData.countryCode + formData.phoneNumber,
+          password: formData.password,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
-  setIsSubmitting(true);
-
-  try {
-    const res = await axios.put(`${API_BASE_URL}/api/addCustomer`, 
-      formDataToLog,
-      {
-      headers: {
-        'Content-Type': 'application/json', // Set content type to JSON
+      if (data.success) {
+        toast.success("OTP sent! Please check your email.");
+        setStep(2);
+      } else {
+        toast.error(data.message || "Failed to send OTP");
       }
-    
-      
-    });
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Error sending OTP");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    toast.success("Account created successfully!", {
-                  position: "top-right",
-                  autoClose: 5000,
-                  hideProgressBar: false,
-                  closeOnClick: true,
-                  pauseOnHover: true,
-                  draggable: true,
-                  progress: undefined,
-                  theme: theme === 'dark' ? 'dark' : 'light',
-                  style: { fontSize: '1.2rem' }, 
-                });
-    setTimeout(() => navigate("/dashboard"), 2000);
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
 
-  } catch (e) {
-    console.error("Registration error:", e);
-    toast.error("Registration failed. Please try again.", {
-                  position: "top-right",
-                  autoClose: 5000,
-                  hideProgressBar: false,
-                  closeOnClick: true,
-                  pauseOnHover: true,
-                  draggable: true,
-                  progress: undefined,
-                  theme: theme === 'dark' ? 'dark' : 'light',
-                  style: { fontSize: '1.2rem' }, 
-                });
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+    if (otp.length !== 6) {
+      toast.error("Please enter the 6-digit OTP");
+      return;
+    }
 
-  const plans = [
-    { name: 'Basic', price: '$0.00', users: '1', trial: '7 Days Trial' },
-    { name: 'Silver', price: '¥1000.00', users: '2', trial: '7 Days Trial' },
-    { name: 'Gold', price: '¥1500.00', users: '3', trial: '7 Days Trial' },
-    { name: 'Platinum', price: '¥2000.00', users: '4', trial: '7 Days Trial' },
-    { name: 'Diamond', price: '¥2500.00', users: '6', trial: '7 Days Trial' },
-    { name: 'Diamond Pro', price: '¥3950.00', users: '6', trial: '7 Days Trial' }
-  ];
+    setIsSubmitting(true);
 
-  // Load heavy components and styles when needed
-  const handlePhoneInputFocus = () => {
-    loadStyles();
+    try {
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/companyOTP/verifyOTP`,
+        {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          username: formData.username,
+          companyName: formData.companyName,
+          email: formData.email,
+          phone: formData.countryCode + formData.phoneNumber,
+          password: formData.password,
+          otp,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (data.success) {
+        toast.success("Signup successful!");
+        setTimeout(() => navigate("/dashboard"), 1500);
+      } else {
+        toast.error(data.message || "OTP verification or signup failed");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Something went wrong.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl bg-white rounded-lg shadow-lg overflow-hidden flex flex-col lg:flex-row h-[calc(100vh-2rem)] max-h-[90vh]">
-        {/* Image - Hidden on medium and small screens */}
+      <div className="w-full max-w-4xl bg-white rounded-lg shadow-lg overflow-hidden flex flex-col lg:flex-row h-[calc(100vh-2rem)] max-h-[90vh]">
         <div className="hidden lg:block lg:w-1/2 bg-gray-100 h-full">
           <LazyLoadImage
             src="https://images.unsplash.com/photo-1551434678-e076c223a692?ixlib=rb-1.2.1&auto=format&fit=crop&w=1000&q=80"
@@ -247,285 +158,241 @@ const Register = () => {
             className="w-full h-full object-cover"
             width="100%"
             height="100%"
-            threshold={100}
           />
         </div>
 
-        {/* Form */}
         <div className="w-full lg:w-1/2 p-8 md:p-12 overflow-y-auto">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Register Your Company!</h1>
-          
-          <form className="space-y-4" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* first name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  required
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8633]"
-                  placeholder="Enter First Name"
-                />
-                 {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
-              </div>
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">Recruiter Sign Up</h1>
 
-              {/* last name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  required
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8633]"
-                  placeholder="Enter Last Name"
-                />
+          {step === 1 && (
+            <form className="space-y-4" onSubmit={handleNext}>
+              {/* First Name and Last Name - Side by side */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter your first name"
+                    className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                      errors.firstName ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#ff8633]"
+                    }`}
+                  />
+                  {errors.firstName && <p className="mt-1 text-sm text-red-600">{errors.firstName}</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter your last name"
+                    className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                      errors.lastName ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#ff8633]"
+                    }`}
+                  />
                   {errors.lastName && <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>}
+                </div>
               </div>
-            </div>
 
-            {/* email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                type="email"
-                name="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8633]"
-                placeholder="Enter Email"
-              />
-                   {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-            </div>
-
-            {/* phone number */}
-            <div>
-              <Suspense fallback={<div className="w-full h-[42px] bg-gray-100 rounded-md animate-pulse" />}>
-                <PhoneInput
-                  country={'in'}
-                  value={formData.phone}
-                  onChange={(phone) => {
-                    setFormData({...formData, phone});
-                    if (errors.phone) {
-                      setErrors({...errors, phone: ''});
-                    }
-                  }}
-                  inputClass="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8633]"
-                  onFocus={handlePhoneInputFocus}
+              {/* Username */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                <input
+                  type="text"
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
                   required
+                  placeholder="Choose a username"
+                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                    errors.username ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#ff8633]"
+                  }`}
                 />
-              </Suspense>
-                   {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone}</p>}
-            </div>
+                {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+              </div>
 
-            {/* password */}
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Password</label>
-              <div className="relative">
+              {/* Company Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                <input
+                  type="text"
+                  name="companyName"
+                  value={formData.companyName}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter your company name"
+                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                    errors.companyName ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#ff8633]"
+                  }`}
+                />
+                {errors.companyName && <p className="mt-1 text-sm text-red-600">{errors.companyName}</p>}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  placeholder="Enter your email"
+                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                    errors.email ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#ff8633]"
+                  }`}
+                />
+                {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <div className="flex">
+                  <select
+                    name="countryCode"
+                    value={formData.countryCode}
+                    onChange={handleChange}
+                    className={`mr-2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                      errors.phoneNumber ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#ff8633]"
+                    }`}
+                  >
+                    <option value="+1">+1 (USA)</option>
+                    <option value="+44">+44 (UK)</option>
+                    <option value="+91">+91 (India)</option>
+                    <option value="+61">+61 (Australia)</option>
+                    <option value="+81">+81 (Japan)</option>
+                    {/* Add more country codes as needed */}
+                  </select>
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter your phone number"
+                    className={`flex-1 px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                      errors.phoneNumber ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#ff8633]"
+                    }`}
+                  />
+                </div>
+                {errors.phoneNumber && <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>}
+              </div>
+
+              {/* Password */}
+              <div className="space-y-1 relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                 <input
                   type={showPassword ? "text" : "password"}
                   name="password"
-                  required
                   value={formData.password}
                   onChange={handleChange}
-                     className={`w-full px-4 py-2 pr-10 border ${errors.password ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8633]`}
-                      placeholder="Enter Password"
+                  required
+                  placeholder="Enter your password"
+                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                    errors.password ? "border-red-500 focus:ring-red-500" : "border-gray-300 focus:ring-[#ff8633]"
+                  }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   <Suspense fallback={<div className="w-5 h-5" />}>
                     {showPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                   </Suspense>
                 </button>
-              </div>
                 {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
-            </div>
+              </div>
 
-            {/* confirm password */}
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Confirm Password</label>
-              <div className="relative">
+              {/* Confirm Password */}
+              <div className="space-y-1 relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
                 <input
                   type={showConfirmPassword ? "text" : "password"}
-                  name="customPassword"
-                  required
-                  value={formData.customPassword}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
                   onChange={handleChange}
-                      className={`w-full px-4 py-2 pr-10 border ${errors.customPassword ? 'border-red-500' : 'border-gray-300'} rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8633]`}
-                      placeholder="Enter Custom Password"
+                  required
+                  placeholder="Confirm your password"
+                  className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                    errors.confirmPassword
+                      ? "border-red-500 focus:ring-red-500"
+                      : "border-gray-300 focus:ring-[#ff8633]"
+                  }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                 >
                   <Suspense fallback={<div className="w-5 h-5" />}>
                     {showConfirmPassword ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                   </Suspense>
                 </button>
+                {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
               </div>
-               {errors.customPassword && <p className="mt-1 text-sm text-red-600">{errors.customPassword}</p>}
-            </div>
 
-            {/* timezone */}
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">Select Timezone</label>
-              <Suspense fallback={<div className="w-full h-[42px] bg-gray-100 rounded-md animate-pulse" />}>
-                <TimezoneSelect
-                  value={selectedTimezone}
-                  onChange={setSelectedTimezone}
-                  className="w-full text-sm border-gray-300 rounded-md focus:border-[#ff8633] focus:ring-[#ff8633]"
-                  menuClassName="z-50"
-                />
-              </Suspense>
-            </div>
-
-            {/* company name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Company Name (Optional)</label>
-              <input
-                type="text"
-                name="companyName"
-                value={formData.companyName}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8633]"
-                placeholder="Enter Company Name"
-              />
-            </div>
-
-            {/* gst number */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">GST Number (Optional)</label>
-              <input
-                type="text"
-                name="gstNumber"
-                value={formData.gstNumber}
-                onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8633]"
-                placeholder="Enter GST Number"
-              />
-            </div>
-
-            {/* apply coupon */}
-            <div className="border-t border-gray-200 pt-4">
-              {!showCouponInput ? (
-                <button 
-                  type="button"
-                  onClick={() => setShowCouponInput(true)}
-                  className="text-[#ff8633] text-sm font-medium cursor-pointer"
-                >
-                  Apply Coupon Code
-                </button>
-              ) : (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Coupon Code</label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      placeholder="Enter Coupon Code"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => console.log('Applying coupon:', couponCode)}
-                      className="w-[200px] cursor-pointer px-3 py-2 bg-[#ff8633] text-white text-sm rounded-md"
-                    >
-                      Apply
-                    </button>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Note: Coupon Code is only applied on package purchase
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* select a plan */}
-            <div className="border-t border-gray-200 pt-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-4">Select a Plan*</h2>
-              {errors.plan && <p className="text-sm text-red-600 mb-2">{errors.plan}</p>}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {plans.map((plan, index) => (
-                  <div 
-                    key={index}
-                    className={`p-4 border rounded-md cursor-pointer transition-all ${formData.plan === plan.name ? 'border-[#ff8633] bg-orange-50' : 'border-gray-200 hover:border-orange-300'}`}
-                    onClick={() => {
-                      setFormData({...formData, plan: plan.name});
-                      if (errors.plan) {
-                        setErrors({...errors, plan: ''});
-                      }
-                    }}
-                  >
-                    <h3 className="font-medium text-gray-800">{plan.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">Price: {plan.price}</p>
-                    <p className="text-sm text-gray-600">Users: {plan.users}</p>
-                    <p className="text-xs text-[#ff8633] mt-2">{plan.trial}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* agree of terms  */}
-            <div className="flex items-start">
-              <div className="flex items-center h-5">
+              {/* Agree to Terms */}
+              <div className="flex items-center mt-4">
                 <input
                   id="agreeToTerms"
                   name="agreeToTerms"
                   type="checkbox"
                   checked={formData.agreeToTerms}
                   onChange={handleChange}
-                   className={`focus:ring-[#ff8633] h-4 w-4 text-blue-600 ${errors.agreeToTerms ? 'border-red-500' : 'border-gray-300'} rounded`}
+                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
                 />
-              </div>
-              <div className="ml-3 text-sm">
-                <label htmlFor="agreeToTerms" className="font-medium text-gray-700">
-                  I Agree to Privacy Policy and Terms.*
+                <label htmlFor="agreeToTerms" className="ml-2 text-sm text-gray-700">
+                  I agree to Privacy Policy and Terms
                 </label>
-                {errors.agreeToTerms && <p className="mt-1 text-sm text-red-600">{errors.agreeToTerms}</p>}
               </div>
-            </div>
-            
-            {/* buttons */}
-            <div className="pt-2 flex flex-row gap-10">
-              <button
-                type="submit"
-                className="w-full bg-[#ff8633] cursor-pointer text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
-              >
-                Try For Free
-              </button>
-              <button
-                type="submit"
-                className="w-full bg-[#ff8633] cursor-pointer text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
-              >
-                Pay Now
-              </button>
-            </div>
-          </form>
+              {errors.agreeToTerms && <p className="mt-1 text-sm text-red-600">{errors.agreeToTerms}</p>}
 
-          <div className='justify-center flex flex-col max-w-6xl items-center mx-auto py-5'>
-            <p>Already have and account?<a href="/login" className='text-[#ff8633]'>Sign in instead</a></p>
-            <p>Check Out Our Packages?<a href="/login" className='text-[#ff8633]'>View</a></p>
-          </div>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full mt-6 bg-[#ff8633] text-white py-3 rounded-md font-semibold hover:bg-[#e47b17] transition-colors disabled:opacity-60"
+              >
+                {isSubmitting ? "Sending OTP..." : "Next"}
+              </button>
+            </form>
+          )}
+
+          {step === 2 && (
+            <form className="space-y-4" onSubmit={handleOtpSubmit}>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Enter 6 Digit OTP</label>
+              <input
+                type="text"
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value)}
+                required
+                placeholder="Enter OTP"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8633]"
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full mt-6 bg-[#ff8633] text-white py-3 rounded-md font-semibold hover:bg-[#e47b17] transition-colors disabled:opacity-60"
+              >
+                {isSubmitting ? "Verifying OTP..." : "Verify & Complete Signup"}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default Register;
+export default RecruiterRegister;

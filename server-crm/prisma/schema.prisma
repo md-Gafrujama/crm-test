@@ -32,12 +32,16 @@ model User {
   lastLoggedIn    DateTime?
   about           String?
   skills          String[]
-  lockedAt       DateTime?
+  lockedAt        DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  companyId       String   @db.ObjectId
+  company         company  @relation("CompanyUsers", fields: [companyId], references: [id])
+
   otps            OTP[]
 }
+
 
 model OTP {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
@@ -70,26 +74,21 @@ model Employee {
 
 }
 
-
-model company {  
+model company {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
-  firstName      String  
-  lastName       String 
+  owners_firstName String 
+  owners_lastName  String
+  username       String
   email          String   @unique
-  phone          String   @unique
-  hashedPassword       String  
-  companyName    String?   @unique
-  GSTNumber      String   @unique
-  plan           String
-  agreeToterms   Boolean 
-  timeZone       String? 
-  couponCode     String?  
-  remainingDays   Int
-  paidStatus    Boolean
-  role           String
-  noOfUsers      Int?
+  phone          String
+  hashedPassword String
+  companyName    String   @unique
+  agreeToterms   Boolean  @default(false)
+  noOfUsers      Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+
+  users          User[]   @relation("CompanyUsers")
 }
 
 model Lead {
@@ -117,7 +116,6 @@ model Lead {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
-
 
 model Alertsandremainder {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
