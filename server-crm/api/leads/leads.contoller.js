@@ -13,7 +13,7 @@ const leadsWork = {
 
   async addLeads(req, res) {
     try {
-      const { uid,username } = req.user;
+      const { uid,username,companyId } = req.user;
       const {
         title, customerFirstName, customerLastName, emailAddress, phoneNumber,
         companyName, jobTitle, topicOfWork, industry, status,
@@ -26,10 +26,10 @@ const leadsWork = {
       }
 
       const lead = await createLead({
-        uid, cid: "0", username,title, customerFirstName, customerLastName,
+        uid, companyId: "0", username,title, customerFirstName, customerLastName,
         emailAddress, phoneNumber, companyName, jobTitle,
         topicOfWork, industry, status, serviceInterestedIn,
-        closingDate: closingDateISO, notes
+        closingDate: closingDateISO, notes,companyId
       });
 
       res.status(201).json(lead);
@@ -41,8 +41,8 @@ const leadsWork = {
 
   async getLeads(req, res) {
     try {
-      const { uid, userType,username } = req.user;
-      const leads = await fetchLeadsByUser(uid, userType,username);
+      const { uid, userType,username,companyId } = req.user;
+      const leads = await fetchLeadsByUser(uid, userType,username,companyId);
       res.status(200).json(leads);
     } catch (error) {
       console.error("Get Leads Error:", error);
@@ -65,7 +65,7 @@ const leadsWork = {
 
   async upLeads(req, res) {
     try {
-      const { username } = req.user;
+      const { username,companyId } = req.user;
       const { id: _id, ...updateData } = req.body;
       const lead = await updateLeadById(req.params.id,username, updateData);
       res.status(200).json(lead);

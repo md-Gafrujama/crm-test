@@ -50,7 +50,7 @@ router.post('/', jwtTokenMiddleware, async (req, res) => {
       data: {
         uid,
         username,
-        cid: "0",
+        companyId: "0",
         title,
         customerFirstName,
         customerLastName,

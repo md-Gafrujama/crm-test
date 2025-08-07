@@ -69,9 +69,12 @@ model Employee {
   department     String
   role           String
   photo          String?  
+
+  companyId      String   @db.ObjectId
+  company        company  @relation("CompanyEmployees", fields: [companyId], references: [id])
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
 }
 
 model company {
@@ -88,13 +91,17 @@ model company {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  users          User[]   @relation("CompanyUsers")
+  users          User[]               @relation("CompanyUsers")
+  employees      Employee[]           @relation("CompanyEmployees")
+  leads          Lead[]               @relation("CompanyLeads")
+  alerts         Alertsandremainder[] @relation("CompanyAlerts")
 }
 
 model Lead {
-  id String @id @default(auto()) @map("_id") @db.ObjectId
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
   uid                 String
-  cid                 String
+  companyId           String   @db.ObjectId
+  company             company  @relation("CompanyLeads", fields: [companyId], references: [id])
   title               String
   username            String?
   customerFirstName   String
@@ -109,7 +116,6 @@ model Lead {
   serviceInterestedIn String
   closingDate         DateTime
   notes               String?
-
   rootId              String?   
   versionNumber       Int      @default(1)
   isCurrentVersion    Boolean  @default(true)
@@ -120,7 +126,8 @@ model Lead {
 model Alertsandremainder {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   uid         String
-  cid         String
+  companyId   String   @db.ObjectId
+  company     company  @relation("CompanyAlerts", fields: [companyId], references: [id])
   topic       String
   remainder   String
   date        DateTime

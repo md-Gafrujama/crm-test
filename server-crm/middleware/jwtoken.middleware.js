@@ -21,7 +21,7 @@ const jwtTokenMiddleware = async (req, res, next) => {
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.uid },
-      select: { id: true, email: true,username:true },
+      select: { id: true, email: true,username:true,companyId:true },
     });
 
     if (!user) {
@@ -32,6 +32,7 @@ const jwtTokenMiddleware = async (req, res, next) => {
       uid: user.id,
       email: user.email,
       username:user.username,
+      companyId :user.companyId,
       userType: decoded.role
     };
    

@@ -6,6 +6,7 @@ const employee = {
     async addEmployee(req, res) {
         try {
             const user = req.user;
+            const companyId = req.user.companyId;
 
             if (!user || user.userType !== 'admin') {
                 return res.status(403).json({ message: 'Access denied. Admins only.' });
@@ -57,6 +58,7 @@ const employee = {
                 department,
                 role,
                 photo: photoUrl,
+                companyId:companyId
             };
 
             const employee = await prisma.employee.create({
@@ -88,7 +90,10 @@ const employee = {
 
     async getEmployee(req, res) {
         try {
-            const employees = await prisma.employee.findMany();
+            const companyId = req.user.companyId
+            const employees = await prisma.employee.findMany({where:{
+                companyId:companyId}
+            });
             return res.status(200).json({ employees });
         } catch (error) {
             console.error("Get employee error:", error);
@@ -98,7 +103,7 @@ const employee = {
 
     async getSale(req, res) {
         try {
-            const employeeSale = await prisma.employee.findMany({where :{department :"Sale"}});
+            const employeeSale = await prisma.employee.findMany({where :{department :"Sale", companyId:companyId}});
             return res.status(200).json({ employeeSale });
         } catch (error) {
             console.error("Get employee error:", error);
@@ -108,7 +113,7 @@ const employee = {
 
     async getMarketing(req, res) {
         try {
-            const employeeMarketing = await prisma.employee.findMany({ where:{department:"Marketing"}});
+            const employeeMarketing = await prisma.employee.findMany({ where:{department:"Marketing",companyId:companyId}});
             return res.status(200).json({ employeeMarketing });
         } catch (error) {
             return res.status(500).json({ message: "Internal server error" });
@@ -117,7 +122,7 @@ const employee = {
 
     async getSaas(req, res) {
         try {
-            const employeeSaas = await prisma.employee.findMany({where:{department:"SaaS"}});
+            const employeeSaas = await prisma.employee.findMany({where:{department:"SaaS",companyId:companyId}});
             return res.status(200).json({ employeeSaas });
         } catch (error) {
             console.error("Get employee error:", error);
@@ -127,7 +132,7 @@ const employee = {
 
     async getTechnologies(req, res) {
         try {
-            const employeeTech = await prisma.employee.findMany({where:{department:"Technology"}});
+            const employeeTech = await prisma.employee.findMany({where:{department:"Technology",companyId:companyId}});
             return res.status(200).json({ employeeTech });
         } catch (error) {
             console.error("Get employee error:", error);
@@ -145,13 +150,13 @@ const employee = {
 
             const { id } = req.params;
 
-            const existingEmployee = await prisma.employee.findUnique({ where: { id: id } });
+            const existingEmployee = await prisma.employee.findUnique({ where: { id: id , companyId:companyId } });
 
             if (!existingEmployee) {
                 return res.status(404).json({ message: "Employee not found" });
             }
 
-            await prisma.employee.delete({ where: { id: id } });
+            await prisma.employee.delete({ where: { id: id,companyId:companyId } });
 
             return res.status(200).json({ message: "Employee deleted successfully" });
 
@@ -171,7 +176,7 @@ const employee = {
 
             const { id } = req.params;
 
-            const existingEmployee = await prisma.employee.findUnique({ where: { id: parseInt(id) } });
+            const existingEmployee = await prisma.employee.findUnique({ where: { id:id,companyId:companyId } });
 
             if (!existingEmployee) {
                 return res.status(404).json({ message: "Employee not found" });
@@ -202,13 +207,14 @@ const employee = {
                 status,
                 department,
                 role,
-                photo: req.cloudinaryUrl || profilePhoto || existingEmployee.photo
+                photo: req.cloudinaryUrl || profilePhoto || existingEmployee.photo,
+                companyId,
             };
 
             Object.keys(updatedData).forEach(key => updatedData[key] === undefined && delete updatedData[key]);
 
             const updatedEmployee = await prisma.employee.update({
-                where: { id: parseInt(id) },
+                where: { id: id, companyId:companyId },
                 data: updatedData
             });
 

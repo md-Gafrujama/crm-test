@@ -82,7 +82,7 @@ const LeadsActivity = ({collapsed}) => {
       // Only send fields that exist in the Lead schema
       const payload = {
         uid: updatedLead.uid,
-        cid: updatedLead.cid,
+        companyId: updatedLead.cid,
         title: updatedLead.title,
         customerFirstName: updatedLead.customerFirstName,
         customerLastName: updatedLead.customerLastName,

@@ -4,17 +4,17 @@ export function createLead(data) {
   return prisma.lead.create({ data });
 }
 
-export function fetchLeadsByUser(userId, userType,username) {
+export function fetchLeadsByUser(userId, userType,username,companyId) {
   const query = {
     where: {
       isCurrentVersion: true, 
-      ...(userType !== "admin" && { uid: userId }), 
+      ...(userType !== "admin" && { uid: userId } && {companyId:companyId}), 
     },
     select: {
       id: true,
       uid: true,
       username:true,
-      cid: true,
+      companyId: true,
       title: true,
       customerFirstName: true,
       customerLastName: true,

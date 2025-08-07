@@ -1,7 +1,39 @@
 import { sendVerificationMailforRegisteringCompany } from "../../middleware/authenication.middleware.js";
+import company from "./companies.controller.js";
+import prisma from "../../prisma/prismaClient.js";
 
 const otpStore = new Map();
-const OTP_EXPIRY_TIME = 5 * 60 * 1000;
+const OTP_EXPIRY_TIME = 5 * 60 * 1000; 
+
+const verifyOTPFunction = async (email, otp) => {
+    try {
+        const storedOTP = otpStore.get(email);
+
+        if (!storedOTP) {
+            console.log(`No OTP found for email: ${email}`);
+            return false;
+        }
+
+        if (storedOTP.otp !== otp) {
+            console.log(`OTP mismatch for email: ${email}`);
+            return false;
+        }
+
+        const currentTime = Date.now();
+        if (currentTime - storedOTP.createdAt > OTP_EXPIRY_TIME) {
+            console.log(`OTP expired for email: ${email}`);
+            otpStore.delete(email);
+            return false;
+        }
+
+        otpStore.delete(email);
+        return true;
+
+    } catch (error) {
+        console.error("Error verifying OTP:", error);
+        return false;
+    }
+};
 
 export const sendOTP = async (req, res) => {
     const { email } = req.body;
@@ -14,68 +46,122 @@ export const sendOTP = async (req, res) => {
     }
 
     try {
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const existingUser = await prisma.user.findUnique({
+            where: { email }
+        });
 
-        otpStore.set(email, { otp, createdAt: Date.now() });
+        if (existingUser) {
+            return res.status(409).json({
+                success: false,
+                message: "User with this email already exists.",
+            });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        otpStore.set(email, {
+            otp,
+            createdAt: Date.now(),
+            attempts: 0 
+        });
 
         const response = await sendVerificationMailforRegisteringCompany(email, otp);
 
-        return res.status(response.status).json({
-            success: response.success,
-            message: response.message,
+        return res.status(200).json({
+            success: true,
+            message: "OTP sent successfully",
+            otpExpiry: OTP_EXPIRY_TIME / 1000 
         });
 
     } catch (error) {
         console.error("Error sending OTP:", error);
         return res.status(500).json({
             success: false,
-            message: "Can't send OTP right now.",
+            message: "Failed to send OTP. Please try again.",
             error: error.message,
         });
     }
 };
 
 export const verifyOTP = async (req, res) => {
-    const { email, otp } = req.body;
-    console.log(email,otp);
+  try {
+    const {
+      firstName, 
+      lastName, 
+      username, 
+      companyName, 
+      email, 
+      phone, 
+      password, 
+      agreeToTerms, 
+      otp
+    } = req.body;
+
     if (!email || !otp) {
-        return res.status(400).json({
-            success: false,
-            message: "Email and OTP are required.",
-        });
+      return res.status(400).json({ 
+        success: false, 
+        message: "Email and OTP are required." 
+      });
     }
 
-    const record = otpStore.get(email);
-
-    if (!record) {
-        return res.status(404).json({
-            success: false,
-            message: "No OTP found for this email.",
-        });
+    const isOTPValid = await verifyOTPFunction(email, otp);
+    if (!isOTPValid) {
+      return res.status(400).json({ 
+        success: false, 
+        message: "Invalid or expired OTP. Please request a new one." 
+      });
     }
 
-    const { otp: storedOtp, createdAt } = record;
+    const companyReq = {
+      body: {
+        firstName, 
+        lastName, 
+        username, 
+        companyName, 
+        email, 
+        phone, 
+        password, 
+        agreeToTerms
+      }
+    };
 
-    if (Date.now() - createdAt > OTP_EXPIRY_TIME) {
-        otpStore.delete(email);
-        return res.status(410).json({
-            success: false,
-            message: "OTP has expired.",
-        });
+    const companyRes = {
+      status: (code) => ({
+        json: (data) => {
+          return res.status(code).json({
+            success: true,
+            message: "Company registration successful",
+            company: {
+              id: data.company.id,
+              name: data.company.companyName,
+              email: data.company.email
+            },
+            user: {
+              id: data.user.id,
+              username: data.user.username,
+              email: data.user.email,
+              role: data.user.role
+            }
+          });
+        }
+      })
+    };
+
+    await company.fillCompany(companyReq, companyRes);
+    
+  } catch (error) {
+    console.error("OTP verification error:", error);
+    
+    if (error.code === 'P2002') {
+      return res.status(409).json({
+        success: false,
+        message: "User or company with these details already exists."
+      });
     }
 
-    if (storedOtp !== otp) {
-        return res.status(401).json({
-            success: false,
-            message: "Invalid OTP.",
-        });
-    }
-
-    otpStore.delete(email);
-
-    return res.status(200).json({
-        success: true,
-        message: "OTP verified successfully.",
+    return res.status(500).json({
+      success: false,
+      message: "Registration failed. Please try again.",
+      error: error.message
     });
-    console.log("correct otp",otp);
+  }
 };

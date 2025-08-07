@@ -12,18 +12,18 @@ const company = {
         email,
         phone,
         password,
-        agreeToterms,
+        agreeToTerms,
       } = req.body;
 
-      console.log(firstName,lastName,username, companyName, email, phone,password, agreeToterms);
+      console.log(firstName,lastName,username, companyName, email, phone,password, agreeToTerms);
 
-      if (!firstName||!lastName||!username || !companyName || !email || !phone || !password || !agreeToterms) {
+      if (!firstName||!lastName||!username || !companyName || !email || !phone || !password || !agreeToTerms) {
         return res.status(400).json({
           message: "All required fields must be provided.",
         });
       }
 
-      const agreeToTermsBool = agreeToterms === true || agreeToterms === "true";
+      const agreeToTermsBool = agreeToTerms === true || agreeToTerms === "true";
 
       const existingCompany = await prisma.company.findFirst({
         where: {
@@ -70,20 +70,11 @@ const company = {
       });
 
       return res.status(201).json({
-        message: "Company and admin user created successfully",
-        user: {
-          id: createdUser.id,
-          username: createdUser.username,
-          email: createdUser.email,
-          role: createdUser.role,
-        },
-        company: {
-          id: createdCompany.id,
-          companyName: createdCompany.companyName,
-          email: createdCompany.email,
-        },
-      });
-
+      message: "Company and admin user created successfully",
+      company: createdCompany,
+      user: createdUser
+    });
+    
     } catch (error) {
       console.error("Registration error:", error);
       return res.status(500).json({

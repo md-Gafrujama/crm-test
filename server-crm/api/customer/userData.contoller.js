@@ -4,6 +4,7 @@ const data = {
 
     async getData(req, res) {
         try {
+            const companyId = req.user.companyId; 
             const userId = req.user.uid;
 
             //not possible as we use token and i dont think we need this
@@ -31,6 +32,7 @@ const data = {
                     assignedWork: true,
                     statusOfWork: true,
                     statusOfAccount: true,
+                    companyId:true
                     //loggedInTime: true,
                 },
             });
@@ -45,7 +47,8 @@ const data = {
             const allLeads = await prisma.Lead.count({
                 where: {
                     uid: userId,
-                    isCurrentVersion:true
+                    isCurrentVersion:true,
+                    companyId:companyId
                 }
             })
 
@@ -53,7 +56,8 @@ const data = {
                 where: {
                     uid: userId,
                     status: "New",
-                    isCurrentVersion:true
+                    isCurrentVersion:true,
+                    companyId:companyId
                 },
             });
 
@@ -61,7 +65,8 @@ const data = {
                 where: {
                     uid: userId,
                     status: "Contacted",
-                    isCurrentVersion:true
+                    isCurrentVersion:true,
+                    companyId:companyId
                 }
             })
 
@@ -69,7 +74,8 @@ const data = {
                 where: {
                     uid: userId,
                     status: "Engaged",
-                    isCurrentVersion:true
+                    isCurrentVersion:true,
+                    companyId:companyId
                 }
             })
 
@@ -77,7 +83,8 @@ const data = {
                 where: {
                     uid: userId,
                     status: "Qualified",
-                    isCurrentVersion:true
+                    isCurrentVersion:true,
+                    companyId:companyId
                 }
             })
 
@@ -85,7 +92,8 @@ const data = {
                 where: {
                     uid: userId,
                     status: "Proposal Sent",
-                    isCurrentVersion:true
+                    isCurrentVersion:true,
+                    companyId:companyId
                 }
             })
 
@@ -93,7 +101,8 @@ const data = {
                 where: {
                     uid: userId,
                     status: "Negotiation",
-                    isCurrentVersion:true
+                    isCurrentVersion:true,
+                    companyId:companyId
                 }
             })
 
@@ -101,7 +110,8 @@ const data = {
                 where: {
                     uid: userId,
                     status: "Closed Won",
-                    isCurrentVersion:true
+                    isCurrentVersion:true,
+                    companyId:companyId
                 }
             })
 
@@ -109,7 +119,8 @@ const data = {
                 where: {
                     uid: userId,
                     status: "Closed Lost",
-                    isCurrentVersion:true
+                    isCurrentVersion:true,
+                    companyId:companyId
                 }
             })
 
@@ -117,7 +128,8 @@ const data = {
                 where: {
                     uid: userId,
                     status: "On Hold",
-                    isCurrentVersion:true
+                    isCurrentVersion:true,
+                    companyId:companyId
                 }
             })
 
@@ -125,7 +137,8 @@ const data = {
                 where: {
                     uid: userId,
                     status: "Do Not Contact",
-                    isCurrentVersion:true
+                    isCurrentVersion:true,
+                    companyId:companyId
                 }
             })
 

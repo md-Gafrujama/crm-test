@@ -44,7 +44,7 @@ async function mailer(mailling, otp) {
         console.log("Error sending mail:", error);
         throw error;
     }
-    console.log(otp)
+    console.log(otp);
 }
 
 export async function sendVerificationMail(mailling, otp) {

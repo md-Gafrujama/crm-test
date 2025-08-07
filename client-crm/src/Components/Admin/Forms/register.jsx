@@ -107,45 +107,54 @@ const RecruiterRegister = () => {
   };
 
   const handleOtpSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (otp.length !== 6) {
-      toast.error("Please enter the 6-digit OTP");
-      return;
-    }
+  if (otp.length !== 6) {
+    toast.error("Please enter the 6-digit OTP");
+    return;
+  }
 
-    setIsSubmitting(true);
+  setIsSubmitting(true);
 
-    try {
-      const { data } = await axios.post(
-        `${API_BASE_URL}/api/companyOTP/verifyOTP`,
-        {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          username: formData.username,
-          companyName: formData.companyName,
-          email: formData.email,
-          phone: formData.countryCode + formData.phoneNumber,
-          password: formData.password,
-          otp,
-        },
-        {
-          headers: { "Content-Type": "application/json" },
+  try {
+    const { data } = await axios.post(
+      `${API_BASE_URL}/api/companyOTP/verifyOTP`,
+      {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        username: formData.username,
+        companyName: formData.companyName,
+        email: formData.email,
+        phone: formData.countryCode + formData.phoneNumber,
+        password: formData.password,
+        agreeToTerms: formData.agreeToTerms, // Make sure this is included
+        otp,
+      },
+      {
+headers: { 
+      'Content-Type': 'application/json',
+      'Accept': 'application/json'
+    },
         }
-      );
+    );
 
-      if (data.success) {
-        toast.success("Signup successful!");
-        setTimeout(() => navigate("/dashboard"), 1500);
-      } else {
-        toast.error(data.message || "OTP verification or signup failed");
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Something went wrong.");
-    } finally {
-      setIsSubmitting(false);
+    if (data.success) {
+      toast.success("Signup successful!");
+      setTimeout(() => navigate("/dashboard"), 1500);
+    } else {
+      toast.error(data.message || "OTP verification or signup failed");
     }
-  };
+  } catch (err) {
+    toast.error(err.response?.data?.message || "Something went wrong.");
+  } finally {
+    setIsSubmitting(false);
+  }
+  console.log("Submitting OTP with data:", {
+  ...formData,
+  phone: formData.countryCode + formData.phoneNumber,
+  otp
+});
+};
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
