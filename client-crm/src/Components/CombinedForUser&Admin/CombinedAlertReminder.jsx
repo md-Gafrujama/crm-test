@@ -39,22 +39,16 @@
 
 
 // export default CombinedAlertReminder;
-
-
-
-
-
-
-
 import 'react-toastify/dist/ReactToastify.css';
 import React, { useEffect, useRef } from 'react';
 import AlertsandReminderForm from '../Admin/Forms/AlertsandReminderForm';
 import { useTheme } from '../../hooks/use-theme';
+import { X, Bell, Calendar, Plus } from 'lucide-react';
 
-
-const CombinedAlertReminder = ({collapsed,isOpen, onClose}) => {
-const panelRef = useRef(null);
-const { theme, setTheme } = useTheme();
+const CombinedAlertReminder = ({collapsed, isOpen, onClose}) => {
+  const panelRef = useRef(null);
+  const { theme, setTheme } = useTheme();
+  
   // Close panel when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -89,39 +83,43 @@ const { theme, setTheme } = useTheme();
 
   return (
     <>
+      {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
         onClick={onClose}
       />
 
+      {/* Modal Panel - Reduced Width */}
       <div 
         ref={panelRef}
-        className={`fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-slate-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+        className={`fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-gray-800 shadow-2xl z-50 transform transition-all duration-300 ease-out ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
+        } border-l border-gray-200 dark:border-gray-700`}
       >
         <div className="h-full flex flex-col">
-          <div className={`px-6 py-4 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+          {/* Simplified Clean Header */}
+          <div className="p-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold dark:text-gray-300">Add New Alerts and Reminder</h2>
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
+                  <Plus className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  New Alert
+                </h2>
+              </div>
               <button
                 onClick={onClose}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                aria-label="Close modal"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
+                <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
               </button>
             </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6">
+          {/* Content Area */}
+          <div className="flex-1 overflow-y-auto">
             <AlertsandReminderForm onSuccess={onClose} />
           </div>
         </div>
@@ -130,6 +128,4 @@ const { theme, setTheme } = useTheme();
   );
 };
 
-
 export default CombinedAlertReminder;
-
