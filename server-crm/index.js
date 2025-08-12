@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import connectDB from "./prisma/dbConnect.js";
 import compression from "compression";
 import cron from "node-cron";
-
+import corsMiddleware from './middleware/corsMiddleware.js';
 const app = express();
 app.use(compression());
 
