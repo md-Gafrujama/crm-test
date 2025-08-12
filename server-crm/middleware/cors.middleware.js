@@ -1,8 +1,7 @@
 const allowedOrigins = [
   'https://crm-test-eyrb.vercel.app',
   'http://localhost:5173',
-  // 'https://our-crm-website.vercel.app'
-];
+  'https://crm-test-eyrb.vercel.app'];
 
 const corsMiddleware = (req, res, next) => {
   const origin = req.headers.origin;

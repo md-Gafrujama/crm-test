@@ -11,7 +11,7 @@ router.get("/", jwtTokenMiddleware , async(req,res)=>{
         const companyId = req.user.companyId; 
 
         const user = await prisma.user.findMany({where:{companyId:companyId}});
-        const company = await prisma.company.findMany();
+        const company = await prisma.company.findMany({where:{id:companyId}});
         const leads = await prisma.Lead.findMany({where:{isCurrentVersion:true, companyId:companyId}});
         const userCount = await prisma.user.count({where:{companyId:companyId}});
         const leadsCount = await prisma.Lead.count({where:{isCurrentVersion:true,companyId:companyId}});
