@@ -143,7 +143,7 @@ app.use(compression());
 // CORS Configuration - FIXED FOR VERCEL
 const corsOptions = {
   origin: [
-    'http://localhost:3000',
+
     'http://localhost:5173', // Vite dev server
     'https://crm-test-eyrb.vercel.app', // Your current Vercel URL
     'https://*.vercel.app', // Allow all Vercel preview deployments
