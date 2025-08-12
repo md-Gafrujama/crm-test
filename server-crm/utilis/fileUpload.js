@@ -110,20 +110,19 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Cloudinary configuration
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Use memory storage for better Vercel compatibility
+
 const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB
+    fileSize: 2 * 1024 * 1024, 
   },
   fileFilter: (req, file, cb) => {
     if (file.mimetype.startsWith("image/")) {
@@ -134,7 +133,7 @@ const upload = multer({
   },
 });
 
-// Test Cloudinary connection
+
 const testCloudinaryConnection = async () => {
   try {
     await cloudinary.api.ping();
@@ -144,10 +143,10 @@ const testCloudinaryConnection = async () => {
   }
 };
 
-// Call connection test
+
 testCloudinaryConnection();
 
-// Upload to Cloudinary from memory buffer
+
 const uploadToCloudinary = async (req, res, next) => {
   if (!req.file) {
     console.log("No file to upload to Cloudinary");
@@ -157,7 +156,6 @@ const uploadToCloudinary = async (req, res, next) => {
   try {
     console.log("Uploading to Cloudinary...");
     
-    // Convert buffer to base64 and upload
     const base64String = req.file.buffer.toString('base64');
     const dataURI = `data:${req.file.mimetype};base64,${base64String}`;
     
