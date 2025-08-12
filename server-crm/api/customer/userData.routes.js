@@ -7,3 +7,5 @@ const router = express.Router();
 router.get("/",jwtTokenMiddleware,data.getData);
 
 export default router;
+
+
