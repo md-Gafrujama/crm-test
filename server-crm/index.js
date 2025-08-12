@@ -147,7 +147,7 @@ const corsOptions = {
     'http://localhost:5173', // Vite dev server
     'https://crm-test-eyrb.vercel.app', // Your current Vercel URL
     'https://*.vercel.app', // Allow all Vercel preview deployments
-    process.env.FRONTEND_URL, // Environment variable for flexibility
+    process.env.VITE_API_BASE_URL, // Environment variable for flexibility
   ].filter(Boolean), // Remove undefined values
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
