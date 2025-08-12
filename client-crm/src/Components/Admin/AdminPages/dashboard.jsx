@@ -631,6 +631,7 @@ const Dashboard = ({ collapsed }) => {
   const { theme, setTheme } = useTheme();
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
   const [showAddAlertReminderForm, setShowAddAlertReminderForm] = useState(false);
+  const [showAllActivities, setShowAllActivities] = useState(false);
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -676,7 +677,7 @@ const Dashboard = ({ collapsed }) => {
     };
 
     fetchRecentAlerts();
-  }, []);
+  }, [theme]);
 
   // Sample data with enhanced metrics
   const [stats, setStats] = useState([
@@ -769,6 +770,65 @@ const Dashboard = ({ collapsed }) => {
     },
   ]);
 
+  // Extended activities data for "View All" functionality
+  const [allActivities, setAllActivities] = useState([
+    ...recentActivities,
+    {
+      id: 5,
+      type: "order",
+      user: "Mike Wilson",
+      action: "updated order details",
+      time: "4 hours ago",
+      status: "completed",
+      avatar: "MW"
+    },
+    {
+      id: 6,
+      type: "user",
+      user: "Emma Davis",
+      action: "uploaded profile picture",
+      time: "5 hours ago",
+      status: "completed",
+      avatar: "ED"
+    },
+    {
+      id: 7,
+      type: "system",
+      user: "System",
+      action: "database optimization completed",
+      time: "6 hours ago",
+      status: "completed",
+      avatar: "SY"
+    },
+    {
+      id: 8,
+      type: "alert",
+      user: "System",
+      action: "disk space warning threshold reached",
+      time: "8 hours ago",
+      status: "warning",
+      avatar: "AL"
+    },
+    {
+      id: 9,
+      type: "order",
+      user: "Alex Chen",
+      action: "cancelled order #12345",
+      time: "10 hours ago",
+      status: "cancelled",
+      avatar: "AC"
+    },
+    {
+      id: 10,
+      type: "user",
+      user: "Lisa Brown",
+      action: "changed password",
+      time: "12 hours ago",
+      status: "completed",
+      avatar: "LB"
+    }
+  ]);
+
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -823,7 +883,7 @@ const Dashboard = ({ collapsed }) => {
         },
         {
           id: 3,
-          title: "Conversion Rate",
+          title: "Pending Leads",
           value: "24.8%",
           icon: <Activity className="h-6 w-6" />,
           change: "+0.5%",
@@ -835,7 +895,7 @@ const Dashboard = ({ collapsed }) => {
         },
         {
           id: 4,
-          title: "Revenue",
+          title: "Loss Leads",
           value: "$45.2k",
           icon: <TrendingUp className="h-6 w-6" />,
           change: "+8.1%",
@@ -863,39 +923,17 @@ const Dashboard = ({ collapsed }) => {
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
         <div
           className={cn(
-            "transition-all duration-300 ease-in-out min-h-screen bg-slate-50 dark:from-gray-900 dark:to-gray-800",
+            "transition-all duration-300 ease-in-out min-h-screen dark:from-gray-900 dark:to-gray-800",
             collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
           )}
         >
           <main className="p-6">
-            {/* Header Section */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                  Dashboard Overview
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  Welcome back! Here's what's happening with your business today.
-                </p>
-              </div>
-              <div className="flex items-center gap-3 mt-4 lg:mt-0">
-                <button className="flex items-center gap-2 px-4 py-2 text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-                  <Filter className="h-4 w-4" />
-                  Filter
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors shadow-sm">
-                  <Upload className="h-4 w-4" />
-                  Upload Data
-                </button>
-              </div>
-            </div>
-
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
               {stats.map((stat) => (
                 <div
                   key={stat.id}
-                  className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 overflow-hidden"
+                  className="max-w-lg bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 overflow-hidden mx-auto"
                 >
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-4">
@@ -930,9 +968,8 @@ const Dashboard = ({ collapsed }) => {
               ))}
             </div>
 
-            {/* Main Grid - Now Recent Activities takes full width */}
+            {/* Recent Activities - Full Width */}
             <div className="mb-8">
-              {/* Recent Activities - Full Width */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between">
@@ -940,48 +977,53 @@ const Dashboard = ({ collapsed }) => {
                       <Activity className="h-5 w-5 text-blue-600" />
                       Recent Activities
                     </h2>
-                    <button className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
+                    <button 
+                      onClick={() => setShowAllActivities(!showAllActivities)}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                    >
                       <Eye className="h-4 w-4" />
-                      View All
+                      {showAllActivities ? 'Show Less' : 'View All'}
                     </button>
                   </div>
                 </div>
                 <div className="p-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                    {recentActivities.map((activity) => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {(showAllActivities ? allActivities : recentActivities).map((activity) => (
                       <div
                         key={activity.id}
-                        className="flex items-center gap-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                        className="flex flex-col gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors max-w-xs mx-auto w-full"
                       >
-                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-sm font-semibold">
-                          {activity.avatar}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                            {activity.avatar}
+                          </div>
+                          <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                               {activity.user}
                             </p>
-                            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap ml-2">
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
                               {activity.time}
                             </span>
                           </div>
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
-                            {activity.action}
-                          </p>
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              activity.status === "pending"
-                                ? "bg-amber-100 text-amber-700"
-                                : activity.status === "completed"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : activity.status === "warning"
-                                ? "bg-orange-100 text-orange-700"
-                                : "bg-gray-100 text-gray-700"
-                            }`}
-                          >
-                            {activity.status}
-                          </span>
                         </div>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+                          {activity.action}
+                        </p>
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium w-fit ${
+                            activity.status === "pending"
+                              ? "bg-amber-100 text-amber-700"
+                              : activity.status === "completed"
+                              ? "bg-emerald-100 text-emerald-700"
+                              : activity.status === "warning"
+                              ? "bg-orange-100 text-orange-700"
+                              : activity.status === "cancelled"
+                              ? "bg-red-100 text-red-700"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
+                        >
+                          {activity.status}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -1117,4 +1159,3 @@ const Dashboard = ({ collapsed }) => {
 };
 
 export default Dashboard;
-
