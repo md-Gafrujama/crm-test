@@ -101,6 +101,8 @@ const Sign = ({isOpen,onClose}) => {
 const handleSubmit = async (e) => {
   e.preventDefault();
   setIsSubmitting(true);
+  const token = localStorage.getItem('token');
+
 
   try {
     const formDataToSend = new FormData();
@@ -119,6 +121,7 @@ const handleSubmit = async (e) => {
       formDataToSend,
       {
           headers: {
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'multipart/form-data' 
         }
     });
