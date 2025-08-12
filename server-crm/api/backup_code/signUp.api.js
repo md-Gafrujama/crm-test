@@ -17,6 +17,7 @@ import corsMiddleware from "../../middleware/cors.middleware.js";
 
 const router = express.Router();
 
+router.options("/", corsMiddleware);
 router.use(corsMiddleware); // Use the CORS middleware
 
 
