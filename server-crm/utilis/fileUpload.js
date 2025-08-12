@@ -1,36 +1,124 @@
+// import fs from "fs";
+// import multer from "multer";
+// import path from "path";
+// import dotenv from "dotenv";
+// import { fileURLToPath } from "url";
+// import { dirname } from "path";
+// import { v2 as cloudinary } from "cloudinary";  
+
+// dotenv.config();
+
+// const __filename = fileURLToPath(import.meta.url);
+// const __dirname = dirname(__filename);
+
+// cloudinary.config({
+//   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+//   api_key: process.env.CLOUDINARY_API_KEY,
+//   api_secret: process.env.CLOUDINARY_API_SECRET,
+// });
+
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => {
+//     const uploadDir = path.join(__dirname, "../uploads/profile");
+//     fs.mkdirSync(uploadDir, { recursive: true });
+//     cb(null, uploadDir);
+//   },
+//   filename: (req, file, cb) => {
+//     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+//     cb(
+//       null,
+//       file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
+//     );
+//   },
+// });
+
+// const upload = multer({
+//   storage: storage,
+//   limits: {
+//     fileSize: 2 * 1024 * 1024, // 2MB
+//   },
+//   fileFilter: (req, file, cb) => {
+//     if (file.mimetype.startsWith("image/")) {
+//       cb(null, true);
+//     } else {
+//       cb(new Error("Only image files are allowed!"), false);
+//     }
+//   },
+// });
+
+// try {
+//   await cloudinary.api.ping();
+//   console.log("Cloudinary connected successfully!");
+// } catch (error) {
+//   console.error("Cloudinary connection failed:", error.message);
+//   throw error;
+// }
+
+// const uploadToCloudinary = async (req, res, next) => {
+//   if (!req.file) {
+//     console.log("No file to upload to Cloudinary");
+//     return next();
+//   }
+
+//   try {
+//     console.log("Uploading to Cloudinary...");
+//     const result = await cloudinary.uploader.upload(req.file.path, {
+//       folder: "user-profile-photos",
+//     });
+
+//     try {
+//       fs.unlinkSync(req.file.path);
+//     } catch (deleteErr) {
+//       console.error("Error deleting file:", deleteErr);
+//     }
+
+//     req.cloudinaryUrl = result.secure_url;
+//     next();
+//   } catch (error) {
+//     console.error("Cloudinary upload error:", error);
+
+//     try {
+//       if (req.file?.path && fs.existsSync(req.file.path)) {
+//         fs.unlinkSync(req.file.path);
+//       }
+//     } catch (err) {
+//       console.error("Error deleting file after Cloudinary failure:", err);
+//     }
+
+//     return res.status(500).json({
+//       message: "Error uploading file to Cloudinary",
+//       error: error.message,
+//     });
+//   }
+// };
+
+// export { upload, uploadToCloudinary };
+
+
+
+
 import fs from "fs";
 import multer from "multer";
 import path from "path";
 import dotenv from "dotenv";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
-import { v2 as cloudinary } from "cloudinary";  
+import { v2 as cloudinary } from "cloudinary";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
+// Cloudinary configuration
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const uploadDir = path.join(__dirname, "../uploads/profile");
-    fs.mkdirSync(uploadDir, { recursive: true });
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(
-      null,
-      file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname)
-    );
-  },
-});
+// Use memory storage for better Vercel compatibility
+const storage = multer.memoryStorage();
 
 const upload = multer({
   storage: storage,
@@ -46,14 +134,20 @@ const upload = multer({
   },
 });
 
-try {
-  await cloudinary.api.ping();
-  console.log("Cloudinary connected successfully!");
-} catch (error) {
-  console.error("Cloudinary connection failed:", error.message);
-  throw error;
-}
+// Test Cloudinary connection
+const testCloudinaryConnection = async () => {
+  try {
+    await cloudinary.api.ping();
+    console.log("Cloudinary connected successfully!");
+  } catch (error) {
+    console.error("Cloudinary connection failed:", error.message);
+  }
+};
 
+// Call connection test
+testCloudinaryConnection();
+
+// Upload to Cloudinary from memory buffer
 const uploadToCloudinary = async (req, res, next) => {
   if (!req.file) {
     console.log("No file to upload to Cloudinary");
@@ -62,30 +156,25 @@ const uploadToCloudinary = async (req, res, next) => {
 
   try {
     console.log("Uploading to Cloudinary...");
-    const result = await cloudinary.uploader.upload(req.file.path, {
+    
+    // Convert buffer to base64 and upload
+    const base64String = req.file.buffer.toString('base64');
+    const dataURI = `data:${req.file.mimetype};base64,${base64String}`;
+    
+    const result = await cloudinary.uploader.upload(dataURI, {
       folder: "user-profile-photos",
+      resource_type: "auto",
     });
 
-    try {
-      fs.unlinkSync(req.file.path);
-    } catch (deleteErr) {
-      console.error("Error deleting file:", deleteErr);
-    }
-
     req.cloudinaryUrl = result.secure_url;
+    req.cloudinaryPublicId = result.public_id;
+    
+    console.log("File uploaded to Cloudinary successfully");
     next();
   } catch (error) {
     console.error("Cloudinary upload error:", error);
-
-    try {
-      if (req.file?.path && fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-    } catch (err) {
-      console.error("Error deleting file after Cloudinary failure:", err);
-    }
-
     return res.status(500).json({
+      success: false,
       message: "Error uploading file to Cloudinary",
       error: error.message,
     });
