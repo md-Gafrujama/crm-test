@@ -631,7 +631,6 @@ const Dashboard = ({ collapsed }) => {
   const { theme, setTheme } = useTheme();
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
   const [showAddAlertReminderForm, setShowAddAlertReminderForm] = useState(false);
-  const [showAllActivities, setShowAllActivities] = useState(false);
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -770,64 +769,6 @@ const Dashboard = ({ collapsed }) => {
     },
   ]);
 
-  // Extended activities data for "View All" functionality
-  const [allActivities, setAllActivities] = useState([
-    ...recentActivities,
-    {
-      id: 5,
-      type: "order",
-      user: "Mike Wilson",
-      action: "updated order details",
-      time: "4 hours ago",
-      status: "completed",
-      avatar: "MW"
-    },
-    {
-      id: 6,
-      type: "user",
-      user: "Emma Davis",
-      action: "uploaded profile picture",
-      time: "5 hours ago",
-      status: "completed",
-      avatar: "ED"
-    },
-    {
-      id: 7,
-      type: "system",
-      user: "System",
-      action: "database optimization completed",
-      time: "6 hours ago",
-      status: "completed",
-      avatar: "SY"
-    },
-    {
-      id: 8,
-      type: "alert",
-      user: "System",
-      action: "disk space warning threshold reached",
-      time: "8 hours ago",
-      status: "warning",
-      avatar: "AL"
-    },
-    {
-      id: 9,
-      type: "order",
-      user: "Alex Chen",
-      action: "cancelled order #12345",
-      time: "10 hours ago",
-      status: "cancelled",
-      avatar: "AC"
-    },
-    {
-      id: 10,
-      type: "user",
-      user: "Lisa Brown",
-      action: "changed password",
-      time: "12 hours ago",
-      status: "completed",
-      avatar: "LB"
-    }
-  ]);
 
   const [notifications, setNotifications] = useState([
     {
@@ -928,108 +869,143 @@ const Dashboard = ({ collapsed }) => {
           )}
         >
           <main className="p-6">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-              {stats.map((stat) => (
-                <div
-                  key={stat.id}
-                  className="max-w-lg bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all duration-200 overflow-hidden mx-auto"
-                >
-                  <div className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className={`p-3 rounded-lg ${stat.lightColor}`}>
-                        <div className={stat.textColor}>
-                          {stat.icon}
-                        </div>
-                      </div>
-                      <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                        stat.trend === "up" 
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-red-100 text-red-700"
-                      }`}>
-                        <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
-                        {stat.change}
-                      </div>
-                    </div>
-                    <div className="space-y-1">
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                        {stat.value}
-                      </h3>
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
-                        {stat.title}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {stat.subtitle}
-                      </p>
-                    </div>
-                  </div>
-                  <div className={`h-2 bg-gradient-to-r ${stat.color}`}></div>
-                </div>
-              ))}
+{/* Enhanced Stats Grid */}
+<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+  {stats.map((stat) => (
+    <div
+      key={stat.id}
+      className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
+    >
+      {/* Background Gradient Overlay */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
+      
+      {/* Main Content */}
+      <div className="relative p-6">
+        {/* Header with Icon and Change */}
+        <div className="flex items-start justify-between mb-4">
+          <div className={`p-3 rounded-xl ${stat.lightColor} dark:${stat.lightColor.replace('bg-', 'bg-').replace('-50', '-900/30')} group-hover:scale-110 transition-transform duration-300`}>
+            <div className={`${stat.textColor} dark:${stat.textColor.replace('text-', 'text-').replace('-600', '-400')}`}>
+              {stat.icon}
             </div>
+          </div>
+          
+          <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
+            stat.trend === "up" 
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+          } group-hover:scale-105 transition-transform duration-300`}>
+            <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
+            {stat.change}
+          </div>
+        </div>
 
-            {/* Recent Activities - Full Width */}
-            <div className="mb-8">
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
-                      <Activity className="h-5 w-5 text-blue-600" />
-                      Recent Activities
-                    </h2>
-                    <button 
-                      onClick={() => setShowAllActivities(!showAllActivities)}
-                      className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-                    >
-                      <Eye className="h-4 w-4" />
-                      {showAllActivities ? 'Show Less' : 'View All'}
-                    </button>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    {(showAllActivities ? allActivities : recentActivities).map((activity) => (
-                      <div
-                        key={activity.id}
-                        className="flex flex-col gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors max-w-xs mx-auto w-full"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-                            {activity.avatar}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                              {activity.user}
-                            </p>
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {activity.time}
-                            </span>
-                          </div>
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
-                          {activity.action}
-                        </p>
-                        <span
-                          className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium w-fit ${
-                            activity.status === "pending"
-                              ? "bg-amber-100 text-amber-700"
-                              : activity.status === "completed"
-                              ? "bg-emerald-100 text-emerald-700"
-                              : activity.status === "warning"
-                              ? "bg-orange-100 text-orange-700"
-                              : activity.status === "cancelled"
-                              ? "bg-red-100 text-red-700"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          {activity.status}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+        {/* Stats Value */}
+        <div className="space-y-2 mb-4">
+          <h3 className="text-3xl font-bold text-gray-900 dark:text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
+            {stat.value}
+          </h3>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+              {stat.title}
+            </p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">
+              {stat.subtitle}
+            </p>
+          </div>
+        </div>
+
+        {/* Bottom Section */}
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <div className={`w-2 h-2 rounded-full ${
+              stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
+            }`}></div>
+            {stat.subtitle}
+          </div>
+          <div className={`text-xs font-medium ${
+            stat.trend === "up" 
+              ? "text-emerald-600 dark:text-emerald-400" 
+              : "text-red-600 dark:text-red-400"
+          }`}>
+            {stat.change}
+          </div>
+        </div>
+      </div>
+
+      {/* Animated Progress Bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
+        <div 
+          className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}
+        ></div>
+      </div>
+    </div>
+  ))}
+</div>
+
+
+{/* Recent Activities - Full Width */}
+<div className="mb-8">
+  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
+          <Activity className="h-5 w-5 text-blue-600" />
+          Recent Activities
+        </h2>
+        <button 
+          onClick={() => navigate("/all-activities")}
+          className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+        >
+          <Eye className="h-4 w-4" />
+          View All
+        </button>
+      </div>
+    </div>
+    <div className="p-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {recentActivities.map((activity) => (
+          <div
+            key={activity.id}
+            className="flex flex-col gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors max-w-xs mx-auto w-full"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                {activity.avatar}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                  {activity.user}
+                </p>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  {activity.time}
+                </span>
               </div>
             </div>
+            <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
+              {activity.action}
+            </p>
+            <span
+              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium w-fit ${
+                activity.status === "pending"
+                  ? "bg-amber-100 text-amber-700"
+                  : activity.status === "completed"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : activity.status === "warning"
+                  ? "bg-orange-100 text-orange-700"
+                  : activity.status === "cancelled"
+                  ? "bg-red-100 text-red-700"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              {activity.status}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</div>
+
 
             {/* Bottom Section */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
