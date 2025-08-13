@@ -90,6 +90,7 @@ model company {
   noOfUsers      Int      @default(0)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  profileImage          String
 
   users          User[]               @relation("CompanyUsers")
   employees      Employee[]           @relation("CompanyEmployees")

@@ -1,6 +1,6 @@
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
-import React, { useState, lazy, Suspense } from "react";
+import React, { useState, lazy, Suspense, useEffect } from "react";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
 import axios from "axios";
@@ -37,7 +37,14 @@ const RecruiterRegister = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
 
+  // Log step changes
+  useEffect(() => {
+    console.log("Current step:", step);
+  }, [step]);
+
   const validateForm = () => {
+    console.log("Validating form with data:", formData);
+    
     const newErrors = {};
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
     if (!formData.lastName.trim()) newErrors.lastName = "Last name is required";
@@ -56,6 +63,7 @@ const RecruiterRegister = () => {
       newErrors.confirmPassword = "Passwords do not match";
     if (!formData.agreeToTerms) newErrors.agreeToTerms = "You must agree to the terms";
 
+    console.log("Validation errors:", newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -70,10 +78,13 @@ const RecruiterRegister = () => {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
+    const newFormData = {
+      ...formData,
       [name]: type === "checkbox" ? checked : value,
-    }));
+    };
+    
+    setFormData(newFormData);
+    console.log("Form Data Updated:", { field: name, value: type === "checkbox" ? checked : value });
 
     if (errors[name]) {
       setErrors((prev) => ({
@@ -86,6 +97,13 @@ const RecruiterRegister = () => {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      console.log("Selected Image:", {
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        lastModified: new Date(file.lastModified).toISOString()
+      });
+
       // Validate file type
       if (!file.type.startsWith('image/')) {
         toast.error("Please select a valid image file");
@@ -104,12 +122,14 @@ const RecruiterRegister = () => {
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target.result);
+        console.log("Image preview created successfully");
       };
       reader.readAsDataURL(file);
     }
   };
 
   const removeImage = () => {
+    console.log("Removing selected image");
     setSelectedImage(null);
     setImagePreview(null);
   };
@@ -117,16 +137,28 @@ const RecruiterRegister = () => {
   // Step 1: Handle form submission and move to image upload
   const handleFormSubmit = (e) => {
     e.preventDefault();
+    console.log("Form submitted, validating...");
     if (!validateForm()) return;
+    console.log("Form validation passed, moving to step 2");
     setStep(2); // Move to image upload step
   };
 
   // Step 2: Handle image upload and send OTP
   const handleImageUpload = async (e) => {
     e.preventDefault();
+    // console.log("Image upload form submitted");
     if (!validateImage()) return;
 
     setIsSubmitting(true);
+    console.log("Sending OTP request with data:", {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      username: formData.username,
+      companyName: formData.companyName,
+      email: formData.email,
+      phone: formData.countryCode + formData.phoneNumber,
+    });
+
     try {
       const { data } = await axios.post(
         `${API_BASE_URL}/api/companyOTP/sendOTP`,
@@ -144,6 +176,8 @@ const RecruiterRegister = () => {
         }
       );
 
+      console.log("OTP Send Response:", data);
+
       if (data.success) {
         toast.success("OTP sent! Please check your email.");
         setStep(3); // Move to OTP verification step
@@ -151,6 +185,7 @@ const RecruiterRegister = () => {
         toast.error(data.message || "Failed to send OTP");
       }
     } catch (err) {
+      console.error("OTP Send Error:", err.response?.data || err.message);
       toast.error(err.response?.data?.message || "Error sending OTP");
     } finally {
       setIsSubmitting(false);
@@ -160,6 +195,7 @@ const RecruiterRegister = () => {
   // Step 3: Handle OTP verification and final registration
   const handleOtpSubmit = async (e) => {
     e.preventDefault();
+    console.log("OTP form submitted with OTP:", otp);
 
     if (otp.length !== 6) {
       toast.error("Please enter the 6-digit OTP");
@@ -169,48 +205,59 @@ const RecruiterRegister = () => {
     setIsSubmitting(true);
 
     try {
-      // Create FormData for file upload
-      const formDataToSend = new FormData();
-      formDataToSend.append('firstName', formData.firstName);
-      formDataToSend.append('lastName', formData.lastName);
-      formDataToSend.append('username', formData.username);
-      formDataToSend.append('companyName', formData.companyName);
-      formDataToSend.append('email', formData.email);
-      formDataToSend.append('phone', formData.countryCode + formData.phoneNumber);
-      formDataToSend.append('password', formData.password);
-      formDataToSend.append('agreeToTerms', formData.agreeToTerms);
-      formDataToSend.append('otp', otp);
-      
-      // Append image if selected
-      if (selectedImage) {
-        formDataToSend.append('profileImage', selectedImage);
-      }
+  // Create FormData for file upload
+  const formDataToSend = new FormData();
+  formDataToSend.append('firstName', formData.firstName);
+  formDataToSend.append('lastName', formData.lastName);
+  formDataToSend.append('username', formData.username);
+  formDataToSend.append('companyName', formData.companyName);
+  formDataToSend.append('email', formData.email);
+  formDataToSend.append('phone', formData.countryCode + formData.phoneNumber);
+  formDataToSend.append('password', formData.password);
+  formDataToSend.append('agreeToTerms', formData.agreeToTerms);
+  formDataToSend.append('otp', otp);
+  
+  // Append image if selected - using 'profilePhoto' to match backend
+  if (selectedImage) {
+    formDataToSend.append('profilePhoto', selectedImage); // Fixed field name
+  }
 
-      const { data } = await axios.post(
-        `${API_BASE_URL}/api/companyOTP/verifyOTP`,
-        formDataToSend,
-        {
-          headers: { 
-            'Content-Type': 'multipart/form-data',
-            'Accept': 'application/json'
-          },
-        }
-      );
+  // Debugging: Uncomment to verify what's being sent
+  console.log("FormData being sent:");
+  for (let [key, value] of formDataToSend.entries()) {
+    console.log(key, value);
+  }
 
-      if (data.success) {
-        toast.success("Signup successful!");
-        setTimeout(() => navigate("/dashboard"), 1500);
-      } else {
-        toast.error(data.message || "OTP verification or signup failed");
-      }
-    } catch (err) {
-      toast.error(err.response?.data?.message || "Something went wrong.");
-    } finally {
+  const { data } = await axios.post(
+    `${API_BASE_URL}/api/companyOTP/verifyOTP`,
+    formDataToSend,
+    {
+      headers: { 
+        'Content-Type': 'multipart/form-data',
+        'Accept': 'application/json'
+      },
+    }
+  );
+
+  console.log("OTP Verification Response:", data);
+
+  if (data.success) {
+    console.log("Registration successful, redirecting to dashboard");
+    toast.success("Signup successful!");
+    setTimeout(() => navigate("/dashboard"), 1500);
+  } else {
+    toast.error(data.message || "OTP verification or signup failed");
+  }
+} catch (error) {
+  console.error("Registration error:", error);
+  toast.error(error.response?.data?.message || "Registration failed");
+} finally {
       setIsSubmitting(false);
     }
   };
 
   const goBackToStep = (targetStep) => {
+    console.log("Going back to step:", targetStep);
     setStep(targetStep);
   };
 
