@@ -9,18 +9,22 @@ import { useTheme } from "../../../hooks/use-theme";
 
 const EyeIcon = lazy(() => import("lucide-react").then((module) => ({ default: module.Eye })));
 const EyeSlashIcon = lazy(() => import("lucide-react").then((module) => ({ default: module.EyeOff })));
+const UploadIcon = lazy(() => import("lucide-react").then((module) => ({ default: module.Upload })));
+const XIcon = lazy(() => import("lucide-react").then((module) => ({ default: module.X })));
 
 const RecruiterRegister = () => {
-  const [step, setStep] = useState(1); // 1 = form, 2 = OTP verify
+  const [step, setStep] = useState(1); // 1 = form, 2 = image upload, 3 = OTP verify
   const [otp, setOtp] = useState("");
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [formData, setFormData] = useState({
-    firstName: "",          // new first name field
-    lastName: "",           // new last name field
+    firstName: "",
+    lastName: "",
     username: "",
     companyName: "",
     email: "",
-    countryCode: "+1",      // default country code (USA)
-    phoneNumber: "",        // new phone number field
+    countryCode: "+1",
+    phoneNumber: "",
     password: "",
     confirmPassword: "",
     agreeToTerms: false,
@@ -56,6 +60,14 @@ const RecruiterRegister = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateImage = () => {
+    if (!selectedImage) {
+      toast.error("Please select an image to upload");
+      return false;
+    }
+    return true;
+  };
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prev) => ({
@@ -71,9 +83,48 @@ const RecruiterRegister = () => {
     }
   };
 
-  const handleNext = async (e) => {
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error("Please select a valid image file");
+        return;
+      }
+      
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size should be less than 5MB");
+        return;
+      }
+
+      setSelectedImage(file);
+      
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setImagePreview(e.target.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+  };
+
+  // Step 1: Handle form submission and move to image upload
+  const handleFormSubmit = (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+    setStep(2); // Move to image upload step
+  };
+
+  // Step 2: Handle image upload and send OTP
+  const handleImageUpload = async (e) => {
+    e.preventDefault();
+    if (!validateImage()) return;
 
     setIsSubmitting(true);
     try {
@@ -95,7 +146,7 @@ const RecruiterRegister = () => {
 
       if (data.success) {
         toast.success("OTP sent! Please check your email.");
-        setStep(2);
+        setStep(3); // Move to OTP verification step
       } else {
         toast.error(data.message || "Failed to send OTP");
       }
@@ -106,55 +157,62 @@ const RecruiterRegister = () => {
     }
   };
 
+  // Step 3: Handle OTP verification and final registration
   const handleOtpSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (otp.length !== 6) {
-    toast.error("Please enter the 6-digit OTP");
-    return;
-  }
-
-  setIsSubmitting(true);
-
-  try {
-    const { data } = await axios.post(
-      `${API_BASE_URL}/api/companyOTP/verifyOTP`,
-      {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        username: formData.username,
-        companyName: formData.companyName,
-        email: formData.email,
-        phone: formData.countryCode + formData.phoneNumber,
-        password: formData.password,
-        agreeToTerms: formData.agreeToTerms, // Make sure this is included
-        otp,
-      },
-      {
-headers: { 
-      'Content-Type': 'application/json',
-      'Accept': 'application/json'
-    },
-        }
-    );
-
-    if (data.success) {
-      toast.success("Signup successful!");
-      setTimeout(() => navigate("/dashboard"), 1500);
-    } else {
-      toast.error(data.message || "OTP verification or signup failed");
+    if (otp.length !== 6) {
+      toast.error("Please enter the 6-digit OTP");
+      return;
     }
-  } catch (err) {
-    toast.error(err.response?.data?.message || "Something went wrong.");
-  } finally {
-    setIsSubmitting(false);
-  }
-  console.log("Submitting OTP with data:", {
-  ...formData,
-  phone: formData.countryCode + formData.phoneNumber,
-  otp
-});
-};
+
+    setIsSubmitting(true);
+
+    try {
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append('firstName', formData.firstName);
+      formDataToSend.append('lastName', formData.lastName);
+      formDataToSend.append('username', formData.username);
+      formDataToSend.append('companyName', formData.companyName);
+      formDataToSend.append('email', formData.email);
+      formDataToSend.append('phone', formData.countryCode + formData.phoneNumber);
+      formDataToSend.append('password', formData.password);
+      formDataToSend.append('agreeToTerms', formData.agreeToTerms);
+      formDataToSend.append('otp', otp);
+      
+      // Append image if selected
+      if (selectedImage) {
+        formDataToSend.append('profileImage', selectedImage);
+      }
+
+      const { data } = await axios.post(
+        `${API_BASE_URL}/api/companyOTP/verifyOTP`,
+        formDataToSend,
+        {
+          headers: { 
+            'Content-Type': 'multipart/form-data',
+            'Accept': 'application/json'
+          },
+        }
+      );
+
+      if (data.success) {
+        toast.success("Signup successful!");
+        setTimeout(() => navigate("/dashboard"), 1500);
+      } else {
+        toast.error(data.message || "OTP verification or signup failed");
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Something went wrong.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const goBackToStep = (targetStep) => {
+    setStep(targetStep);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -171,10 +229,30 @@ headers: {
         </div>
 
         <div className="w-full lg:w-1/2 p-8 md:p-12 overflow-y-auto">
-          <h1 className="text-2xl font-bold text-gray-800 mb-6">Recruiter Sign Up</h1>
+          {/* Progress Indicator */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <span className="text-sm font-medium text-gray-700">
+                Step {step} of 3
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2">
+              <div 
+                className="bg-[#ff8633] h-2 rounded-full transition-all duration-300" 
+                style={{ width: `${(step / 3) * 100}%` }}
+              ></div>
+            </div>
+          </div>
 
+          <h1 className="text-2xl font-bold text-gray-800 mb-6">
+            {step === 1 && "Recruiter Sign Up"}
+            {step === 2 && "Upload Profile Image"}
+            {step === 3 && "Verify Your Account"}
+          </h1>
+
+          {/* Step 1: Form */}
           {step === 1 && (
-            <form className="space-y-4" onSubmit={handleNext}>
+            <form className="space-y-4" onSubmit={handleFormSubmit}>
               {/* First Name and Last Name - Side by side */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -278,7 +356,6 @@ headers: {
                     <option value="+91">+91 (India)</option>
                     <option value="+61">+61 (Australia)</option>
                     <option value="+81">+81 (Japan)</option>
-                    {/* Add more country codes as needed */}
                   </select>
                   <input
                     type="tel"
@@ -313,6 +390,7 @@ headers: {
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                  style={{ top: '24px' }}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   <Suspense fallback={<div className="w-5 h-5" />}>
@@ -342,6 +420,7 @@ headers: {
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-700"
+                  style={{ top: '24px' }}
                   aria-label={showConfirmPassword ? "Hide password" : "Show password"}
                 >
                   <Suspense fallback={<div className="w-5 h-5" />}>
@@ -372,30 +451,127 @@ headers: {
                 disabled={isSubmitting}
                 className="w-full mt-6 bg-[#ff8633] text-white py-3 rounded-md font-semibold hover:bg-[#e47b17] transition-colors disabled:opacity-60"
               >
-                {isSubmitting ? "Sending OTP..." : "Next"}
+                Next: Upload Image
               </button>
             </form>
           )}
 
+          {/* Step 2: Image Upload */}
           {step === 2 && (
-            <form className="space-y-4" onSubmit={handleOtpSubmit}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Enter 6 Digit OTP</label>
-              <input
-                type="text"
-                maxLength={6}
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                required
-                placeholder="Enter OTP"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8633]"
-              />
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full mt-6 bg-[#ff8633] text-white py-3 rounded-md font-semibold hover:bg-[#e47b17] transition-colors disabled:opacity-60"
-              >
-                {isSubmitting ? "Verifying OTP..." : "Verify & Complete Signup"}
-              </button>
+            <form className="space-y-6" onSubmit={handleImageUpload}>
+              <div className="text-center">
+                <p className="text-gray-600 mb-4">
+                  Please upload a profile image to complete your registration
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                {!imagePreview ? (
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-[#ff8633] transition-colors">
+                    <Suspense fallback={<div className="w-12 h-12 mx-auto" />}>
+                      <UploadIcon className="mx-auto h-12 w-12 text-gray-400" />
+                    </Suspense>
+                    <div className="mt-4">
+                      <label htmlFor="image-upload" className="cursor-pointer">
+                        <span className="mt-2 block text-sm font-medium text-gray-900">
+                          Click to upload or drag and drop
+                        </span>
+                        <span className="mt-1 block text-sm text-gray-500">
+                          PNG, JPG, JPEG up to 5MB
+                        </span>
+                      </label>
+                      <input
+                        id="image-upload"
+                        name="image-upload"
+                        type="file"
+                        className="sr-only"
+                        accept="image/*"
+                        onChange={handleImageChange}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="relative">
+                    <div className="border border-gray-300 rounded-lg p-4">
+                      <img
+                        src={imagePreview}
+                        alt="Preview"
+                        className="w-full h-64 object-cover rounded-md"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={removeImage}
+                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                    >
+                      <Suspense fallback={<div className="w-5 h-5" />}>
+                        <XIcon className="h-5 w-5" />
+                      </Suspense>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => goBackToStep(1)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-md font-semibold hover:bg-gray-400 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-[#ff8633] text-white py-3 rounded-md font-semibold hover:bg-[#e47b17] transition-colors disabled:opacity-60"
+                >
+                  {isSubmitting ? "Sending OTP..." : "Next: Verify Account"}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* Step 3: OTP Verification */}
+          {step === 3 && (
+            <form className="space-y-6" onSubmit={handleOtpSubmit}>
+              <div className="text-center">
+                <p className="text-gray-600 mb-4">
+                  We've sent a 6-digit verification code to your email address
+                </p>
+                <p className="text-sm text-gray-500">
+                  {formData.email}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Enter 6 Digit OTP</label>
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  required
+                  placeholder="Enter OTP"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#ff8633] text-center text-2xl tracking-widest"
+                />
+              </div>
+
+              <div className="flex space-x-4">
+                <button
+                  type="button"
+                  onClick={() => goBackToStep(2)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-md font-semibold hover:bg-gray-400 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="flex-1 bg-[#ff8633] text-white py-3 rounded-md font-semibold hover:bg-[#e47b17] transition-colors disabled:opacity-60"
+                >
+                  {isSubmitting ? "Verifying..." : "Complete Registration"}
+                </button>
+              </div>
             </form>
           )}
         </div>

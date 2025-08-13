@@ -944,7 +944,7 @@ const Dashboard = ({ collapsed }) => {
                       </div>
                       <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
                         stat.trend === "up" 
-                          ? "bg-emerald-100 text-emerald-700" 
+                          ? "bg-emerald-100 text-emerald-700"
                           : "bg-red-100 text-red-700"
                       }`}>
                         <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
