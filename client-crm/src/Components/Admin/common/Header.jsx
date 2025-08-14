@@ -210,17 +210,19 @@ import { Bell, ChevronsLeft, Moon, Search, Sun, Menu } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
 import PropTypes from "prop-types";
 import { useSearch } from "../../../contexts/SearchContext";
+import axios from 'axios';
+import { API_BASE_URL } from "../../../config/api";
 
 export const Header = ({ onToggleSidebar }) => {
     const { theme, setTheme } = useTheme();
     const { updateSearchTerm } = useSearch();
     const [localSearchTerm, setLocalSearchTerm] = useState('');
-    console.log('Current theme in Header:', theme);
     
     const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem("loggedIn") === "true");
     const [userType, setUserType] = useState(localStorage.getItem("userType"));
     const [companyName, setCompanyName] = useState("");
     const [companyImage, setCompanyImage] = useState("");
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
     const handleSearchChange = (e) => {
@@ -229,19 +231,72 @@ export const Header = ({ onToggleSidebar }) => {
         updateSearchTerm(value); 
     };
 
+    // Function to fetch company registration data
+    const fetchCompanyData = async () => {
+        try {
+            setLoading(true);
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                console.log('No token found');
+                return;
+            }
+
+            console.log('Making API call...');
+            const response = await axios.get(`${API_BASE_URL}/api/registerComp/`, {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            console.log('API Response:', response.data);
+
+            // Fixed: Access response.data.data since your JSON has nested data
+            if (response.data && response.data.data) {
+                const { companyName: apiCompanyName, profileImage: apiCompanyImage } = response.data.data;
+                
+                console.log('Extracted data:', { apiCompanyName, apiCompanyImage });
+                
+                setCompanyName(apiCompanyName || "");
+                setCompanyImage(apiCompanyImage || "https://tse4.mm.bing.net/th/id/OIP.C4yEUq2tPmLDROuTo9XkcQHaHa?rs=1&pid=ImgDetMain");
+                
+                localStorage.setItem("companyName", apiCompanyName || "");
+                localStorage.setItem("companyImage", apiCompanyImage || "https://tse4.mm.bing.net/th/id/OIP.C4yEUq2tPmLDROuTo9XkcQHaHa?rs=1&pid=ImgDetMain");
+            }
+        } catch (error) {
+            console.error('Error fetching company data:', error);
+            
+            setCompanyName(localStorage.getItem("companyName") || "");
+            setCompanyImage(localStorage.getItem("companyImage") || "https://tse4.mm.bing.net/th/id/OIP.C4yEUq2tPmLDROuTo9XkcQHaHa?rs=1&pid=ImgDetMain");
+            
+            if (error.response?.status === 401) {
+                console.log('Unauthorized - token may be expired');
+                handleLogout();
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         const handleStorageChange = () => {
             setIsLoggedIn(localStorage.getItem("loggedIn") === "true");
             setUserType(localStorage.getItem("userType"));
-            // Get company information from localStorage
-            setCompanyName(localStorage.getItem("companyName") || "Nityaa");
+            
+            // Get initial company information from localStorage
+            setCompanyName(localStorage.getItem("companyName") || "");
             setCompanyImage(localStorage.getItem("companyImage") || "https://tse4.mm.bing.net/th/id/OIP.C4yEUq2tPmLDROuTo9XkcQHaHa?rs=1&pid=ImgDetMain");
         };
 
-        window.addEventListener("storage", handleStorageChange);
-        
-        // Initialize state once
+        // Initialize state
         handleStorageChange();
+        
+        // Fetch fresh company data from API if user is logged in
+        if (localStorage.getItem("loggedIn") === "true") {
+            fetchCompanyData();
+        }
+
+        window.addEventListener("storage", handleStorageChange);
 
         return () => {
             window.removeEventListener("storage", handleStorageChange);
@@ -287,11 +342,17 @@ export const Header = ({ onToggleSidebar }) => {
                     )}
                     
                     <div className="flex flex-col">
-                        <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                            Dashboard
-                        </h1>
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+                                Dashboard
+                            </h1>
+                            {loading && (
+                                <div className="h-4 w-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"></div>
+                            )}
+                        </div>
+                        {/* Updated welcome message with conditional rendering */}
                         <p className="text-sm text-gray-600 dark:text-gray-300 hidden sm:block">
-                            Welcome, {companyName}
+                            {loading ? "Loading..." : companyName ? `Welcome, ${companyName}` : "Welcome"}
                         </p>
                     </div>
                 </div>
