@@ -169,7 +169,7 @@ useEffect(() => {
   return (
     <>
         <div className={cn(
-          "transition-[margin] duration-300 ease-in-out min-h-screen  dark:bg-gray-900",
+          "transition-[margin] duration-300 ease-in-out min-h-screen dark:bg-gray-900",
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
         )}>
           <main className="p-6">

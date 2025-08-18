@@ -8,7 +8,6 @@ import { UserFooter } from '../common/UserFooter';
 const ConnectSocialMedia = ({ onLogout }) => {
 const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarUser();
 
-
   return (
     <>
         <UserHeader onToggleSidebar={toggleSidebar} />
