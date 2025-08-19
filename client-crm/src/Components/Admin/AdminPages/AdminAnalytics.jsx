@@ -6,29 +6,30 @@ import { cn } from '../../../utils/cn';
 import { Package, ShoppingCart, Activity, TrendingUp } from 'lucide-react';
 import { User, Users, MessageSquare, Users2 } from 'lucide-react';
 
-// Chart.js imports
+// Chart.js imports for Pie and Doughnut charts
 import {
   Chart as ChartJS,
+  ArcElement,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Line } from 'react-chartjs-2';
+import { Pie, Doughnut, Bar } from 'react-chartjs-2';
 
-// CRITICAL: Register Chart.js components
+// Register Chart.js components
 ChartJS.register(
+  ArcElement,
   CategoryScale,
   LinearScale,
-  PointElement,
-  LineElement,
+  BarElement,
   Title,
   Tooltip,
   Legend
 );
+
 const additionalStats = [
   {
     id: 5,
@@ -135,93 +136,53 @@ const AdminAnalytics = ({ collapsed }) => {
     },
   ]);
 
-  const additionalChartData = {
-  labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-  datasets: [
-    {
-      label: 'Total User',
-      data: [3300, 3400, 3450, 3500],
-      borderColor: '#6366F1',
-      backgroundColor: 'rgba(99,102,241,0.2)',
-      tension: 0.4,
-      fill: false,
-    },
-    {
-      label: 'Active User',
-      data: [1800, 1850, 1900, 1892],
-      borderColor: '#22C55E',
-      backgroundColor: 'rgba(34,197,94,0.2)',
-      tension: 0.4,
-      fill: false,
-    },
-    {
-      label: 'Conversation Rate (%)',
-      data: [60, 61, 62, 62.4],
-      borderColor: '#EC4899',
-      backgroundColor: 'rgba(236,72,153,0.2)',
-      tension: 0.4,
-      fill: false,
-    },
-    {
-      label: 'Total Employee',
-      data: [210, 220, 225, 230],
-      borderColor: '#EAB308',
-      backgroundColor: 'rgba(234,179,8,0.2)',
-      tension: 0.4,
-      fill: false,
-    }
-  ],
-};
-
-const additionalChartOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      position: 'top',
-    },
-  },
-  scales: {
-    x: { display: true },
-    y: { display: true, beginAtZero: true },
-  },
-};
-
-  // Chart data
-  const chartData = {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+  // Pie Chart Data for Lead Distribution
+  const leadsPieData = {
+    labels: ['Total Leads', 'Qualified Leads', 'Pending Leads', 'Lost Leads'],
     datasets: [
       {
-        label: 'Total Leads',
-        data: [1200, 1225, 1240, 1248],
-        borderColor: '#3b82f6',
-        backgroundColor: 'rgba(59,130,246,0.1)',
-        tension: 0.4,
+        label: 'Lead Distribution',
+        data: [1248, 342, 310, 596],
+        backgroundColor: [
+          '#3B82F6', // Blue
+          '#10B981', // Emerald
+          '#8B5CF6', // Purple
+          '#F97316', // Orange
+        ],
+        borderColor: [
+          '#2563EB',
+          '#059669',
+          '#7C3AED',
+          '#EA580C',
+        ],
         borderWidth: 2,
+        hoverOffset: 10,
       },
+    ],
+  };
+
+  // Doughnut Chart Data for User Analytics (for the 4 additional cards)
+  const userDoughnutData = {
+    labels: ['Total Users', 'Active Users', 'Inactive Users', 'Employees'],
+    datasets: [
       {
-        label: 'Qualified Leads',
-        data: [300, 320, 335, 342],
-        borderColor: '#10b981',
-        backgroundColor: 'rgba(16,185,129,0.1)',
-        tension: 0.4,
+        label: 'User Analytics',
+        data: [3450, 1892, 1558, 230],
+        backgroundColor: [
+          '#6366F1', // Indigo
+          '#22C55E', // Green
+          '#EC4899', // Pink
+          '#EAB308', // Yellow
+        ],
+        borderColor: [
+          '#4F46E5',
+          '#16A34A',
+          '#DB2777',
+          '#CA8A04',
+        ],
         borderWidth: 2,
-      },
-      {
-        label: 'Conversion Rate (%)',
-        data: [20, 22, 23.5, 24.8],
-        borderColor: '#8b5cf6',
-        backgroundColor: 'rgba(139,92,246,0.1)',
-        tension: 0.4,
-        borderWidth: 2,
-      },
-      {
-        label: 'Revenue ($K)',
-        data: [40, 42, 44, 45.2],
-        borderColor: '#f97316',
-        backgroundColor: 'rgba(249,115,22,0.1)',
-        tension: 0.4,
-        borderWidth: 2,
+        cutout: '60%',
+        hoverOffset: 8,
       },
     ],
   };
@@ -231,19 +192,18 @@ const additionalChartOptions = {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
+        position: 'bottom',
+        labels: {
+          padding: 20,
+          font: {
+            size: 12,
+          },
+        },
       },
-      title: {
-        display: false,
-      },
-    },
-    scales: {
-      x: {
-        display: true,
-      },
-      y: {
-        display: true,
-        beginAtZero: true,
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: 'white',
+        bodyColor: 'white',
       },
     },
   };
@@ -271,37 +231,33 @@ const additionalChartOptions = {
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
         )}>
           <div className="space-y-6 p-6">
-            {/* Enhanced Stats Grid - ALL YOUR ORIGINAL CARDS */}
+            {/* First 4 Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
               {stats.map((stat) => (
                 <div
                   key={stat.id}
                   className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
                 >
-                  {/* Background Gradient Overlay */}
                   <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
                   
-                  {/* Main Content */}
                   <div className="relative p-6">
-                    {/* Header with Icon and Change */}
                     <div className="flex items-start justify-between mb-4">
-                      <div className={`${stat.lightColor} p-3 rounded-xl`}>
-                        <div className={`${stat.textColor}`}>
+                      <div className={`${stat.lightColor} p-3 rounded-xl dark:${stat.lightColor.replace('bg-', 'bg-').replace('-50', '-900/30')}`}>
+                        <div className={`${stat.textColor} dark:${stat.textColor.replace('text-', 'text-').replace('-600', '-400')}`}>
                           {stat.icon}
                         </div>
                       </div>
                       
                       <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
                         stat.trend === "up"
-                          ? "bg-emerald-50 text-emerald-700"
-                          : "bg-red-50 text-red-700"
+                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                          : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                       }`}>
                         <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
                         {stat.change}
                       </div>
                     </div>
 
-                    {/* Stats Value */}
                     <div className="space-y-2 mb-4">
                       <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
                       <div className="space-y-1">
@@ -310,20 +266,18 @@ const additionalChartOptions = {
                       </div>
                     </div>
 
-                    {/* Bottom Section */}
                     <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
                       <div className={`w-2 h-2 rounded-full ${
                         stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
                       }`}></div>
                       <div className={`text-xs font-medium ${
                         stat.trend === "up"
-                          ? "text-emerald-600"
-                          : "text-red-600"
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : "text-red-600 dark:text-red-400"
                       }`}>{stat.change}</div>
                     </div>
                   </div>
 
-                  {/* Animated Progress Bar */}
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
                     <div className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
                   </div>
@@ -331,79 +285,78 @@ const additionalChartOptions = {
               ))}
             </div>
 
-            {/* Chart Section */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+            {/* Chart for First 4 Cards - Pie Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 mb-8">
               <div className="mb-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  Analytics Trends
+                  Lead Distribution Analysis
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Performance metrics over the last 4 weeks
+                  Breakdown of all leads by status and performance
                 </p>
               </div>
               <div style={{ height: '400px' }}>
-                <Line data={chartData} options={chartOptions} />
+                <Pie data={leadsPieData} options={chartOptions} />
               </div>
             </div>
 
-{/* Four new cards */}
-<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-  {additionalStats.map(stat => (
-    <div
-      key={stat.id}
-      className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
-    >
-      {/* Background Gradient Overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
-      <div className="relative p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className={`${stat.lightColor} p-3 rounded-xl`}>
-            <div className={`${stat.textColor}`}>{stat.icon}</div>
-          </div>
-          <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
-            stat.trend === "up" ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
-          }`}>
-            <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
-            {stat.change}
-          </div>
-        </div>
-        <div className="space-y-2 mb-4">
-          <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">{stat.title}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
-          </div>
-        </div>
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-          <div className={`w-2 h-2 rounded-full ${
-            stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
-          }`}></div>
-          <div className={`text-xs font-medium ${
-            stat.trend === "up" ? "text-emerald-600" : "text-red-600"
-          }`}>{stat.change}</div>
-        </div>
-      </div>
-      <div className={`absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700`}>
-        <div className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
-      </div>
-    </div>
-  ))}
-</div>
+            {/* Next 4 Stats Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+              {additionalStats.map(stat => (
+                <div
+                  key={stat.id}
+                  className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
+                >
+                  <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
+                  <div className="relative p-6">
+                    <div className="flex items-start justify-between mb-4">
+                      <div className={`${stat.lightColor} p-3 rounded-xl dark:${stat.lightColor.replace('bg-', 'bg-').replace('-50', '-900/30')}`}>
+                        <div className={`${stat.textColor} dark:${stat.textColor.replace('text-', 'text-').replace('-600', '-400')}`}>{stat.icon}</div>
+                      </div>
+                      <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
+                        stat.trend === "up" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                      }`}>
+                        <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
+                        {stat.change}
+                      </div>
+                    </div>
+                    <div className="space-y-2 mb-4">
+                      <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{stat.title}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+                      <div className={`w-2 h-2 rounded-full ${
+                        stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
+                      }`}></div>
+                      <div className={`text-xs font-medium ${
+                        stat.trend === "up" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+                      }`}>{stat.change}</div>
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
+                    <div className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-{/* New graph for these cards */}
-<div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
-  <div className="mb-6">
-    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-      User & Employee Trends
-    </h3>
-    <p className="text-sm text-gray-500 dark:text-gray-400">
-      Four key metrics over the last 4 weeks
-    </p>
-  </div>
-  <div style={{ height: "400px" }}>
-    <Line data={additionalChartData} options={additionalChartOptions} />
-  </div>
-</div>
+            {/* Chart for Second 4 Cards - Doughnut Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  User & Employee Analytics
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Overview of user engagement and workforce distribution
+                </p>
+              </div>
+              <div style={{ height: "400px" }}>
+                <Doughnut data={userDoughnutData} options={chartOptions} />
+              </div>
+            </div>
           </div>
         </div>
       </Sidebar>
@@ -413,5 +366,3 @@ const additionalChartOptions = {
 };
 
 export default AdminAnalytics;
-
-

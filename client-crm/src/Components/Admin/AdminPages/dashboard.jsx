@@ -1,595 +1,3 @@
-
-// import React, { useState, useEffect } from "react";
-// import { useNavigate } from "react-router-dom";
-// import axios from "axios";
-// import { toast } from "react-toastify";
-// import { API_BASE_URL } from "../../../config/api";
-// import {
-//   Users,
-//   ShoppingCart,
-//   Package,
-//   Activity,
-//   AlertCircle,
-//   Clock,
-//   CheckCircle,
-//   XCircle,
-//   Server,
-//   Database,
-//   HardDrive,
-//   Bell,
-//   MessageSquare,
-//   Calendar,
-//   User,
-//   TrendingUp,
-// } from "lucide-react";
-// import { Header } from "../common/Header";
-// import { Sidebar, useSidebar } from "../common/sidebar";
-// import { cn } from "../../../utils/cn";
-// import { useTheme } from "../../../hooks/use-theme";
-// import Footer from "../common/Footer";
-// import CombinedAlertReminder from "../../CombinedForUser&Admin/CombinedAlertReminder";
-
-// const Dashboard = ({ collapsed }) => {
-//   const { theme, setTheme } = useTheme();
-//   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
-//   const [showAddAlertReminderForm, setShowAddAlertReminderForm] = useState(false);
-//   const navigate = useNavigate();
-//   const [alerts, setAlerts] = useState([]);
-//   const [loading, setLoading] = useState(true);
-
-//   useEffect(() => {
-//     const fetchRecentAlerts = async () => {
-//       try {
-//         const token = localStorage.getItem("token");
-
-//         if (!token) {
-//           throw new Error("Please login to view alerts");
-//         }
-
-//         const response = await axios.get(`${API_BASE_URL}/api/alert`, {
-//           headers: { Authorization: `Bearer ${token}` },
-//         });
-
-//         const recentAlerts = response.data.data
-//           .sort((a, b) => new Date(b.date) - new Date(a.date))
-//           .slice(0, 5);
-
-//         setAlerts(recentAlerts);
-//       } catch (error) {
-//         toast.error(
-//           error.response?.data?.message ||
-//             error.message ||
-//             "Failed to load alerts",
-//           {
-//             position: "top-right",
-//             autoClose: 5000,
-//             hideProgressBar: false,
-//             closeOnClick: true,
-//             pauseOnHover: true,
-//             draggable: true,
-//             progress: undefined,
-//             theme: theme === "dark" ? "dark" : "light",
-//             style: { fontSize: "1.2rem" },
-//           }
-//         );
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     fetchRecentAlerts();
-//   }, []);
-
-//   // Sample data
-//   const [stats, setStats] = useState([
-//     {
-//       id: 1,
-//       title: "Total Leads",
-//       value: "1,248",
-//       icon: <Package className="h-5 w-5" />,
-//       change: "+5.2%",
-//       trend: "up",
-//     },
-//     {
-//       id: 2,
-//       title: "Qualified Leads",
-//       value: "42",
-//       icon: <ShoppingCart className="h-5 w-5" />,
-//       change: "-12%",
-//       trend: "down",
-//     },
-//     {
-//       id: 3,
-//       title: "Pending Leads",
-//       value: "98%",
-//       icon: <Activity className="h-5 w-5" />,
-//       change: "+0.5%",
-//       trend: "up",
-//     },
-//     {
-//       id: 4,
-//       title: "Loss Leads",
-//       value: "156",
-//       icon: <Users className="h-5 w-5" />,
-//       change: "+8.1%",
-//       trend: "up",
-//     },
-//   ]);
-
-//   const [recentActivities, setRecentActivities] = useState([
-//     {
-//       id: 1,
-//       type: "order",
-//       user: "John Smith",
-//       action: "placed a new order",
-//       time: "2 mins ago",
-//       status: "pending",
-//     },
-//     {
-//       id: 2,
-//       type: "user",
-//       user: "Sarah Johnson",
-//       action: "registered new account",
-//       time: "15 mins ago",
-//       status: "completed",
-//     },
-//     {
-//       id: 3,
-//       type: "system",
-//       user: "System",
-//       action: "completed nightly backup",
-//       time: "1 hour ago",
-//       status: "completed",
-//     },
-//     {
-//       id: 4,
-//       type: "alert",
-//       user: "System",
-//       action: "high memory usage detected",
-//       time: "3 hours ago",
-//       status: "warning",
-//     },
-//   ]);
-
-//   const [systemStatus, setSystemStatus] = useState([
-//     {
-//       id: 1,
-//       component: "Web Server",
-//       status: "operational",
-//       icon: <Server className="h-4 w-4" />,
-//     },
-//     {
-//       id: 2,
-//       component: "Database",
-//       status: "operational",
-//       icon: <Database className="h-4 w-4" />,
-//     },
-//     {
-//       id: 3,
-//       component: "Storage",
-//       status: "warning",
-//       icon: <HardDrive className="h-4 w-4" />,
-//     },
-//     {
-//       id: 4,
-//       component: "API",
-//       status: "operational",
-//       icon: <MessageSquare className="h-4 w-4" />,
-//     },
-//   ]);
-
-//   const [notifications, setNotifications] = useState([
-//     {
-//       id: 1,
-//       title: "New feature request",
-//       content: "Customer requested bulk export functionality",
-//       time: "Today, 10:30 AM",
-//       read: false,
-//     },
-//     {
-//       id: 2,
-//       title: "System update available",
-//       content: "Version 2.3.5 is ready to install",
-//       time: "Yesterday, 4:15 PM",
-//       read: true,
-//     },
-//     {
-//       id: 3,
-//       title: "Payment received",
-//       content: "Invoice #3245 has been paid",
-//       time: "Yesterday, 11:20 AM",
-//       read: true,
-//     },
-//   ]);
-
-//   // Simulate loading data
-//   useEffect(() => {
-//     const timer = setTimeout(() => {
-//       // In a real app, you would fetch this data from an API
-//       setStats([
-//         {
-//           id: 1,
-//           title: "Total Products",
-//           value: "1,248",
-//           icon: <Package className="h-5 w-5" />,
-//           change: "+5.2%",
-//           trend: "up",
-//         },
-//         {
-//           id: 2,
-//           title: "Pending Orders",
-//           value: "42",
-//           icon: <ShoppingCart className="h-5 w-5" />,
-//           change: "-12%",
-//           trend: "down",
-//         },
-//         {
-//           id: 3,
-//           title: "System Health",
-//           value: "98%",
-//           icon: <Activity className="h-5 w-5" />,
-//           change: "+0.5%",
-//           trend: "up",
-//         },
-//         {
-//           id: 4,
-//           title: "Active Sessions",
-//           value: "156",
-//           icon: <Users className="h-5 w-5" />,
-//           change: "+8.1%",
-//           trend: "up",
-//         },
-//       ]);
-//     }, 500);
-
-//     return () => clearTimeout(timer);
-//   }, []);
-
-//   const getStatusColor = (status) => {
-//     switch (status.toLowerCase()) {
-//       case "operational":
-//         return "text-green-500";
-//       case "warning":
-//         return "text-yellow-500";
-//       case "critical":
-//         return "text-red-500";
-//       default:
-//         return "text-gray-500";
-//     }
-//   };
-
-//   const getStatusIcon = (status) => {
-//     switch (status.toLowerCase()) {
-//       case "operational":
-//         return <CheckCircle className="h-4 w-4 text-green-500" />;
-//       case "warning":
-//         return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-//       case "critical":
-//         return <XCircle className="h-4 w-4 text-red-500" />;
-//       default:
-//         return <Clock className="h-4 w-4 text-gray-500" />;
-//     }
-//   };
-
-//   const markAsRead = (id) => {
-//     setNotifications(
-//       notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
-//     );
-//   };
-
-//   return (
-//     <>
-//       <Header onToggleSidebar={toggleSidebar} />
-//       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
-//         <div
-//           className={cn(
-//             "transition-all duration-300 ease-in-out min-h-screen bg-gray-50 dark:bg-gray-900",
-//             collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
-//           )}
-//         >
-//           <main className="p-6">
-//             {/* Welcome Banner */}
-//             <div className="flex flex-row justify-between rounded-lg py-4 p-5 mb-4 items-center bg-[#ff8633]">
-//               <div className="bg-[#ff8633] rounded-lg p-6 mb-6 text-white">
-//                 <h1 className="text-2xl font-bold mb-2">
-//                   Welcome back, Admin!
-//                 </h1>
-//                 <p className="opacity-90">
-//                   Here's what's happening with your store today.
-//                 </p>
-//               </div>
-//               <div>
-//                 <button className="flex items-center gap-2 px-4 py-2 bg-white p-5 justify-center hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md">
-//                   Upload Data
-//                   <svg
-//                     xmlns="http://www.w3.org/2000/svg"
-//                     className="h-5 w-5"
-//                     viewBox="0 0 20 20"
-//                     fill="currentColor"
-//                   >
-//                     <path
-//                       fillRule="evenodd"
-//                       d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-//                       clipRule="evenodd"
-//                       transform="rotate(180 10 10)"
-//                     />
-//                   </svg>
-//                 </button>
-//               </div>
-//             </div>
-
-//             {/* Quick Stats */}
-//             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-//               {stats.map((stat) => (
-//                 <div
-//                   key={stat.id}
-//                   className="bg-white dark:bg-gray-800 rounded-lg shadow p-6"
-//                 >
-//                   <div className="flex items-center justify-between mb-4">
-//                     <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">
-//                       {stat.title}
-//                     </h3>
-//                     <div className="p-2 rounded-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300">
-//                       {stat.icon}
-//                     </div>
-//                   </div>
-//                   <div className="flex items-end justify-between">
-//                     <span className="text-2xl font-bold text-gray-900 dark:text-gray-200">
-//                       {stat.value}
-//                     </span>
-//                     <span
-//                       className={`flex items-center text-sm ${
-//                         stat.trend === "up" ? "text-green-500" : "text-red-500"
-//                       }`}
-//                     >
-//                       {stat.change}
-//                       {stat.trend === "up" ? (
-//                         <TrendingUp className="h-4 w-4 ml-1" />
-//                       ) : (
-//                         <TrendingUp className="h-4 w-4 ml-1 transform rotate-180" />
-//                       )}
-//                     </span>
-//                   </div>
-//                 </div>
-//               ))}
-//             </div>
-
-//             {/* Main Content */}
-//             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-//               {/* Recent Activities */}
-//               <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-//                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-//                   <h2 className="text-lg dark:text-gray-400 font-semibold flex items-center">
-//                     <Activity className="h-5 w-5 mr-2 text-blue-500" />
-//                     Recent Activities
-//                   </h2>
-//                 </div>
-//                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
-//                   {recentActivities.map((activity) => (
-//                     <div
-//                       key={activity.id}
-//                       className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-//                     >
-//                       <div className="flex items-start">
-//                         <div className="flex-shrink-0 pt-1">
-//                           {activity.type === "order" && (
-//                             <ShoppingCart className="h-5 w-5 text-blue-500" />
-//                           )}
-//                           {activity.type === "user" && (
-//                             <User className="h-5 w-5 text-green-500" />
-//                           )}
-//                           {activity.type === "system" && (
-//                             <Server className="h-5 w-5 text-purple-500" />
-//                           )}
-//                           {activity.type === "alert" && (
-//                             <AlertCircle className="h-5 w-5 text-yellow-500" />
-//                           )}
-//                         </div>
-//                         <div className="ml-3 flex-1">
-//                           <div className="flex items-center justify-between">
-//                             <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
-//                               {activity.user}{" "}
-//                               <span className="text-gray-500 dark:text-gray-400 font-normal">
-//                                 {activity.action}
-//                               </span>
-//                             </p>
-//                             <span className="text-xs text-gray-500 dark:text-gray-400">
-//                               {activity.time}
-//                             </span>
-//                           </div>
-//                           <div className="mt-1 flex items-center">
-//                             <span
-//                               className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-//                                 activity.status === "pending"
-//                                   ? "bg-yellow-100 text-yellow-800"
-//                                   : activity.status === "completed"
-//                                   ? "bg-green-100 text-green-800"
-//                                   : activity.status === "warning"
-//                                   ? "bg-orange-100 text-orange-800"
-//                                   : "bg-gray-100 text-gray-800"
-//                               }`}
-//                             >
-//                               {activity.status}
-//                             </span>
-//                           </div>
-//                         </div>
-//                       </div>
-//                     </div>
-//                   ))}
-//                 </div>
-//                 <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-right">
-//                   <button
-//                     onClick={() => navigate("/admin/activities")}
-//                     className="text-sm font-medium text-[#ff8633] "
-//                   >
-//                     View all activities →
-//                   </button>
-//                 </div>
-//               </div>
-
-//               {/* System Status */}
-//               <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-//                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-//                   <h2 className="text-lg dark:text-gray-400 font-semibold flex items-center">
-//                     <Server className="h-5 w-5 mr-2 text-green-500" />
-//                     System Status
-//                   </h2>
-//                 </div>
-//                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
-//                   {systemStatus.map((item) => (
-//                     <div key={item.id} className="p-4">
-//                       <div className="flex items-center justify-between">
-//                         <div className="flex items-center">
-//                           <div className="p-2 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 mr-3">
-//                             {item.icon}
-//                           </div>
-//                           <span className="text-sm font-medium text-gray-900 dark:text-gray-200">
-//                             {item.component}
-//                           </span>
-//                         </div>
-//                         <div className="flex items-center">
-//                           <span
-//                             className={`text-xs font-medium mr-2 ${getStatusColor(
-//                               item.status
-//                             )}`}
-//                           >
-//                             {item.status}
-//                           </span>
-//                           {getStatusIcon(item.status)}
-//                         </div>
-//                       </div>
-//                     </div>
-//                   ))}
-//                 </div>
-//                 <div className="p-4 bg-gray-50 dark:bg-gray-700">
-//                   <div className="text-xs text-gray-500 dark:text-gray-400">
-//                     Last updated: {new Date().toLocaleString()}
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-
-//             {/* Bottom Row */}
-//             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-//               {/* Notifications */}
-//               <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-//                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-//                   <h2 className="text-lg dark:text-gray-400 font-semibold flex items-center">
-//                     <Bell className="h-5 w-5 mr-2 text-yellow-500" />
-//                     Notifications
-//                   </h2>
-//                 </div>
-//                 <div className="divide-y divide-gray-200 dark:divide-gray-700">
-//                   {notifications.map((notification) => (
-//                     <div
-//                       key={notification.id}
-//                       className={`p-4 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer ${
-//                         !notification.read
-//                           ? "bg-blue-50 dark:bg-blue-900/30"
-//                           : ""
-//                       }`}
-//                       onClick={() => markAsRead(notification.id)}
-//                     >
-//                       <div className="flex justify-between">
-//                         <h3
-//                           className={`text-sm font-medium ${
-//                             !notification.read
-//                               ? "text-blue-800 dark:text-blue-200"
-//                               : "text-gray-800 dark:text-gray-200"
-//                           }`}
-//                         >
-//                           {notification.title}
-//                         </h3>
-//                         {!notification.read && (
-//                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-//                             New
-//                           </span>
-//                         )}
-//                       </div>
-//                       <p className="mt-1 text-sm text-gray-600 dark:text-gray-300 text-left">
-//                         {notification.content}
-//                       </p>
-//                       <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 text-left ">
-//                         {notification.time}
-//                       </p>
-//                     </div>
-//                   ))}
-//                 </div>
-//                 <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-right">
-//                   <button
-//                     onClick={() => navigate("/admin/notifications")}
-//                     className="text-sm font-medium text-[#ff8633]"
-//                   >
-//                     View all notifications →
-//                   </button>
-//                 </div>
-//               </div>
-
-//               {/* Upcoming Events */}
-//               <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-//                 <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-row justify-between">
-//                   <h2 className="text-lg dark:text-gray-400 font-semibold flex items-center">
-//                     <Calendar className="h-5 w-5 mr-2 text-red-500" />
-//                     Alerts and Reminders
-//                   </h2>
-//                   <button onClick={() => setShowAddAlertReminderForm(true)} className="flex items-center gap-2 px-4 py-2 bg-[#ff8633] hover:bg-orange-500 text-white rounded-md transition-colors">
-//           Add Alerts and Reminder
-//           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-//             <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-//           </svg>
-//         </button>
-//                 </div>
-//                 <div className="p-6">
-//                   {alerts.map((alert) => (
-//                     <div
-//                       key={alert.id}
-//                       className="dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded shadow-sm flex items-center gap-4 overflow-x-auto"
-//                     >
-//                       <span className="font-medium text-gray-900 dark:text-white min-w-[100px]">
-//                         {alert.topic}
-//                       </span>
-//                       <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-//                         📅 {new Date(alert.date).toLocaleDateString()}
-//                       </span>
-//                       <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-//                         ⏰ {alert.time}
-//                       </span>
-//                       <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-//                         🔔 {alert.remainder}
-//                       </span>
-//                       {alert.description && (
-//                         <span className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
-//                           📝 {alert.description}
-//                         </span>
-//                       )}
-//                     </div>
-//                   ))}
-//                 </div>
-//                 <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-right">
-//                   <button
-//                     onClick={() => navigate("/all-alerts-reminders")}
-//                     className="text-sm font-medium text-[#ff8633]"
-//                   >
-//                     View All Events →
-//                   </button>
-//                 </div>
-//               </div>
-//             </div>
-//           </main>
-//         </div>
-//          <CombinedAlertReminder 
-//                       isOpen={showAddAlertReminderForm} 
-//                       onClose={() => setShowAddAlertReminderForm(false)}
-//                     />
-//       </Sidebar>
-//       <Footer />
-//     </>
-//   );
-// };
-
-// export default Dashboard;
-
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -600,25 +8,15 @@ import {
   ShoppingCart,
   Package,
   Activity,
-  AlertCircle,
-  Clock,
-  CheckCircle,
-  XCircle,
-  Server,
-  Database,
-  HardDrive,
-  Bell,
-  MessageSquare,
   Calendar,
-  User,
   TrendingUp,
-  Upload,
   Plus,
   ArrowRight,
   BarChart3,
   Eye,
   Settings,
-  Filter,
+  Clock,
+  Bell,
 } from "lucide-react";
 import { Header } from "../common/Header";
 import { Sidebar, useSidebar } from "../common/sidebar";
@@ -628,148 +26,14 @@ import Footer from "../common/Footer";
 import CombinedAlertReminder from "../../CombinedForUser&Admin/CombinedAlertReminder";
 
 const Dashboard = ({ collapsed }) => {
-  const { theme, setTheme } = useTheme();
+  const { theme } = useTheme();
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
   const [showAddAlertReminderForm, setShowAddAlertReminderForm] = useState(false);
   const navigate = useNavigate();
   const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchRecentAlerts = async () => {
-      try {
-        const token = localStorage.getItem("token");
-
-        if (!token) {
-          throw new Error("Please login to view alerts");
-        }
-
-        const response = await axios.get(`${API_BASE_URL}/api/alert`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        const recentAlerts = response.data.data
-          .sort((a, b) => new Date(b.date) - new Date(a.date))
-          .slice(0, 5);
-
-        setAlerts(recentAlerts);
-      } catch (error) {
-        toast.error(
-          error.response?.data?.message ||
-            error.message ||
-            "Failed to load alerts",
-          {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
-            theme: theme === "dark" ? "dark" : "light",
-            style: { fontSize: "1.2rem" },
-          }
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRecentAlerts();
-  }, [theme]);
-
-  // Sample data with enhanced metrics
-  const [stats, setStats] = useState([
-    {
-      id: 1,
-      title: "Total Leads",
-      value: "1,248",
-      icon: <Package className="h-6 w-6" />,
-      change: "+5.2%",
-      trend: "up",
-      color: "from-blue-500 to-blue-600",
-      lightColor: "bg-blue-50",
-      textColor: "text-blue-600",
-      subtitle: "This month"
-    },
-    {
-      id: 2,
-      title: "Qualified Leads",
-      value: "342",
-      icon: <ShoppingCart className="h-6 w-6" />,
-      change: "+12.3%",
-      trend: "up",
-      color: "from-emerald-500 to-emerald-600",
-      lightColor: "bg-emerald-50",
-      textColor: "text-emerald-600",
-      subtitle: "Active pipeline"
-    },
-    {
-      id: 3,
-      title: "Conversion Rate",
-      value: "24.8%",
-      icon: <Activity className="h-6 w-6" />,
-      change: "+0.5%",
-      trend: "up",
-      color: "from-purple-500 to-purple-600",
-      lightColor: "bg-purple-50",
-      textColor: "text-purple-600",
-      subtitle: "Last 30 days"
-    },
-    {
-      id: 4,
-      title: "Revenue",
-      value: "$45.2k",
-      icon: <TrendingUp className="h-6 w-6" />,
-      change: "+8.1%",
-      trend: "up",
-      color: "from-orange-500 to-orange-600",
-      lightColor: "bg-orange-50",
-      textColor: "text-orange-600",
-      subtitle: "This quarter"
-    },
-  ]);
-
-  const [recentActivities, setRecentActivities] = useState([
-    {
-      id: 1,
-      type: "order",
-      user: "John Smith",
-      action: "placed a new order",
-      time: "2 mins ago",
-      status: "pending",
-      avatar: "JS"
-    },
-    {
-      id: 2,
-      type: "user",
-      user: "Sarah Johnson",
-      action: "registered new account",
-      time: "15 mins ago",
-      status: "completed",
-      avatar: "SJ"
-    },
-    {
-      id: 3,
-      type: "system",
-      user: "System",
-      action: "completed nightly backup",
-      time: "1 hour ago",
-      status: "completed",
-      avatar: "SY"
-    },
-    {
-      id: 4,
-      type: "alert",
-      user: "System",
-      action: "high memory usage detected",
-      time: "3 hours ago",
-      status: "warning",
-      avatar: "AL"
-    },
-  ]);
-
-
+  const [stats, setStats] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -794,7 +58,135 @@ const Dashboard = ({ collapsed }) => {
     },
   ]);
 
-  // Simulate loading data
+  useEffect(() => {
+    const fetchRecentAlerts = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Please login to view alerts");
+        
+        const response = await axios.get(`${API_BASE_URL}/api/alert`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        const recentAlerts = response.data.data
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .slice(0, 5);
+        setAlerts(recentAlerts);
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message || error.message || "Failed to load alerts",
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: theme === "dark" ? "dark" : "light",
+            style: { fontSize: "1.2rem" },
+          }
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecentAlerts();
+  }, [theme]);
+
+  useEffect(() => {
+    const fetchRecentActivities = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Please login to view activities");
+        
+        const response = await axios.get(`${API_BASE_URL}/api/recent`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        const allActivities = [];
+
+        // Process Users
+        if (response.data.userData && Array.isArray(response.data.userData)) {
+          response.data.userData.forEach(user => {
+            const firstName = user.firstName || "";
+            const lastName = user.lastName || "";
+            const avatar = firstName.charAt(0) + lastName.charAt(0);
+            
+            allActivities.push({
+              id: user.id,
+              type: "user",
+              user: firstName + " " + lastName,
+              action: "registered new account",
+              time: formatTimeAgo(new Date(user.createdAt)),
+              status: user.locked ? "locked" : "completed",
+              avatar: avatar.toUpperCase(),
+              timestamp: new Date(user.createdAt)
+            });
+          });
+        }
+
+        // Process Employees
+        if (response.data.lastCreatedEmployee && Array.isArray(response.data.lastCreatedEmployee)) {
+          response.data.lastCreatedEmployee.forEach(emp => {
+            const firstName = emp.firstName || "";
+            const lastName = emp.lastName || "";
+            const avatar = firstName.charAt(0) + lastName.charAt(0);
+            
+            allActivities.push({
+              id: emp.id,
+              type: "employee",
+              user: firstName + " " + lastName,
+              action: "joined the company",
+              time: formatTimeAgo(new Date(emp.createdAt)),
+              status: emp.status || "active",
+              avatar: avatar.toUpperCase(),
+              timestamp: new Date(emp.createdAt)
+            });
+          });
+        }
+
+        // Process Leads
+        if (response.data.leads && Array.isArray(response.data.leads)) {
+          response.data.leads.forEach(lead => {
+            const firstName = lead.customerFirstName || "";
+            const lastName = lead.customerLastName || "";
+            const avatar = firstName.charAt(0) + lastName.charAt(0);
+            
+            allActivities.push({
+              id: lead.id,
+              type: "lead",
+              user: firstName + " " + lastName,
+              action: "created new lead",
+              time: formatTimeAgo(new Date(lead.createdAt)),
+              status: lead.status || "pending",
+              avatar: avatar.toUpperCase(),
+              timestamp: new Date(lead.createdAt)
+            });
+          });
+        }
+
+        // Sort by timestamp (newest first) and take first 8
+        allActivities.sort((a, b) => b.timestamp - a.timestamp);
+        setRecentActivities(allActivities.slice(0, 4));
+
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message || error.message || "Failed to load recent activities",
+          {
+            position: "top-right",
+            autoClose: 5000,
+            theme: theme === "dark" ? "dark" : "light",
+            style: { fontSize: "1.2rem" },
+          }
+        );
+      }
+    };
+
+    fetchRecentActivities();
+  }, [theme]);
+
   useEffect(() => {
     const timer = setTimeout(() => {
       setStats([
@@ -802,49 +194,49 @@ const Dashboard = ({ collapsed }) => {
           id: 1,
           title: "Total Leads",
           value: "1,248",
-          icon: <Package className="h-6 w-6" />,
+          icon: React.createElement(Package, { className: "h-6 w-6" }),
           change: "+5.2%",
           trend: "up",
           color: "from-blue-500 to-blue-600",
           lightColor: "bg-blue-50",
           textColor: "text-blue-600",
-          subtitle: "This month"
+          subtitle: "This month",
         },
         {
           id: 2,
           title: "Qualified Leads",
           value: "342",
-          icon: <ShoppingCart className="h-6 w-6" />,
+          icon: React.createElement(ShoppingCart, { className: "h-6 w-6" }),
           change: "+12.3%",
           trend: "up",
           color: "from-emerald-500 to-emerald-600",
           lightColor: "bg-emerald-50",
           textColor: "text-emerald-600",
-          subtitle: "Active pipeline"
+          subtitle: "Active pipeline",
         },
         {
           id: 3,
           title: "Pending Leads",
           value: "24.8%",
-          icon: <Activity className="h-6 w-6" />,
+          icon: React.createElement(Activity, { className: "h-6 w-6" }),
           change: "+0.5%",
           trend: "up",
           color: "from-purple-500 to-purple-600",
           lightColor: "bg-purple-50",
           textColor: "text-purple-600",
-          subtitle: "Last 30 days"
+          subtitle: "Last 30 days",
         },
         {
           id: 4,
           title: "Loss Leads",
           value: "$45.2k",
-          icon: <TrendingUp className="h-6 w-6" />,
+          icon: React.createElement(TrendingUp, { className: "h-6 w-6" }),
           change: "+8.1%",
           trend: "up",
           color: "from-orange-500 to-orange-600",
           lightColor: "bg-orange-50",
           textColor: "text-orange-600",
-          subtitle: "This quarter"
+          subtitle: "This quarter",
         },
       ]);
     }, 500);
@@ -852,10 +244,46 @@ const Dashboard = ({ collapsed }) => {
     return () => clearTimeout(timer);
   }, []);
 
+  const formatTimeAgo = (timestamp) => {
+    const now = new Date();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 60) {
+      return minutes + " mins ago";
+    } else if (hours < 24) {
+      return hours + " hours ago";
+    } else {
+      return days + " days ago";
+    }
+  };
+
   const markAsRead = (id) => {
     setNotifications(
       notifications.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+  };
+
+  const getActivityStatusColor = (status) => {
+    if (status === "pending") {
+      return "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400";
+    } else if (status === "completed") {
+      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+    } else if (status === "warning") {
+      return "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400";
+    } else if (status === "cancelled") {
+      return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+    } else if (status === "locked") {
+      return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+    } else if (status === "active") {
+      return "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400";
+    } else if (status === "Contacted" || status === "Engaged") {
+      return "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400";
+    } else {
+      return "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400";
+    }
   };
 
   return (
@@ -869,147 +297,129 @@ const Dashboard = ({ collapsed }) => {
           )}
         >
           <main className="p-6">
-{/* Enhanced Stats Grid */}
-<div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-  {stats.map((stat) => (
-    <div
-      key={stat.id}
-      className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
-    >
-      {/* Background Gradient Overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
-      
-      {/* Main Content */}
-      <div className="relative p-6">
-        {/* Header with Icon and Change */}
-        <div className="flex items-start justify-between mb-4">
-          <div className={`p-3 rounded-xl ${stat.lightColor} dark:${stat.lightColor.replace('bg-', 'bg-').replace('-50', '-900/30')} group-hover:scale-110 transition-transform duration-300`}>
-            <div className={`${stat.textColor} dark:${stat.textColor.replace('text-', 'text-').replace('-600', '-400')}`}>
-              {stat.icon}
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
+              {stats.map((stat) => (
+                <div
+                  key={stat.id}
+                  className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
+                >
+                  {/* Background Gradient Overlay */}
+                  <div className={"absolute inset-0 bg-gradient-to-br " + stat.color + " opacity-5 group-hover:opacity-10 transition-opacity duration-300"} />
+                  
+                  {/* Main Content */}
+                  <div className="relative p-6">
+                    {/* Header with Icon and Change */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className={"p-3 rounded-xl " + stat.lightColor + " dark:" + stat.lightColor.replace("bg-", "bg-").replace("-50", "-900/30") + " group-hover:scale-110 transition-transform duration-300"}>
+                        <div className={stat.textColor + " dark:" + stat.textColor.replace("text-", "text-").replace("-600", "-400")}>
+                          {stat.icon}
+                        </div>
+                      </div>
+                      
+                      <div className={"flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold " + (stat.trend === "up" 
+                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                          : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400") + " group-hover:scale-105 transition-transform duration-300"}>
+                        <TrendingUp className={"h-3 w-3 " + (stat.trend === "down" ? "rotate-180" : "")} />
+                        {stat.change}
+                      </div>
+                    </div>
+
+                    {/* Stats Value */}
+                    <div className="space-y-2 mb-4">
+                      <h3 className="text-3xl font-bold text-gray-900 dark:text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
+                        {stat.value}
+                      </h3>
+                      <div className="space-y-1">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{stat.title}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
+                      </div>
+                    </div>
+
+                    {/* Bottom Section */}
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
+                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+                        <div className={"w-2 h-2 rounded-full " + (stat.trend === "up" ? "bg-emerald-500" : "bg-red-500")} />
+                        {stat.subtitle}
+                      </div>
+                      <div className={"text-xs font-medium " + (stat.trend === "up" 
+                          ? "text-emerald-600 dark:text-emerald-400" 
+                          : "text-red-600 dark:text-red-400")}>
+                        {stat.change}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Animated Progress Bar */}
+                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
+                    <div className={"h-full bg-gradient-to-r " + stat.color + " transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"} />
+                  </div>
+                </div>
+              ))}
             </div>
-          </div>
-          
-          <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
-            stat.trend === "up" 
-              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-              : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-          } group-hover:scale-105 transition-transform duration-300`}>
-            <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
-            {stat.change}
-          </div>
-        </div>
 
-        {/* Stats Value */}
-        <div className="space-y-2 mb-4">
-          <h3 className="text-3xl font-bold text-gray-900 dark:text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
-            {stat.value}
-          </h3>
-          <div className="space-y-1">
-            <p className="text-sm font-semibold text-gray-900 dark:text-white">
-              {stat.title}
-            </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              {stat.subtitle}
-            </p>
-          </div>
-        </div>
-
-        {/* Bottom Section */}
-        <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <div className={`w-2 h-2 rounded-full ${
-              stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
-            }`}></div>
-            {stat.subtitle}
-          </div>
-          <div className={`text-xs font-medium ${
-            stat.trend === "up" 
-              ? "text-emerald-600 dark:text-emerald-400" 
-              : "text-red-600 dark:text-red-400"
-          }`}>
-            {stat.change}
-          </div>
-        </div>
-      </div>
-
-      {/* Animated Progress Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
-        <div 
-          className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}
-        ></div>
-      </div>
-    </div>
-  ))}
-</div>
-
-
-{/* Recent Activities - Full Width */}
-<div className="mb-8">
-  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
-          <Activity className="h-5 w-5 text-blue-600" />
-          Recent Activities
-        </h2>
-        <button 
-          onClick={() => navigate("/all-activities")}
-          className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
-        >
-          <Eye className="h-4 w-4" />
-          View All
-        </button>
-      </div>
-    </div>
-    <div className="p-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-        {recentActivities.map((activity) => (
-          <div
-            key={activity.id}
-            className="flex flex-col gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors max-w-xs mx-auto w-full"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
-                {activity.avatar}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                  {activity.user}
-                </p>
-                <span className="text-xs text-gray-500 dark:text-gray-400">
-                  {activity.time}
-                </span>
+            {/* Recent Activities */}
+            <div className="mb-8">
+              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
+                      <Activity className="h-5 w-5 text-blue-600" />
+                      Recent Activities
+                    </h2>
+                    <button
+                      onClick={() => navigate("/all-activities")}
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1"
+                    >
+                      <Eye className="h-4 w-4" />
+                      View All
+                    </button>
+                  </div>
+                </div>
+                <div className="p-6">
+                  {recentActivities.length === 0 ? (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
+                        <Activity className="h-8 w-8 text-gray-400" />
+                      </div>
+                      <p className="text-gray-500 dark:text-gray-400 mb-2">No recent activities</p>
+                      <p className="text-sm text-gray-400 dark:text-gray-500">Activities will appear here as they happen</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                      {recentActivities.map((activity) => (
+                        <div
+                          key={activity.id}
+                          className="flex flex-col gap-3 p-4 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors max-w-xs mx-auto w-full"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-semibold flex-shrink-0">
+                              {activity.avatar || "?"}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                                {activity.user}
+                              </p>
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {activity.time}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">{activity.action}</p>
+                          <span className={"inline-flex items-center px-2 py-1 rounded-full text-xs font-medium w-fit " + getActivityStatusColor(activity.status)}>
+                            {activity.status}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2">
-              {activity.action}
-            </p>
-            <span
-              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium w-fit ${
-                activity.status === "pending"
-                  ? "bg-amber-100 text-amber-700"
-                  : activity.status === "completed"
-                  ? "bg-emerald-100 text-emerald-700"
-                  : activity.status === "warning"
-                  ? "bg-orange-100 text-orange-700"
-                  : activity.status === "cancelled"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-gray-100 text-gray-700"
-              }`}
-            >
-              {activity.status}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-</div>
-
 
             {/* Bottom Section */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              {/* Alerts and Reminders */}
+              {/* Alerts & Reminders */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                   <div className="flex items-center justify-between">
@@ -1017,8 +427,8 @@ const Dashboard = ({ collapsed }) => {
                       <Calendar className="h-5 w-5 text-purple-600" />
                       Alerts & Reminders
                     </h2>
-                    <button 
-                      onClick={() => setShowAddAlertReminderForm(true)} 
+                    <button
+                      onClick={() => setShowAddAlertReminderForm(true)}
                       className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium"
                     >
                       <Plus className="h-4 w-4" />
@@ -1084,39 +494,42 @@ const Dashboard = ({ collapsed }) => {
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700">
                   <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
-                    <Settings className="h-5 w-5 text-gray-600" />
+                    <Settings className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                     Quick Actions
                   </h2>
                 </div>
                 <div className="p-6">
                   <div className="grid grid-cols-2 gap-4">
-                    <button className="p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group">
-                      <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-200">
-                        <BarChart3 className="h-5 w-5 text-blue-600" />
+                    <button className="p-4 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30 rounded-lg transition-colors group">
+                      <div className="w-10 h-10 bg-blue-100 dark:bg-blue-800/50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-blue-200 dark:group-hover:bg-blue-700/50">
+                        <BarChart3 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       </div>
-                      <p className="text-sm font-semibold text-gray-900 mb-1">View Reports</p>
-                      <p className="text-xs text-gray-500">Generate detailed analytics</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">View Reports</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Generate detailed analytics</p>
                     </button>
-                    <button className="p-4 bg-emerald-50 hover:bg-emerald-100 rounded-lg transition-colors group">
-                      <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-emerald-200">
-                        <Users className="h-5 w-5 text-emerald-600" />
+                    
+                    <button className="p-4 bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30 rounded-lg transition-colors group">
+                      <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-800/50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-700/50">
+                        <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                       </div>
-                      <p className="text-sm font-semibold text-gray-900 mb-1">Manage Users</p>
-                      <p className="text-xs text-gray-500">Add or edit user accounts</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Manage Users</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Add or edit user accounts</p>
                     </button>
-                    <button className="p-4 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors group">
-                      <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-purple-200">
-                        <Package className="h-5 w-5 text-purple-600" />
+                    
+                    <button className="p-4 bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30 rounded-lg transition-colors group">
+                      <div className="w-10 h-10 bg-purple-100 dark:bg-purple-800/50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-purple-200 dark:group-hover:bg-purple-700/50">
+                        <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                       </div>
-                      <p className="text-sm font-semibold text-gray-900 mb-1">Inventory</p>
-                      <p className="text-xs text-gray-500">Manage product stock</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Inventory</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Manage product stock</p>
                     </button>
-                    <button className="p-4 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors group">
-                      <div className="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center mb-3 group-hover:bg-orange-200">
-                        <Settings className="h-5 w-5 text-orange-600" />
+                    
+                    <button className="p-4 bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30 rounded-lg transition-colors group">
+                      <div className="w-10 h-10 bg-orange-100 dark:bg-orange-800/50 rounded-lg flex items-center justify-center mb-3 group-hover:bg-orange-200 dark:group-hover:bg-orange-700/50">
+                        <Settings className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                       </div>
-                      <p className="text-sm font-semibold text-gray-900 mb-1">Settings</p>
-                      <p className="text-xs text-gray-500">Configure system preferences</p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Settings</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Configure system preferences</p>
                     </button>
                   </div>
                 </div>
@@ -1124,8 +537,9 @@ const Dashboard = ({ collapsed }) => {
             </div>
           </main>
         </div>
-        <CombinedAlertReminder 
-          isOpen={showAddAlertReminderForm} 
+        
+        <CombinedAlertReminder
+          isOpen={showAddAlertReminderForm}
           onClose={() => setShowAddAlertReminderForm(false)}
         />
       </Sidebar>
