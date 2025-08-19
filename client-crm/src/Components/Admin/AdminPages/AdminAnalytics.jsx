@@ -111,7 +111,7 @@ const AdminAnalytics = ({ collapsed }) => {
     },
     {
       id: 3,
-      title: "Conversion Rate",
+      title: "Pending Leads",
       value: "24.8%",
       icon: <Activity className="h-6 w-6" />,
       change: "+0.5%",
@@ -123,7 +123,7 @@ const AdminAnalytics = ({ collapsed }) => {
     },
     {
       id: 4,
-      title: "Revenue",
+      title: "Loss Leads",
       value: "$45.2k",
       icon: <TrendingUp className="h-6 w-6" />,
       change: "+8.1%",
