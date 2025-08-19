@@ -74,6 +74,9 @@ connectDB();
 
   import "./automate/automate.routes.js";
 
+  import superAdmin from "./api/superAdmin/superAmin.routes.js";
+  app.use("/api/superAdmin",superAdmin);
+
 import updatePassword from "./middleware/updatePassword.middleware.js";
 import jwtTokenMiddleware from "./middleware/jwtoken.middleware.js"; 
 
