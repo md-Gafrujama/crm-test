@@ -5,11 +5,8 @@ import { toast } from "react-toastify";
 import { API_BASE_URL } from "../../config/api";
 import { cn } from "../../utils/cn";
 import { useTheme } from "../../hooks/use-theme";
+import { ArrowLeft, Search, Filter, Activity, Users } from 'lucide-react';
 import { 
-  Activity, 
-  ArrowLeft, 
-  Filter, 
-  Search, 
   User, 
   ShoppingCart, 
   Settings, 
@@ -248,77 +245,139 @@ const AllActivities = ({ collapsed }) => {
   return (
     <div className={finalContainerClass}>
       <main className="p-6">
-        {/* Page Header */}
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-          <div>
-            <div className="flex items-center gap-4 mb-4">
-              <button
-                onClick={() => navigate(-1)}
-                className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                Back to Dashboard
-              </button>
-            </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-200">
-              All Activities
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-2">
-              Monitor all system and user activities in real-time
-            </p>
-          </div>
-        </div>
+{/* Page Header */}
+<div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+  <div>
+    <div className="flex items-center gap-4 mb-4">
+      <button
+        onClick={() => navigate(-1)}
+        className="flex items-center gap-2 font-semibold px-4 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Dashboard
+      </button>
+    </div>
+    <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-200">
+      All Activities
+    </h1>
+    <p className="text-gray-600 dark:text-gray-400 mt-2">
+      Monitor all system and user activities in real-time
+    </p>
+  </div>
+</div>
 
-        {/* Search and Filters */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 p-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search activities..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-              />
-            </div>
-            <div className="flex gap-4">
-              <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  className="pl-10 pr-8 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="completed">Completed</option>
-                  <option value="warning">Warning</option>
-                  <option value="cancelled">Cancelled</option>
-                  <option value="locked">Locked</option>
-                  <option value="active">Active</option>
-                  <option value="Contacted">Contacted</option>
-                  <option value="Engaged">Engaged</option>
-                </select>
-              </div>
-              <div className="relative">
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="pl-4 pr-8 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                >
-                  <option value="all">All Types</option>
-                  <option value="user">Users</option>
-                  <option value="employee">Employees</option>
-                  <option value="lead">Leads</option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <p className="text-gray-600 dark:text-gray-400 mt-4">
-            Showing {filteredActivities.length} of {activities.length} activities
-          </p>
+{/* Search and Filters */}
+<div className="bg-white dark:bg-gray-800 rounded-lg shadow mb-6 border border-gray-200 dark:border-gray-700">
+  <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+    <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 flex items-center gap-2">
+      <Search className="h-5 w-5 text-orange-500" />
+      Search & Filter Activities
+    </h2>
+  </div>
+  
+  <div className="p-6">
+    <div className="flex flex-col lg:flex-row gap-4">
+      {/* Search Input */}
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search activities, users, or actions..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-10 pr-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+        />
+      </div>
+      
+      {/* Filter Controls */}
+      <div className="flex gap-4">
+        {/* Status Filter */}
+        <div className="relative">
+          <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="pl-10 pr-8 py-2.5 border border-gray-200 font-semibold dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent min-w-[140px]"
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="completed">Completed</option>
+            <option value="warning">Warning</option>
+            <option value="cancelled">Cancelled</option>
+            <option value="locked">Locked</option>
+            <option value="active">Active</option>
+            <option value="Contacted">Contacted</option>
+            <option value="Engaged">Engaged</option>
+          </select>
         </div>
+        
+        {/* Type Filter */}
+        <div className="relative">
+          <Users className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="pl-10 pr-8 font-semibold py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-transparent min-w-[120px]"
+          >
+            <option value="all">All Types</option>
+            <option value="user">Users</option>
+            <option value="employee">Employees</option>
+            <option value="lead">Leads</option>
+          </select>
+        </div>
+        
+        {/* Clear Filters Button */}
+        {(searchTerm || filterStatus !== 'all' || filterType !== 'all') && (
+          <button
+            onClick={() => {
+              setSearchTerm('');
+              setFilterStatus('all');
+              setFilterType('all');
+            }}
+            className="px-4 py-2.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition-colors font-medium whitespace-nowrap"
+          >
+            Clear All
+          </button>
+        )}
+      </div>
+    </div>
+    
+    {/* Results Summary */}
+    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+          <span className="font-semibold text-orange-500">{filteredActivities.length}</span>
+          <span>of</span>
+          <span className="font-medium">{activities.length}</span>
+          <span>activities found</span>
+        </div>
+        
+        {/* Quick Stats */}
+        <div className="hidden md:flex items-center gap-6">
+          <div className="flex items-center gap-2 text-sm">
+            <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+            <span className="text-gray-600 dark:text-gray-400">
+              {activities.filter(a => a.status === 'completed' || a.status === 'active').length} Active
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+            <span className="text-gray-600 dark:text-gray-400">
+              {activities.filter(a => a.status === 'pending').length} Pending
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+            <span className="text-gray-600 dark:text-gray-400">
+              {activities.filter(a => a.status === 'warning' || a.status === 'locked').length} Issues
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 
         {/* Activities List */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
