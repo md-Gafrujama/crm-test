@@ -14,14 +14,14 @@ const analytics = {
         return;
       }
 
-      const qualifiedLeads = await prisma.Lead.count({
-        where: {
-          companyId: companyId,
-          isCurrentVersion: true,
-          status: {
-            in : ["Qualified","Closed Won"]
-        }},
-      });
+      // const qualifiedLeads = await prisma.Lead.count({
+      //   where: {
+      //     companyId: companyId,
+      //     isCurrentVersion: true,
+      //     status: {
+      //       in : ["Qualified","Closed Won"]
+      //   }},
+      // });
 
       const pendingLeads = await prisma.Lead.count({
         where: {
@@ -33,17 +33,17 @@ const analytics = {
         },
       });
 
-      const lossLeads = await prisma.Lead.count({
-        where: {
-          companyId: companyId,
-          isCurrentVersion: true,
-          status: {
-            in : ["Closed Lost","Do Not Contact"]
-          }},
-      });
+      // const lossLeads = await prisma.Lead.count({
+      //   where: {
+      //     companyId: companyId,
+      //     isCurrentVersion: true,
+      //     status: {
+      //       in : ["Closed Lost","Do Not Contact"]
+      //     }},
+      // });
 
-      // const qualifiedLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Qualified"}});
-      // const lossLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Do Not Contact"}});
+      const qualifiedLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Qualified"}});
+      const lossLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Do Not Contact"}});
 
       const totalLeads = qualifiedLeads + pendingLeads + lossLeads;
 
