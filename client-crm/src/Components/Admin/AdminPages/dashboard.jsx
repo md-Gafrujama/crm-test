@@ -71,7 +71,7 @@ const Dashboard = ({ collapsed }) => {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Please login to view analytics");
         
-        const response = await axios.get("http://localhost:8888/api/analytics/leads", {
+        const response = await axios.get(`${API_BASE_URL}/api/analytics/leads`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         

@@ -5,6 +5,7 @@ import Footer from '../common/Footer';
 import { Header } from '../common/Header';
 import { Sidebar, useSidebar } from '../common/sidebar';
 import { cn } from '../../../utils/cn';
+import { API_BASE_URL } from "../../../config/api";
 import { Package, ShoppingCart, Activity, TrendingUp } from 'lucide-react';
 import { User, Users, MessageSquare, Users2 } from 'lucide-react';
 
@@ -67,12 +68,12 @@ const AdminAnalytics = ({ collapsed }) => {
         if (!token) throw new Error("Please login to view analytics");
 
         // Fetch users analytics
-        const userResponse = await axios.get("http://localhost:8888/api/analytics/users", {
+        const userResponse = await axios.get(`${API_BASE_URL}/api/analytics/users`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         // Fetch leads analytics
-        const leadsResponse = await axios.get("http://localhost:8888/api/analytics/leads", {
+        const leadsResponse = await axios.get(`${API_BASE_URL}/api/analytics/leads`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
