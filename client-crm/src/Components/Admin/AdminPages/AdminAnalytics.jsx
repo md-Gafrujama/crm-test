@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 import Footer from '../common/Footer';
 import { Header } from '../common/Header';
 import { Sidebar, useSidebar } from '../common/sidebar';
@@ -30,119 +32,210 @@ ChartJS.register(
   Legend
 );
 
-const additionalStats = [
-  {
-    id: 5,
-    title: "Total User",
-    value: "3,450",
-    icon: <User className="h-6 w-6" />,
-    change: "+7.5%",
-    trend: "up",
-    color: "from-indigo-500 to-indigo-600",
-    lightColor: "bg-indigo-50",
-    textColor: "text-indigo-600",
-    subtitle: "This year"
-  },
-  {
-    id: 6,
-    title: "Active User",
-    value: "1,892",
-    icon: <Users className="h-6 w-6" />,
-    change: "+3.2%",
-    trend: "up",
-    color: "from-green-400 to-green-500",
-    lightColor: "bg-green-50",
-    textColor: "text-green-600",
-    subtitle: "Last month"
-  },
-  {
-    id: 7,
-    title: "Conversation Rate",
-    value: "62.4%",
-    icon: <MessageSquare className="h-6 w-6" />,
-    change: "+1.1%",
-    trend: "up",
-    color: "from-pink-500 to-pink-600",
-    lightColor: "bg-pink-50",
-    textColor: "text-pink-600",
-    subtitle: "Last 7 days"
-  },
-  {
-    id: 8,
-    title: "Total Employee",
-    value: "230",
-    icon: <Users2 className="h-6 w-6" />,
-    change: "+4.8%",
-    trend: "up",
-    color: "from-yellow-500 to-yellow-600",
-    lightColor: "bg-yellow-50",
-    textColor: "text-yellow-600",
-    subtitle: "This quarter"
-  }
-];
-
 const AdminAnalytics = ({ collapsed }) => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
 
-  const [stats] = useState([
-    {
-      id: 1,
-      title: "Total Leads",
-      value: "1,248",
-      icon: <Package className="h-6 w-6" />,
-      change: "+5.2%",
-      trend: "up",
-      color: "from-blue-500 to-blue-600",
-      lightColor: "bg-blue-50",
-      textColor: "text-blue-600",
-      subtitle: "This month"
-    },
-    {
-      id: 2,
-      title: "Qualified Leads",
-      value: "342",
-      icon: <ShoppingCart className="h-6 w-6" />,
-      change: "+12.3%",
-      trend: "up",
-      color: "from-emerald-500 to-emerald-600",
-      lightColor: "bg-emerald-50",
-      textColor: "text-emerald-600",
-      subtitle: "Active pipeline"
-    },
-    {
-      id: 3,
-      title: "Pending Leads",
-      value: "24.8%",
-      icon: <Activity className="h-6 w-6" />,
-      change: "+0.5%",
-      trend: "up",
-      color: "from-purple-500 to-purple-600",
-      lightColor: "bg-purple-50",
-      textColor: "text-purple-600",
-      subtitle: "Last 30 days"
-    },
-    {
-      id: 4,
-      title: "Loss Leads",
-      value: "$45.2k",
-      icon: <TrendingUp className="h-6 w-6" />,
-      change: "+8.1%",
-      trend: "up",
-      color: "from-orange-500 to-orange-600",
-      lightColor: "bg-orange-50",
-      textColor: "text-orange-600",
-      subtitle: "This quarter"
-    },
-  ]);
+  // State for leads data
+  const [leadsData, setLeadsData] = useState({
+    totalLeads: 0,
+    qualifiedLeads: 0,
+    pendingLeads: 0,
+    lossLeads: 0
+  });
 
-  // Pie Chart Data for Lead Distribution
+  // State for users data
+  const [usersData, setUsersData] = useState({
+    totalUser: 0,
+    activeUser: 0,
+    totalEmployee: 0,
+    conversionRateFromActive: 0,
+    conversionRateFromTotal: 0
+  });
+
+  // State for lead stats cards
+  const [stats, setStats] = useState([]);
+
+  // State for user stats cards
+  const [additionalStats, setAdditionalStats] = useState([]);
+
+  // Fetch both APIs data
+  useEffect(() => {
+    const fetchAnalyticsData = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Please login to view analytics");
+
+        // Fetch users analytics
+        const userResponse = await axios.get("http://localhost:8888/api/analytics/users", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Fetch leads analytics
+        const leadsResponse = await axios.get("http://localhost:8888/api/analytics/leads", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (userResponse.data) {
+          setUsersData({
+            totalUser: userResponse.data.totalUser || 0,
+            activeUser: userResponse.data.activeUser || 0,
+            totalEmployee: userResponse.data.totalEmployee || 0,
+            conversionRateFromActive: userResponse.data.conversionRateFromActive || 0,
+            conversionRateFromTotal: userResponse.data.conversionRateFromTotal || 0
+          });
+        }
+
+        if (leadsResponse.data) {
+          setLeadsData({
+            totalLeads: leadsResponse.data.totalLeads || 0,
+            qualifiedLeads: leadsResponse.data.qualifiedLeads || 0,
+            pendingLeads: leadsResponse.data.pendingLeads || 0,
+            lossLeads: leadsResponse.data.lossLeads || 0
+          });
+        }
+
+      } catch (error) {
+        console.error("Failed to fetch analytics data:", error);
+        toast.error(
+          error.response?.data?.message || error.message || "Failed to load analytics data",
+          {
+            position: "top-right",
+            autoClose: 5000,
+          }
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnalyticsData();
+  }, []);
+
+  // Update stats with real leads data
+  useEffect(() => {
+    if (leadsData) {
+      setStats([
+        {
+          id: 1,
+          title: "Total Leads",
+          value: leadsData.totalLeads.toLocaleString(),
+          icon: <Package className="h-6 w-6" />,
+          change: "+5.2%",
+          trend: "up",
+          color: "from-blue-500 to-blue-600",
+          lightColor: "bg-blue-50",
+          textColor: "text-blue-600",
+          subtitle: "This month"
+        },
+        {
+          id: 2,
+          title: "Qualified Leads",
+          value: leadsData.qualifiedLeads.toLocaleString(),
+          icon: <ShoppingCart className="h-6 w-6" />,
+          change: "+12.3%",
+          trend: "up",
+          color: "from-emerald-500 to-emerald-600",
+          lightColor: "bg-emerald-50",
+          textColor: "text-emerald-600",
+          subtitle: "Active pipeline"
+        },
+        {
+          id: 3,
+          title: "Pending Leads",
+          value: leadsData.pendingLeads.toLocaleString(),
+          icon: <Activity className="h-6 w-6" />,
+          change: "+0.5%",
+          trend: "up",
+          color: "from-purple-500 to-purple-600",
+          lightColor: "bg-purple-50",
+          textColor: "text-purple-600",
+          subtitle: "Awaiting follow-up"
+        },
+        {
+          id: 4,
+          title: "Loss Leads",
+          value: leadsData.lossLeads.toLocaleString(),
+          icon: <TrendingUp className="h-6 w-6" />,
+          change: leadsData.lossLeads > 0 ? "-8.1%" : "0.0%",
+          trend: leadsData.lossLeads > 0 ? "down" : "up",
+          color: "from-orange-500 to-orange-600",
+          lightColor: "bg-orange-50",
+          textColor: "text-orange-600",
+          subtitle: "Lost opportunities"
+        },
+      ]);
+    }
+  }, [leadsData]);
+
+  // Update additional stats with real users data
+  useEffect(() => {
+    if (usersData) {
+      setAdditionalStats([
+        {
+          id: 5,
+          title: "Total User",
+          value: usersData.totalUser.toLocaleString(),
+          icon: <User className="h-6 w-6" />,
+          change: "+7.5%",
+          trend: "up",
+          color: "from-indigo-500 to-indigo-600",
+          lightColor: "bg-indigo-50",
+          textColor: "text-indigo-600",
+          subtitle: "This year"
+        },
+        {
+          id: 6,
+          title: "Active User",
+          value: usersData.activeUser.toLocaleString(),
+          icon: <Users className="h-6 w-6" />,
+          change: "+3.2%",
+          trend: "up",
+          color: "from-green-400 to-green-500",
+          lightColor: "bg-green-50",
+          textColor: "text-green-600",
+          subtitle: "Last month"
+        },
+        {
+          id: 7,
+          title: "Conversation Rate",
+          value: `${usersData.conversionRateFromActive.toFixed(1)}%`,
+          icon: <MessageSquare className="h-6 w-6" />,
+          change: "+1.1%",
+          trend: "up",
+          color: "from-pink-500 to-pink-600",
+          lightColor: "bg-pink-50",
+          textColor: "text-pink-600",
+          subtitle: "Employee/Active ratio"
+        },
+        {
+          id: 8,
+          title: "Total Employee",
+          value: usersData.totalEmployee.toLocaleString(),
+          icon: <Users2 className="h-6 w-6" />,
+          change: "+4.8%",
+          trend: "up",
+          color: "from-yellow-500 to-yellow-600",
+          lightColor: "bg-yellow-50",
+          textColor: "text-yellow-600",
+          subtitle: "This quarter"
+        }
+      ]);
+    }
+  }, [usersData]);
+
+  // Pie Chart Data for Lead Distribution (using real data)
   const leadsPieData = {
     labels: ['Total Leads', 'Qualified Leads', 'Pending Leads', 'Lost Leads'],
     datasets: [
       {
         label: 'Lead Distribution',
-        data: [1248, 342, 310, 596],
+        data: [
+          leadsData.totalLeads,
+          leadsData.qualifiedLeads,
+          leadsData.pendingLeads,
+          leadsData.lossLeads
+        ],
         backgroundColor: [
           '#3B82F6', // Blue
           '#10B981', // Emerald
@@ -161,28 +254,33 @@ const AdminAnalytics = ({ collapsed }) => {
     ],
   };
 
-  // Doughnut Chart Data for User Analytics (for the 4 additional cards)
+  // Doughnut Chart Data for User Analytics - ONLY 4 FIELDS
   const userDoughnutData = {
-    labels: ['Total Users', 'Active Users', 'Inactive Users', 'Employees'],
+    labels: ['Total Users', 'Active Users', 'Conversation Rate', 'Total Employee'],
     datasets: [
       {
         label: 'User Analytics',
-        data: [3450, 1892, 1558, 230],
+        data: [
+          usersData.totalUser,                    // 3
+          usersData.activeUser,                   // 3
+          usersData.conversionRateFromActive,     // 133.3
+          usersData.totalEmployee                 // 4
+        ],
         backgroundColor: [
-          '#6366F1', // Indigo
-          '#22C55E', // Green
-          '#EC4899', // Pink
-          '#EAB308', // Yellow
+          '#6366F1', // Indigo for Total Users
+          '#22C55E', // Green for Active Users  
+          '#EC4899', // Pink for Conversation Rate
+          '#EAB308', // Yellow for Total Employee
         ],
         borderColor: [
           '#4F46E5',
           '#16A34A',
-          '#DB2777',
+          '#DB2777', 
           '#CA8A04',
         ],
         borderWidth: 2,
         cutout: '60%',
-        hoverOffset: 8,
+        hoverOffset: 10,
       },
     ],
   };
@@ -204,15 +302,23 @@ const AdminAnalytics = ({ collapsed }) => {
         backgroundColor: 'rgba(0, 0, 0, 0.8)',
         titleColor: 'white',
         bodyColor: 'white',
+        callbacks: {
+          label: function(context) {
+            const label = context.label || '';
+            const value = context.parsed;
+            
+            // Format conversation rate as percentage
+            if (label.includes('Conversation Rate')) {
+              return `${label}: ${value.toFixed(1)}%`;
+            }
+            
+            // Format other values as regular numbers
+            return `${label}: ${value}`;
+          }
+        }
       },
     },
   };
-
-  useEffect(() => {
-    setIsLoading(true);
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
 
   if (isLoading) {
     return (
@@ -231,7 +337,7 @@ const AdminAnalytics = ({ collapsed }) => {
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
         )}>
           <div className="space-y-6 p-6">
-            {/* First 4 Stats Cards */}
+            {/* First 4 Stats Cards - Leads Data */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
               {stats.map((stat) => (
                 <div
@@ -300,7 +406,7 @@ const AdminAnalytics = ({ collapsed }) => {
               </div>
             </div>
 
-            {/* Next 4 Stats Cards */}
+            {/* Next 4 Stats Cards - Users Data */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
               {additionalStats.map(stat => (
                 <div
@@ -343,14 +449,14 @@ const AdminAnalytics = ({ collapsed }) => {
               ))}
             </div>
 
-            {/* Chart for Second 4 Cards - Doughnut Chart */}
+            {/* Doughnut Chart for User Analytics - ONLY 4 FIELDS */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
               <div className="mb-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                  User & Employee Analytics
+                  User Analytics Overview
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Overview of user engagement and workforce distribution
+                  Distribution of Total Users, Active Users, Conversation Rate & Total Employee
                 </p>
               </div>
               <div style={{ height: "400px" }}>

@@ -34,6 +34,12 @@ const Dashboard = ({ collapsed }) => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
+  const [leadsData, setLeadsData] = useState({
+    totalLeads: 0,
+    qualifiedLeads: 0,
+    pendingLeads: 0,
+    lossLeads: 0
+  });
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -57,6 +63,47 @@ const Dashboard = ({ collapsed }) => {
       read: true,
     },
   ]);
+
+  // Fetch leads analytics data
+  useEffect(() => {
+    const fetchLeadsAnalytics = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Please login to view analytics");
+        
+        const response = await axios.get("http://localhost:8888/api/analytics/leads", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (response.data) {
+          setLeadsData({
+            totalLeads: response.data.totalLeads || 0,
+            qualifiedLeads: response.data.qualifiedLeads || 0,
+            pendingLeads: response.data.pendingLeads || 0,
+            lossLeads: response.data.lossLeads || 0
+          });
+        }
+      } catch (error) {
+        console.error("Failed to fetch leads analytics:", error);
+        toast.error(
+          error.response?.data?.message || error.message || "Failed to load leads analytics",
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: theme === "dark" ? "dark" : "light",
+            style: { fontSize: "1.2rem" },
+          }
+        );
+      }
+    };
+
+    fetchLeadsAnalytics();
+  }, [theme]);
 
   useEffect(() => {
     const fetchRecentAlerts = async () => {
@@ -167,7 +214,7 @@ const Dashboard = ({ collapsed }) => {
           });
         }
 
-        // Sort by timestamp (newest first) and take first 8
+        // Sort by timestamp (newest first) and take first 4
         allActivities.sort((a, b) => b.timestamp - a.timestamp);
         setRecentActivities(allActivities.slice(0, 4));
 
@@ -187,62 +234,67 @@ const Dashboard = ({ collapsed }) => {
     fetchRecentActivities();
   }, [theme]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setStats([
-        {
-          id: 1,
-          title: "Total Leads",
-          value: "1,248",
-          icon: React.createElement(Package, { className: "h-6 w-6" }),
-          change: "+5.2%",
-          trend: "up",
-          color: "from-blue-500 to-blue-600",
-          lightColor: "bg-blue-50",
-          textColor: "text-blue-600",
-          subtitle: "This month",
-        },
-        {
-          id: 2,
-          title: "Qualified Leads",
-          value: "342",
-          icon: React.createElement(ShoppingCart, { className: "h-6 w-6" }),
-          change: "+12.3%",
-          trend: "up",
-          color: "from-emerald-500 to-emerald-600",
-          lightColor: "bg-emerald-50",
-          textColor: "text-emerald-600",
-          subtitle: "Active pipeline",
-        },
-        {
-          id: 3,
-          title: "Pending Leads",
-          value: "24.8%",
-          icon: React.createElement(Activity, { className: "h-6 w-6" }),
-          change: "+0.5%",
-          trend: "up",
-          color: "from-purple-500 to-purple-600",
-          lightColor: "bg-purple-50",
-          textColor: "text-purple-600",
-          subtitle: "Last 30 days",
-        },
-        {
-          id: 4,
-          title: "Loss Leads",
-          value: "$45.2k",
-          icon: React.createElement(TrendingUp, { className: "h-6 w-6" }),
-          change: "+8.1%",
-          trend: "up",
-          color: "from-orange-500 to-orange-600",
-          lightColor: "bg-orange-50",
-          textColor: "text-orange-600",
-          subtitle: "This quarter",
-        },
-      ]);
-    }, 500);
+// Update stats with real data from API
+useEffect(() => {
+  if (leadsData) {
+    // Calculate conversion rate (qualified leads / total leads * 100)
+    const conversionRate = leadsData.totalLeads > 0 
+      ? ((leadsData.qualifiedLeads / leadsData.totalLeads) * 100).toFixed(1) 
+      : "0.0";
 
-    return () => clearTimeout(timer);
-  }, []);
+    setStats([
+      {
+        id: 1,
+        title: "Total Leads",
+        value: leadsData.totalLeads.toLocaleString(),
+        icon: React.createElement(Package, { className: "h-6 w-6" }),
+        change: "+5.2%",
+        trend: "up",
+        color: "from-blue-500 to-blue-600",
+        lightColor: "bg-blue-50",
+        textColor: "text-blue-600",
+        subtitle: "This month",
+      },
+      {
+        id: 2,
+        title: "Qualified Leads",
+        value: leadsData.qualifiedLeads.toLocaleString(),
+        icon: React.createElement(ShoppingCart, { className: "h-6 w-6" }),
+        change: "+12.3%",
+        trend: "up",
+        color: "from-emerald-500 to-emerald-600",
+        lightColor: "bg-emerald-50",
+        textColor: "text-emerald-600",
+        subtitle: "Active pipeline",
+      },
+      {
+        id: 3,
+        title: "Pending Leads",
+        value: leadsData.pendingLeads.toLocaleString(),
+        icon: React.createElement(Activity, { className: "h-6 w-6" }),
+        change: "+0.5%",
+        trend: "up",
+        color: "from-purple-500 to-purple-600",
+        lightColor: "bg-purple-50",
+        textColor: "text-purple-600",
+        subtitle: "Awaiting follow-up",
+      },
+      {
+        id: 4,
+        title: "Loss Leads",
+        value: leadsData.lossLeads.toLocaleString(),
+        icon: React.createElement(TrendingUp, { className: "h-6 w-6" }),
+        change: leadsData.lossLeads > 0 ? "-8.1%" : "0.0%",
+        trend: leadsData.lossLeads > 0 ? "down" : "up",
+        color: "from-orange-500 to-orange-600",
+        lightColor: "bg-orange-50",
+        textColor: "text-orange-600",
+        subtitle: "Lost opportunities",
+      },
+    ]);
+  }
+}, [leadsData]);
+
 
   const formatTimeAgo = (timestamp) => {
     const now = new Date();
