@@ -43,6 +43,9 @@ connectDB();
   app.use("/api/registerComp",company);
   app.use("/api/companyOTP",otpForCompany)
 
+  import adminAnalytics from "./api/admin/analytics.routes.js";
+  app.use("/api/analytics",adminAnalytics);
+
   import allUser  from "./api/customer/allUsers.routes.js";
   import recentActivities from "./api/customer/recentActivities.api.js";
   import addUser from "./api/customer/user.routes.js";
