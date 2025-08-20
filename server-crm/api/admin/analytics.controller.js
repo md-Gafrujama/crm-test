@@ -14,41 +14,43 @@ const analytics = {
         return;
       }
 
-      // const qualifiedLeads = await prisma.Lead.count({
-      //   where: {
-      //     companyId: companyId,
-      //     isCurrentVersion: true,
-      //     status: {
-      //       in : ["Qualified","Closed Won"]
-      //   }},
-      // });
-
-      const pendingLeads = await prisma.Lead.count({
+      const qualifiedLeads = await prisma.Lead.count({
         where: {
           companyId: companyId,
           isCurrentVersion: true,
           status: {
-            in: [ "Contacted", "Engaged", "On Hold", "Proposal Sent", "Negotiation"],
+            in: ["Qualified", "Closed Won"],
           },
         },
       });
 
-      // const lossLeads = await prisma.Lead.count({
-      //   where: {
-      //     companyId: companyId,
-      //     isCurrentVersion: true,
-      //     status: {
-      //       in : ["Closed Lost","Do Not Contact"]
-      //     }},
-      // });
+      const pendingLeads = await prisma.lead.count({
+        where: {
+          companyId: companyId,
+          isCurrentVersion: true,
+          status: {
+            in: ["Contacted","Engaged","On Hold","Proposal sent","Negotiation",],
+          },
+        },
+      });
 
-      const qualifiedLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Qualified"}});
-      const lossLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Do Not Contact"}});
+      const lossLeads = await prisma.Lead.count({
+        where: {
+          companyId: companyId,
+          isCurrentVersion: true,
+          status: {
+            in: ["Closed Lost", "Do Not Contact"],
+          },
+        },
+      });
+
+      // const qualifiedLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Qualified"}});
+      // const lossLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Do Not Contact"}});
 
       const totalLeads = qualifiedLeads + pendingLeads + lossLeads;
 
       res.status(200).json({
-        msg: "Successfully fetched leads data fro analytics.",
+        msg: "Successfully fetched leads data from analytics.",
         totalLeads: totalLeads,
         qualifiedLeads: qualifiedLeads,
         pendingLeads: pendingLeads,
@@ -73,19 +75,13 @@ const analytics = {
         return;
       }
 
-      const totalUser = await prisma.User.count({
-        where: { companyId: companyId },
-      });
-      const activeUser = await prisma.User.count({
-        where: { companyId: companyId, locked: false },
-      });
-      const totalEmployee = await prisma.Employee.count({
-        where: { companyId: companyId },
-      });
-     
-      const conversionRateFromTotal = totalUser > 0 ? (totalEmployee / totalUser) * 100 : 0;
-      const conversionRateFromActive = activeUser > 0? (totalEmployee / activeUser) * 100: 0;
-      const detail = conversionRateFromActive > 100 ? "You should have more employee than user" : "Good";
+      const totalUser = await prisma.User.count({ where: { companyId: companyId },   });
+      const activeUser = await prisma.User.count({ where: { companyId: companyId, locked: false },  });
+      const totalEmployee = await prisma.Employee.count({ where: { companyId: companyId },      });
+
+      const conversionRateFromTotal =        totalUser > 0 ? (totalEmployee / totalUser) * 100 : 0;
+      const conversionRateFromActive =        activeUser > 0 ? (totalEmployee / activeUser) * 100 : 0;
+      const detail =        conversionRateFromActive > 100          ? "You should have more employee than user"          : "Good";
 
       res.status(200).json({
         msg: "Successfully fetched user's data for analytics.",
@@ -93,8 +89,8 @@ const analytics = {
         activeUser: activeUser,
         totalEmployee: totalEmployee,
         conversionRateFromActive: conversionRateFromActive,
-        conversionRateFromTotal : conversionRateFromTotal,
-        detail
+        conversionRateFromTotal: conversionRateFromTotal,
+        detail,
       });
     } catch (error) {
       res.status(500).json({

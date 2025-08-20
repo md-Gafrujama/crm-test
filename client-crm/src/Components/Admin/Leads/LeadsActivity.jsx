@@ -702,7 +702,7 @@ const EditLeadPopup = ({ lead, onClose, onSave }) => {
                   <option value="Qualified">Qualified</option>
                   <option value="Proposal sent">Proposal Sent</option>
                   <option value="Negotiation">Negotiation</option>
-                  <option value="Cloaed Won">Closed Won</option>
+                  <option value="Closed Won">Closed Won</option>
                   <option value="Closed Lost">Closed Lost</option>
                   <option value="On Hold">On Hold</option>
                   <option value="Do Not Contact">Do Not Contact</option>
