@@ -33,7 +33,7 @@ const employeeProfile = {
                 data: dataToUpdate,
             });
 
-            res.status(200).json(updateEmployee);
+            res.status(200).json({msg : "Updated sucessfully", updateEmployee});
         } catch (error) {
             console.error(error);  
             res.status(500).json({

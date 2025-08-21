@@ -4,16 +4,16 @@ export function createLead(data) {
   return prisma.lead.create({ data });
 }
 
-export function fetchLeadsByUser(userId, userType,username,companyId) {
+export function fetchLeadsByUser(userId, userType, username, companyId) {
   const query = {
     where: {
-      isCurrentVersion: true, 
-      ...(userType !== "admin" && { uid: userId } && {companyId:companyId}), 
+      isCurrentVersion: true,
+      ...(userType !== "admin" && { uid: userId } && { companyId: companyId }),
     },
     select: {
       id: true,
       uid: true,
-      username:true,
+      username: true,
       companyId: true,
       title: true,
       customerFirstName: true,
@@ -40,7 +40,7 @@ export function fetchLeadsByUser(userId, userType,username,companyId) {
 
 export async function deleteLeadById(id) {
   const leadToDelete = await prisma.lead.findUnique({
-    where: { id }
+    where: { id },
   });
 
   if (!leadToDelete) {
@@ -52,22 +52,22 @@ export async function deleteLeadById(id) {
       where: {
         OR: [
           { rootId: leadToDelete.rootId || leadToDelete.id },
-          { id: leadToDelete.id }
-        ]
-      }
+          { id: leadToDelete.id },
+        ],
+      },
     });
   } else {
     await prisma.lead.delete({
-      where: { id }
+      where: { id },
     });
   }
 
   return { message: "Lead deleted successfully" };
 }
 
-export async function updateLeadById(id, username,updateData) {
+export async function updateLeadById(id, username, updateData) {
   const currentLead = await prisma.lead.findUnique({
-    where: { id }
+    where: { id },
   });
 
   if (!currentLead) {
@@ -76,7 +76,7 @@ export async function updateLeadById(id, username,updateData) {
 
   await prisma.lead.update({
     where: { id },
-    data: { isCurrentVersion: false }
+    data: { isCurrentVersion: false },
   });
 
   const newVersion = await prisma.lead.create({
@@ -84,13 +84,13 @@ export async function updateLeadById(id, username,updateData) {
       ...currentLead,
       ...updateData,
       id: undefined,
-      username, 
+      username,
       versionNumber: currentLead.versionNumber + 1,
       isCurrentVersion: true,
       rootId: currentLead.rootId || currentLead.id,
       createdAt: new Date(),
-      updatedAt: new Date()
-    }
+      updatedAt: new Date(),
+    },
   });
 
   return newVersion;
@@ -98,7 +98,7 @@ export async function updateLeadById(id, username,updateData) {
 
 export async function fetchLeadWithHistory(id) {
   const currentLead = await prisma.lead.findUnique({
-    where: { id }
+    where: { id },
   });
 
   if (!currentLead) {
@@ -106,12 +106,14 @@ export async function fetchLeadWithHistory(id) {
   }
 
   const history = await prisma.lead.findMany({
-    where: { rootId: currentLead.rootId },
-    orderBy: { versionNumber: 'asc' }
+    where: {
+      OR: [{ rootId: currentLead.rootId }, { id: currentLead.rootId }],
+    },
+    orderBy: { versionNumber: "asc" },
   });
 
   return {
     current: currentLead,
-    history
+    history,
   };
 }
