@@ -211,7 +211,9 @@ const handleUnlock = async () => {
   return (
     <>
       <div className="flex justify-between items-center dark:bg-slate-800 border-b p-4">
-        <h2 className="text-base font-semibold dark:text-gray-400 ">Edit User</h2>
+<div className="flex justify-center w-full">
+  <h2 className="text-lg font-bold dark:text-gray-400">Edit User</h2>
+</div>
         <button
           onClick={onClose}
           className="text-gray-500 hover:text-gray-200"
@@ -268,21 +270,32 @@ const handleUnlock = async () => {
           />
         </div>
 
-        {/* StatusOfWork as simple input */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-400 mb-1" htmlFor="statusOfWork">
-            Status
-          </label>
-          <input
-            id="statusOfWork"
-            name="statusOfWork"
-            value={user.statusOfWork || ''}
-            onChange={handleChange}
-            required
-            className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-400"
-            placeholder="Enter status (e.g. active, inactive)"
-          />
-        </div>
+{/* StatusOfWork as dropdown */}
+<div>
+  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-400 mb-1" htmlFor="statusOfWork">
+    Status
+  </label>
+  <div className="relative">
+    <select
+      id="statusOfWork"
+      name="statusOfWork"
+      value={user.statusOfWork || ''}
+      onChange={handleChange}
+      required
+      className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-400 appearance-none bg-white cursor-pointer"
+    >
+      <option value="">Select Status</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+    <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+      </svg>
+    </div>
+  </div>
+</div>
+
 
         {/* Assigned Work */}
         <div>

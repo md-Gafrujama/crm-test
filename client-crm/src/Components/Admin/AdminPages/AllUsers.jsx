@@ -2,14 +2,14 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import EditUser from '../Forms/EditUser';
 import axios from 'axios';
-import { API_BASE_URL } from '../../../config/api'; 
 import { Header } from '../common/Header';
 import { Sidebar, useSidebar } from '../common/sidebar';
 import { cn } from "../../../utils/cn";
 import { useTheme } from '../../../hooks/use-theme';
 import Footer from '../common/Footer';
 import Sign from '../Forms/sign';
-import { Search, Users, UserCheck, Filter } from 'lucide-react';
+import { API_BASE_URL } from "../../../config/api";
+import { Search, Users, UserCheck, Filter, Shield, Activity, UserX } from 'lucide-react';
 
 const AllUsers = ({collapsed}) => {
   const navigate = useNavigate();
@@ -31,13 +31,19 @@ const AllUsers = ({collapsed}) => {
   );
 
   // Filter by role
-  const filteredByRole = filteredUsers.filter(user => 
-    roleFilter === 'All' || user.role?.toLowerCase() === roleFilter.toLowerCase()
-  );
+  const filteredByRole = filteredUsers.filter(user => {
+    if (roleFilter === 'All') return true;
+    if (roleFilter === 'Active') return user.isActive !== false;
+    if (roleFilter === 'Inactive') return user.isActive === false;
+    return user.role?.toLowerCase() === roleFilter.toLowerCase();
+  });
 
   // Count users and admins
+  const totalCount = filteredByRole.length;
   const userCount = filteredByRole.filter(user => user.role?.toLowerCase() === 'user').length;
   const adminCount = filteredByRole.filter(user => user.role?.toLowerCase() === 'admin').length;
+  const activeCount = filteredByRole.filter(user => user.isActive !== false).length;
+  const inactiveCount = filteredByRole.filter(user => user.isActive === false).length;
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -119,59 +125,64 @@ const AllUsers = ({collapsed}) => {
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
         )}>
           <div className="container mx-auto px-4 py-6">
-            {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 max-w-7xl mx-auto gap-4">
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-200">
-                Users Management
-              </h1>
-              
-              {/* Controls Section */}
-              <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-                {/* Search Input */}
-                <div className="relative flex-grow max-w-xs">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search users..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                  />
-                </div>
-                
-                {/* Role Filter Dropdown */}
-                <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <select
-                    value={roleFilter}
-                    onChange={(e) => setRoleFilter(e.target.value)}
-                    className="pl-10 pr-8 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-white appearance-none bg-white cursor-pointer"
-                  >
-                    <option value="All">All Roles</option>
-                    <option value="User">Users Only</option>
-                    <option value="Admin">Admins Only</option>
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
-                </div>
-                
-                <button
-                  onClick={() => setShowAddUserForm(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-[#ff8633] text-white rounded-lg transition-colors hover:bg-[#e57328] whitespace-nowrap text-sm font-medium"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6z" />
-                  </svg>
-                  Add User
-                </button>
-              </div>
-            </div>
 
-            {/* Stats Cards */}
-            <div className="max-w-7xl mx-auto mb-6 grid grid-cols-1 sm:grid-cols-3 gap-4">
+{/* Header Section */}
+<div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 max-w-7xl mx-auto gap-6">
+  <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-200">
+    Users Management
+  </h1>
+  
+  {/* Controls Section */}
+  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+    {/* Search Input */}
+    <div className="relative w-full sm:w-80">
+      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <input
+        type="text"
+        placeholder="Search users..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+      />
+    </div>
+    
+    {/* Role Filter Dropdown */}
+    <div className="relative w-full sm:w-44">
+      <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+      <select
+        value={roleFilter}
+        onChange={(e) => setRoleFilter(e.target.value)}
+        className="w-full pl-10 pr-8 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-white appearance-none bg-white cursor-pointer"
+      >
+        <option value="All">All Users</option>
+        <option value="User">Users Only</option>
+        <option value="Admin">Admins Only</option>
+        <option value="Active">Active Only</option>
+        <option value="Inactive">Inactive Only</option>
+      </select>
+      <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+        </svg>
+      </div>
+    </div>
+    
+    {/* Add User Button */}
+    <button
+      onClick={() => setShowAddUserForm(true)}
+      className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#ff8633] text-white rounded-lg transition-all duration-200 hover:bg-[#e57328] hover:shadow-md whitespace-nowrap text-sm font-medium"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+        <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 616 6H2a6 6 0 016-6z" />
+      </svg>
+      Add User
+    </button>
+  </div>
+</div>
+
+            {/* Stats Cards - Added more cards with proper counts */}
+            <div className="max-w-7xl mx-auto mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              {/* Total Users */}
               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
@@ -179,15 +190,29 @@ const AllUsers = ({collapsed}) => {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{filteredByRole.length}</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
                   </div>
                 </div>
               </div>
               
+              {/* Admins */}
               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                    <UserCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                    <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Admins</p>
+                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{adminCount}</p>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Users */}
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                    <UserCheck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
                   </div>
                   <div>
                     <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Users</p>
@@ -195,17 +220,29 @@ const AllUsers = ({collapsed}) => {
                   </div>
                 </div>
               </div>
-              
+
+              {/* Active Users - Green */}
               <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                    <svg className="h-5 w-5 text-purple-600 dark:text-purple-400" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-6-3a2 2 0 11-4 0 2 2 0 014 0zm-2 4a5 5 0 00-4.546 2.916A5.986 5.986 0 0010 16a5.986 5.986 0 004.546-2.084A5 5 0 0010 11z" />
-                    </svg>
+                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                    <Activity className="h-5 w-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Admins</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{adminCount}</p>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active</p>
+                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{activeCount}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Inactive Users - Red */}
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                    <UserX className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Inactive</p>
+                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{inactiveCount}</p>
                   </div>
                 </div>
               </div>
@@ -229,14 +266,18 @@ const AllUsers = ({collapsed}) => {
                 {filteredByRole.map((user) => (
                   <div key={user.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-600 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1">
                     <div className="relative">
-                      <img
-                        src={user.photo || 'https://randomuser.me/api/portraits/men/1.jpg'}
-                        alt={`${user.firstName} ${user.lastName}`}
-                        className="w-full h-32 object-cover"
-                        onError={(e) => {
-                          e.target.src = 'https://randomuser.me/api/portraits/men/1.jpg';
-                        }}
-                      />
+                      {/* Circular Profile Image */}
+                      <div className="flex justify-center pt-4">
+                        <img
+                          src={user.photo || 'https://randomuser.me/api/portraits/men/1.jpg'}
+                          alt={`${user.firstName} ${user.lastName}`}
+                          className="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-sm"
+                          onError={(e) => {
+                            e.target.src = 'https://randomuser.me/api/portraits/men/1.jpg';
+                          }}
+                        />
+                      </div>
+                      
                       <div className="absolute top-2 right-2">
                         <button
                           onClick={() => handleEditUser(user.id)}
@@ -249,20 +290,34 @@ const AllUsers = ({collapsed}) => {
                         </button>
                       </div>
                       
+                      {/* Status Badge - Green for Active, Red for Inactive */}
+                      <div className="absolute top-2 left-2">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
+                          user.isActive !== false
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${
+                            user.isActive !== false ? 'bg-green-500' : 'bg-red-500'
+                          }`}></div>
+                          {user.isActive !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+
                       {/* Role Badge */}
-                      <div className="absolute bottom-2 left-2">
+                      <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                           user.role?.toLowerCase() === 'admin' 
                             ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                            : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
                         }`}>
                           {user.role}
                         </span>
                       </div>
                     </div>
 
-                    <div className="p-3">
-                      <div className="mb-2">
+                    <div className="p-4 pt-2">
+                      <div className="mb-2 text-center">
                         <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                           {user.firstName} {user.lastName}
                         </h3>
@@ -296,7 +351,7 @@ const AllUsers = ({collapsed}) => {
 
                       {user.statusOfWork && (
                         <div className="mt-2">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 justify-center">
                             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                             <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                               {user.statusOfWork}

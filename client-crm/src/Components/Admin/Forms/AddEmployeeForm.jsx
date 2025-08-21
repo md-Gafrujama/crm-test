@@ -72,8 +72,6 @@ const AddEmployeeForm = ({ isOpen, onClose }) => {
     };
   }, [isOpen]);
 
-
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file && file.size > 2 * 1024 * 1024) {
@@ -102,7 +100,6 @@ const AddEmployeeForm = ({ isOpen, onClose }) => {
     }
   };
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -130,7 +127,6 @@ const AddEmployeeForm = ({ isOpen, onClose }) => {
           }
         }
       );
-
 
       toast.success("Account created successfully!", {
         position: "top-right",
@@ -168,25 +164,25 @@ const AddEmployeeForm = ({ isOpen, onClose }) => {
   return (
     <>
       <div
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300"
+        className="fixed inset-0 bg-black bg-opacity-50 z-30 transition-opacity duration-300"
         onClick={onClose}
       />
       <div
         ref={panelRef}
-        className={`fixed inset-y-0 right-0 w-full max-w-xl bg-white dark:bg-slate-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
+        className={`fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-slate-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : 'translate-x-full'
           }`}
       >
         <div className="h-full flex flex-col">
-          <div className={`px-6 py-4 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
+          <div className={`px-4 py-3 border-b ${theme === 'dark' ? 'border-slate-700' : 'border-gray-200'}`}>
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold dark:text-gray-300">Add New Employee</h2>
+              <h2 className="text-lg font-semibold dark:text-gray-300">Add New Employee</h2>
               <button
                 onClick={onClose}
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6"
+                  className="h-5 w-5"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -196,283 +192,273 @@ const AddEmployeeForm = ({ isOpen, onClose }) => {
               </button>
             </div>
           </div>
-          <div className="flex-1 overflow-y-auto p-6">
-            <div className="flex items-center justify-center min-h-screen p-5">
-              <Suspense fallback={
-                <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-xl w-full max-w-2xl border border-gray-100">
-                  <div className="animate-pulse">
-                    <div className="h-8 bg-gray-200 rounded w-3/4 mb-6 mx-auto"></div>
-                    <div className="h-4 bg-gray-200 rounded w-1/2 mb-8 mx-auto"></div>
-                  </div>
+          <div className="flex-1 overflow-y-auto p-4">
+            <Suspense fallback={
+              <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl w-full border border-gray-100">
+                <div className="animate-pulse">
+                  <div className="h-6 bg-gray-200 rounded w-3/4 mb-4 mx-auto"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 mb-6 mx-auto"></div>
                 </div>
-              }>
-                <form
-                  onSubmit={handleSubmit}
-                  className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-2xl  transition-all"
-                >
+              </div>
+            }>
+              <form
+                onSubmit={handleSubmit}
+                className="bg-white dark:bg-slate-800 rounded-xl w-full transition-all"
+              >
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-bold text-gray-800 dark:text-gray-400 mb-1">Employee Management</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Add Employees</p>
+                </div>
 
-
-                  <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-400 mb-2">Employee Management</h2>
-                    <p className="text-gray-500 dark:text-gray-400">Add Employees</p>
+                {/* Profile Photo Upload */}
+                <div className="mb-4 flex flex-col items-center">
+                  <div className="relative w-16 h-16 mb-3 rounded-full overflow-hidden border-2 border-gray-200">
+                    {previewImage ? (
+                      <img
+                        src={previewImage}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                        <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                      </div>
+                    )}
                   </div>
+                  <label className="cursor-pointer">
+                    <span className="px-3 py-1.5 text-sm bg-[#ff8633] text-white rounded-lg hover:bg-[#e6732b] transition">
+                      Upload Photo
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
 
-                  {/* Profile Photo Upload */}
-                  <div className="mb-6 flex flex-col items-center">
-                    <div className="relative w-24 h-24 mb-4 rounded-full overflow-hidden border-2 border-gray-200">
-                      {previewImage ? (
-                        <img
-                          src={previewImage}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                          <svg className="w-12 h-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                          </svg>
-                        </div>
-                      )}
-                    </div>
-                    <label className="cursor-pointer">
-                      <span className="px-4 py-2 bg-[#ff8633] text-white rounded-lg hover:bg-[#e6732b] transition">
-                        Upload Photo
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleFileChange}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                    <div>
-                      <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
-                        First Name
-                      </label>
-                      <input
-                        type="text"
-                        id="firstName"
-                        name="firstName"
-                        value={formData.firstName}
-                        onChange={handleChange}
-                        required
-                        className="dark:text-gray-400 w-full text-center px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                        placeholder="John"
-                        autoComplete="given-name"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="middleName" className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
-                        Middle Name
-                      </label>
-                      <input
-                        type="text"
-                        id="middleName"
-                        name="middleName"
-                        value={formData.middleName}
-                        onChange={handleChange}
-                        className="dark:text-gray-400 w-full px-4 text-center py-3 rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                        placeholder="Doe"
-                        autoComplete="family-name"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
-                        Last Name
-                      </label>
-                      <input
-                        type="text"
-                        id="lastName"
-                        name="lastName"
-                        value={formData.lastName}
-                        onChange={handleChange}
-                        required
-                        className="dark:text-gray-400 w-full px-4 text-center py-3 rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                        placeholder="Doe"
-                        autoComplete="family-name"
-                      />
-                    </div>
-                  </div>
-
-
-                  <div className="mb-4">
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
-                      Email (Official)
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  <div>
+                    <label htmlFor="firstName" className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
+                      First Name
                     </label>
                     <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
+                      type="text"
+                      id="firstName"
+                      name="firstName"
+                      value={formData.firstName}
                       onChange={handleChange}
                       required
-                      className="dark:text-gray-400 w-full px-4  text-center py-3 rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                      placeholder="your@email.com"
-                      autoComplete="email"
+                      className="dark:text-gray-400 w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                      placeholder="John"
+                      autoComplete="given-name"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="middleName" className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
+                      Middle Name
+                    </label>
+                    <input
+                      type="text"
+                      id="middleName"
+                      name="middleName"
+                      value={formData.middleName}
+                      onChange={handleChange}
+                      className="dark:text-gray-400 w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                      placeholder="M"
+                      autoComplete="additional-name"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="lastName" className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      id="lastName"
+                      name="lastName"
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      required
+                      className="dark:text-gray-400 w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                      placeholder="Doe"
+                      autoComplete="family-name"
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-3">
+                  <label htmlFor="email" className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
+                    Email (Official)
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="dark:text-gray-400 w-full px-3 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                    placeholder="your@email.com"
+                    autoComplete="email"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-3">
+                  <div>
+                    <label htmlFor="phone" className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
+                      Phone Number
+                    </label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="dark:text-gray-400 w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                      placeholder="123-456-7890"
+                      autoComplete="tel"
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="mb-4">
-                      <label htmlFor="phone" className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
-                        Phone Number
-                      </label>
-                      <input
-                        type="tel"
-                        id="phone"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="dark:text-gray-400 w-full px-4  text-center py-3 rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                        placeholder="+1 (123) 456-7890"
-                        autoComplete="tel"
-                      />
-                    </div>
-
-                    <div className="mb-4">
-                      <label htmlFor="whatsappphone" className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
-                        Whatsapp Number
-                      </label>
-                      <input
-                        type="tel"
-                        id="whatsappphone"
-                        name="whatsappphone"
-                        value={formData.whatsappphone}
-                        onChange={handleChange}
-                        className="dark:text-gray-400 w-full px-4  text-center py-3 rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                        placeholder="+1 (123) 456-7890"
-                        autoComplete="tel"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="mb-4">
-                    <label htmlFor="department" className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
-                      Department
+                  <div>
+                    <label htmlFor="whatsappphone" className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
+                      WhatsApp
                     </label>
-                    <select
-                      id="department"
-                      name="department"
-                      value={formData.department}
+                    <input
+                      type="tel"
+                      id="whatsappphone"
+                      name="whatsappphone"
+                      value={formData.whatsappphone}
                       onChange={handleChange}
-                      required
-                      className="dark:text-gray-400 w-full px-4 py-3 cursor-pointer rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                    >
-                      <option value="">Select Department</option>
-                      {Object.keys(departmentRoles).map(dept => (
-                        <option key={dept} value={dept}>{dept}</option>
-                      ))}
-                    </select>
+                      className="dark:text-gray-400 w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                      placeholder="123-456-7890"
+                      autoComplete="tel"
+                    />
                   </div>
+                </div>
 
-                  <div className="mb-4">
-                    <label htmlFor="role" className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
-                      Role
-                    </label>
-                    <select
-                      id="role"
-                      name="role"
-                      value={formData.role}
-                      onChange={handleChange}
-                      required
-                      disabled={!formData.department}
-                      className="dark:text-gray-400 w-full px-4 py-3 cursor-pointer rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                    >
-                      <option value="">Select Role</option>
-                      {formData.department && departmentRoles[formData.department].map(role => (
-                        <option key={role} value={role}>{role}</option>
-                      ))}
-                    </select>
-                  </div>
-
-
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-800 dark:text-gray-400 mb-3 text-center">Status</label>
-                    <div className="flex justify-center space-x-6">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="status"
-                          value="active"
-                          checked={formData.status === 'active'}
-                          onChange={handleChange}
-                          className="hidden"
-                        />
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition ${formData.status === 'active' ? 'border-[#ff8633]' : 'border-gray-300'}`}>
-                          {formData.status === 'active' && <div className="w-3 h-3 rounded-full bg-[#ff8633]"></div>}
-                        </div>
-                        <span className="text-gray-700 dark:text-gray-400">Active</span>
-                      </label>
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="radio"
-                          name="status"
-                          value="inactive"
-                          checked={formData.status === 'inactive'}
-                          onChange={handleChange}
-                          className="hidden"
-                        />
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition ${formData.status === 'inactive' ? 'border-[#ff8633]' : 'border-gray-300'}`}>
-                          {formData.status === 'inactive' && <div className="w-3 h-3 rounded-full bg-[#ff8633]"></div>}
-                        </div>
-                        <span className="text-gray-700 dark:text-gray-400">Inactive</span>
-                      </label>
-                    </div>
-                  </div>
-
-
-                  <div className='grid grid-cols-1 md:grid-cols-2 gap-4 mb-4'>
-                    <div className="mb-4">
-                      <label htmlFor="username" className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
-                        Username
-                      </label>
-                      <input
-                        type="text"
-                        id="username"
-                        name="username"
-                        value={formData.username}
-                        onChange={handleChange}
-                        required
-                        className="dark:text-gray-400 w-full text-center px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                        placeholder="john_doe"
-                        autoComplete="username"
-                      />
-                    </div>
-
-                    <div className="relative mb-4">
-                      <label htmlFor="date" className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">
-                        Joining Date
-                      </label>
-                      <input
-                        type="date"
-                        id="joiningdate"
-                        name="joiningdate"
-                        value={formData.joiningdate}
-                        onChange={handleChange}
-                        required
-                        className="dark:text-gray-400 w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all pr-12"
-                        autoComplete="new-password"
-                      />
-                    </div>
-                  </div>
-
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className={`w-full cursor-pointer bg-gradient-to-r from-[#ff8633] to-[#ff9a52] text-white py-3 rounded-lg font-medium hover:from-[#e6732b] hover:to-[#e6732b] transition-all shadow-md hover:shadow-lg active:scale-95 transform ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
-                      }`}
+                <div className="mb-3">
+                  <label htmlFor="department" className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
+                    Department
+                  </label>
+                  <select
+                    id="department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleChange}
+                    required
+                    className="dark:text-gray-400 w-full px-3 py-2 text-sm cursor-pointer rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                   >
-                    {isSubmitting ? 'Adding Employee...' : 'Add Employee'}
-                  </button>
+                    <option value="">Select Department</option>
+                    {Object.keys(departmentRoles).map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                </div>
 
-                </form>
-              </Suspense>
-            </div>
+                <div className="mb-3">
+                  <label htmlFor="role" className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
+                    Role
+                  </label>
+                  <select
+                    id="role"
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    required
+                    disabled={!formData.department}
+                    className="dark:text-gray-400 w-full px-3 py-2 text-sm cursor-pointer rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                  >
+                    <option value="">Select Role</option>
+                    {formData.department && departmentRoles[formData.department].map(role => (
+                      <option key={role} value={role}>{role}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-xs font-medium text-gray-800 dark:text-gray-400 mb-2">Status</label>
+                  <div className="flex justify-center space-x-4">
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="status"
+                        value="active"
+                        checked={formData.status === 'active'}
+                        onChange={handleChange}
+                        className="hidden"
+                      />
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition ${formData.status === 'active' ? 'border-[#ff8633]' : 'border-gray-300'}`}>
+                        {formData.status === 'active' && <div className="w-2 h-2 rounded-full bg-[#ff8633]"></div>}
+                      </div>
+                      <span className="text-sm text-gray-700 dark:text-gray-400">Active</span>
+                    </label>
+                    <label className="flex items-center space-x-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="status"
+                        value="inactive"
+                        checked={formData.status === 'inactive'}
+                        onChange={handleChange}
+                        className="hidden"
+                      />
+                      <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center transition ${formData.status === 'inactive' ? 'border-[#ff8633]' : 'border-gray-300'}`}>
+                        {formData.status === 'inactive' && <div className="w-2 h-2 rounded-full bg-[#ff8633]"></div>}
+                      </div>
+                      <span className="text-sm text-gray-700 dark:text-gray-400">Inactive</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div className='grid grid-cols-2 gap-3 mb-4'>
+                  <div>
+                    <label htmlFor="username" className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
+                      Username
+                    </label>
+                    <input
+                      type="text"
+                      id="username"
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      required
+                      className="dark:text-gray-400 w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                      placeholder="john_doe"
+                      autoComplete="username"
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="joiningdate" className="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">
+                      Joining Date
+                    </label>
+                    <input
+                      type="date"
+                      id="joiningdate"
+                      name="joiningdate"
+                      value={formData.joiningdate}
+                      onChange={handleChange}
+                      required
+                      className="dark:text-gray-400 w-full px-2 py-2 text-sm rounded-lg border border-gray-300 dark:border-slate-700 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className={`w-full cursor-pointer bg-gradient-to-r from-[#ff8633] to-[#ff9a52] text-white py-2.5 text-sm rounded-lg font-medium hover:from-[#e6732b] hover:to-[#e6732b] transition-all shadow-md hover:shadow-lg active:scale-95 transform ${isSubmitting ? 'opacity-75 cursor-not-allowed' : ''
+                    }`}
+                >
+                  {isSubmitting ? 'Adding Employee...' : 'Add Employee'}
+                </button>
+              </form>
+            </Suspense>
           </div>
         </div>
       </div>
