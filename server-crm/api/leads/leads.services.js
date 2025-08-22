@@ -1,10 +1,11 @@
 import prisma from "../../prisma/prismaClient.js";
+import { subDays, subMonths, startOfWeek, startOfMonth } from 'date-fns';
 
 export function createLead(data) {
   return prisma.lead.create({ data });
 }
 
-export function fetchLeadsByUser(userId, userType, username, companyId) {
+export async function fetchLeadsByUser(userId, userType, username, companyId) {
   const query = {
     where: {
       isCurrentVersion: true,
@@ -37,6 +38,60 @@ export function fetchLeadsByUser(userId, userType, username, companyId) {
 
   return prisma.lead.findMany(query);
 }
+
+
+export async function fetchTimelyLeadsByUser(userId, userType, username, companyId, today, filterType = "weekly") {
+  const currentDate = new Date(today);
+
+  let startDate;
+  if (filterType === "weekly") {
+    startDate = startOfWeek(currentDate, { weekStartsOn: 1 }); 
+  } else if (filterType === "monthly") {
+    startDate = startOfMonth(currentDate);
+  } else {
+    throw new Error("Invalid filterType. Use 'weekly' or 'monthly'.");
+  }
+
+  const query = {
+    where: {
+      isCurrentVersion: true,
+      createdAt: {
+        gte: startDate,
+        lte: currentDate,
+      },
+      ...(userType !== "admin" && {
+        uid: userId,
+        companyId: companyId,
+      }),
+    },
+    select: {
+      id: true,
+      uid: true,
+      username: true,
+      companyId: true,
+      title: true,
+      customerFirstName: true,
+      customerLastName: true,
+      emailAddress: true,
+      phoneNumber: true,
+      companyName: true,
+      jobTitle: true,
+      topicOfWork: true,
+      industry: true,
+      status: true,
+      serviceInterestedIn: true,
+      closingDate: true,
+      notes: true,
+      rootId: true,
+      versionNumber: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  };
+
+  return prisma.lead.findMany(query);
+}
+
 
 export async function deleteLeadById(id) {
   const leadToDelete = await prisma.lead.findUnique({

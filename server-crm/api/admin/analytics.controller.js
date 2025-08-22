@@ -1,5 +1,6 @@
 import express from "express";
 import prisma from "../../prisma/prismaClient.js";
+import client from "../../middleware/redis.middleware.js";
 
 const analytics = {
   async getLeadsData(req, res) {
@@ -12,6 +13,16 @@ const analytics = {
           msg: "You are not the admin so we cannot fetch the request data.",
         });
         return;
+      }
+
+      const cacheKey = `leadsData:${companyId}`;
+      const cachedData = await client.get(cacheKey);
+
+      if (cachedData) {
+        return res.status(200).json({
+          msg: "Fetched leads data from cache.",
+          ...JSON.parse(cachedData),
+        });
       }
 
       const qualifiedLeads = await prisma.Lead.count({
@@ -29,7 +40,13 @@ const analytics = {
           companyId: companyId,
           isCurrentVersion: true,
           status: {
-            in: ["Contacted","Engaged","On Hold","Proposal sent","Negotiation",],
+            in: [
+              "Contacted",
+              "Engaged",
+              "On Hold",
+              "Proposal sent",
+              "Negotiation",
+            ],
           },
         },
       });
@@ -44,10 +61,17 @@ const analytics = {
         },
       });
 
+      const totalLeads = qualifiedLeads + pendingLeads + lossLeads;
+
+      const responseData = {
+        totalLeads,qualifiedLeads,pendingLeads,lossLeads
+      }
+
+      await client.set(cacheKey, JSON.stringify(responseData), "EX", 600);
+
       // const qualifiedLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Qualified"}});
       // const lossLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Do Not Contact"}});
 
-      const totalLeads = qualifiedLeads + pendingLeads + lossLeads;
 
       res.status(200).json({
         msg: "Successfully fetched leads data from analytics.",
@@ -75,13 +99,24 @@ const analytics = {
         return;
       }
 
-      const totalUser = await prisma.User.count({ where: { companyId: companyId },   });
-      const activeUser = await prisma.User.count({ where: { companyId: companyId, locked: false },  });
-      const totalEmployee = await prisma.Employee.count({ where: { companyId: companyId },      });
+      const totalUser = await prisma.User.count({
+        where: { companyId: companyId },
+      });
+      const activeUser = await prisma.User.count({
+        where: { companyId: companyId, locked: false },
+      });
+      const totalEmployee = await prisma.Employee.count({
+        where: { companyId: companyId },
+      });
 
-      const conversionRateFromTotal =        totalUser > 0 ? (totalEmployee / totalUser) * 100 : 0;
-      const conversionRateFromActive =        activeUser > 0 ? (totalEmployee / activeUser) * 100 : 0;
-      const detail =        conversionRateFromActive > 100          ? "You should have more employee than user"          : "Good";
+      const conversionRateFromTotal =
+        totalUser > 0 ? (totalEmployee / totalUser) * 100 : 0;
+      const conversionRateFromActive =
+        activeUser > 0 ? (totalEmployee / activeUser) * 100 : 0;
+      const detail =
+        conversionRateFromActive > 100
+          ? "You should have more employee than user"
+          : "Good";
 
       res.status(200).json({
         msg: "Successfully fetched user's data for analytics.",

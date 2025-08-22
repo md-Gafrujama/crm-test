@@ -1,15 +1,6 @@
 import prisma from "../../prisma/prismaClient.js";
-import {
-  fetchLeadsByUser,
-  createLead,
-  deleteLeadById,
-  updateLeadById,
-  fetchLeadWithHistory,
-} from "./leads.services.js";
-import {
-  convertLeadsToCSV,
-  convertStringToISODateString,
-} from "../../utilis/csvExporter.js";
+import {  fetchLeadsByUser,  fetchTimelyLeadsByUser,  createLead,  deleteLeadById,  updateLeadById,  fetchLeadWithHistory,} from "./leads.services.js";
+import { convertLeadsToCSV, convertStringToISODateString} from "../../utilis/csvExporter.js";
 
 const leadsWork = {
   async addLeads(req, res) {
@@ -71,6 +62,36 @@ const leadsWork = {
     } catch (error) {
       console.error("Get Leads Error:", error);
       res.status(500).json({ error: "Failed to fetch leads" });
+    }
+  },
+
+  async getLeadsWeekly(req,res){
+    try {
+      const today = new Date();
+     const { uid, userType, username, companyId } = req.user;
+      const leads = await fetchTimelyLeadsByUser(uid, userType, username, companyId);
+      res.status(200).json(leads);
+    }
+    catch(error){
+      res.status(500).json({
+        msg:"Something went wrong in the server.",
+        error: error.message|| error,
+      })
+    }
+  },
+
+  async getLeadsMonthly(req,res){
+    try {
+      const today = new Date();
+      const { uid, userType, username, companyId } = req.user;
+      const leads = await fetchTimelyLeadsByUser(uid, userType, username, companyId,today);
+      res.status(200).json(leads);
+    }
+    catch(error){
+      res.status(500).json({
+        msg:"Something went wrong in the server.",
+        error: error.message|| error,
+      })
     }
   },
 

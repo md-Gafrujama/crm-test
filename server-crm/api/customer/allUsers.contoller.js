@@ -95,6 +95,77 @@ const allUsersDetail = {
       });
     }
   },
+
+  async onlyActive(req,res){
+    const companyId = req.user.companyId;
+    const userType = req.user.userType;
+    try{
+
+      if(userType!== "admin"){
+        res.status(500).json({
+          msg : "Sorry you are not an authorized person to get the data",
+        })
+        return;
+      }
+      
+      const data = await prisma.User.findMany({where:{
+        statusOfWork : "active",
+        companyId : companyId,
+      }})
+
+
+      const dataCount = await prisma.User.count({where:{
+        statusOfWork : "active",
+        companyId : companyId,
+      }})
+
+      res.status(200).json({
+        data: data,
+        count : dataCount
+      })
+    }
+    catch(error){
+      res.status(500).json({
+        msg:"Something went wrong in server. We will soon fix it",
+        error: error.message || error
+      })
+    }
+  },
+
+  async onlyInactive(req,res){
+    const companyId = req.user.companyId;
+    const userType = req.user.userType;
+    try{
+
+      if(userType!== "admin"){
+        res.status(500).json({
+          msg : "Sorry you are not an authorized person to get the data",
+        })
+        return;
+      }
+      const data = await prisma.User.findMany({where:{
+        statusOfWork : "active",
+        companyId : companyId,
+      }})
+
+      
+      const dataCount = await prisma.User.count({where:{
+        statusOfWork : "" || "inactive",
+        companyId : companyId
+      }})
+
+      res.status(200).json({
+        data:data,
+        count : dataCount
+      })
+    }
+    catch(error){
+      res.status(500).json({
+        msg:"Something went wrong in server. We will soon fix it",
+        error: error.message || error
+      })
+    }
+  },
 };
 
 export default allUsersDetail;

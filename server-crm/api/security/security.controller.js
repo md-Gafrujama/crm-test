@@ -50,8 +50,9 @@ export const unlockAccount = async (req, res) => {
 
 export const getLockedAccounts = async (req, res) => {
   try {
+    const companyId = req.user.companyId;
     const lockedUsers = await prisma.user.findMany({
-      where: { locked: true },
+      where: { locked: true,  companyId : companyId},
       select: {
         id: true,
         email: true,

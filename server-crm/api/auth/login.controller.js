@@ -10,16 +10,14 @@ const NODE_ENV = process.env.NODE_ENV;
 const JWT_OPTIONS = { expiresIn: "1h" };
 
 const validateInput = (email, username, password) => {
-  return (email || username) && password;
+  return (email && username) && password;
 };
 
 const getUserByCredentials = async (email, username) => {
   return await prisma.user.findFirst({
     where: {
-      OR: [
-        email ? { email } : undefined,
-        username ? { username } : undefined
-      ].filter(Boolean)
+      email,
+      username
     },
     select: {
       id: true,
@@ -29,17 +27,18 @@ const getUserByCredentials = async (email, username) => {
       lastName: true,
       role: true,
       hashedPassword: true,
-      locked:true
+      locked: true
     }
   });
 };
+
 
 export const loginUser = async (req, res) => {
   const { email, username, password } = req.body;
 
   if (!validateInput(email, username, password)) {
     return res.status(400).json({
-      message: "Email/username and password are required"
+      message: "Email, username and password are required"
     });
   }
 
