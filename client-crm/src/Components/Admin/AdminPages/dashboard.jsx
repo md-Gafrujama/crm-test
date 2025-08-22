@@ -349,66 +349,69 @@ useEffect(() => {
           )}
         >
           <main className="p-6">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-              {stats.map((stat) => (
-                <div
-                  key={stat.id}
-                  className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
-                >
-                  {/* Background Gradient Overlay */}
-                  <div className={"absolute inset-0 bg-gradient-to-br " + stat.color + " opacity-5 group-hover:opacity-10 transition-opacity duration-300"} />
-                  
-                  {/* Main Content */}
-                  <div className="relative p-6">
-                    {/* Header with Icon and Change */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className={"p-3 rounded-xl " + stat.lightColor + " dark:" + stat.lightColor.replace("bg-", "bg-").replace("-50", "-900/30") + " group-hover:scale-110 transition-transform duration-300"}>
-                        <div className={stat.textColor + " dark:" + stat.textColor.replace("text-", "text-").replace("-600", "-400")}>
-                          {stat.icon}
-                        </div>
-                      </div>
-                      
-                      <div className={"flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold " + (stat.trend === "up" 
-                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                          : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400") + " group-hover:scale-105 transition-transform duration-300"}>
-                        <TrendingUp className={"h-3 w-3 " + (stat.trend === "down" ? "rotate-180" : "")} />
-                        {stat.change}
-                      </div>
-                    </div>
 
-                    {/* Stats Value */}
-                    <div className="space-y-2 mb-4">
-                      <h3 className="text-3xl font-bold text-gray-900 dark:text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
-                        {stat.value}
-                      </h3>
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{stat.title}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
-                      </div>
-                    </div>
-
-                    {/* Bottom Section */}
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-                      <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                        <div className={"w-2 h-2 rounded-full " + (stat.trend === "up" ? "bg-emerald-500" : "bg-red-500")} />
-                        {stat.subtitle}
-                      </div>
-                      <div className={"text-xs font-medium " + (stat.trend === "up" 
-                          ? "text-emerald-600 dark:text-emerald-400" 
-                          : "text-red-600 dark:text-red-400")}>
-                        {stat.change}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Animated Progress Bar */}
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
-                    <div className={"h-full bg-gradient-to-r " + stat.color + " transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"} />
-                  </div>
-                </div>
-              ))}
+{/* Stats Grid */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+  {stats.map((stat) => (
+    <div
+      key={stat.id}
+      className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-0.5"
+    >
+      {/* Background Gradient Overlay */}
+      <div className={"absolute inset-0 bg-gradient-to-br " + stat.color + " opacity-5 group-hover:opacity-10 transition-opacity duration-300"} />
+      
+      {/* Main Content */}
+      <div className="relative p-4">
+        {/* Header with Icon and Change */}
+        <div className="flex items-start justify-between mb-3">
+          <div className={"p-2 rounded-xl " + stat.lightColor + " dark:" + stat.lightColor.replace("bg-", "bg-").replace("-50", "-900/30") + " group-hover:scale-110 transition-transform duration-300"}>
+            <div className={stat.textColor + " dark:" + stat.textColor.replace("text-", "text-").replace("-600", "-400")}>
+              {stat.icon}
             </div>
+          </div>
+          
+          <div className={"flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold " + (stat.trend === "up" 
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400") + " group-hover:scale-105 transition-transform duration-300"}>
+            <TrendingUp className={"h-3 w-3 " + (stat.trend === "down" ? "rotate-180" : "")} />
+            {stat.change}
+          </div>
+        </div>
+
+        {/* Stats Value */}
+        <div className="space-y-2 mb-3">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
+            {stat.value}
+          </h3>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{stat.title}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
+          </div>
+        </div>
+
+        {/* Bottom Section */}
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <div className={"w-2 h-2 rounded-full " + (stat.trend === "up" ? "bg-emerald-500" : "bg-red-500")} />
+            {stat.subtitle}
+          </div>
+          <div className={"text-xs font-medium " + (stat.trend === "up" 
+              ? "text-emerald-600 dark:text-emerald-400" 
+              : "text-red-600 dark:text-red-400")}>
+            {stat.change}
+          </div>
+        </div>
+      </div>
+
+      {/* Animated Progress Bar */}
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
+        <div className={"h-full bg-gradient-to-r " + stat.color + " transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500"} />
+      </div>
+    </div>
+  ))}
+</div>
+
+
 
             {/* Recent Activities */}
             <div className="mb-8">
@@ -471,76 +474,78 @@ useEffect(() => {
 
             {/* Bottom Section */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              {/* Alerts & Reminders */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
-                      <Calendar className="h-5 w-5 text-purple-600" />
-                      Alerts & Reminders
-                    </h2>
-                    <button
-                      onClick={() => setShowAddAlertReminderForm(true)}
-                      className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-sm font-medium"
+        {/* Alerts & Reminders */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-purple-600" />
+                Alerts & Reminders
+              </h2>
+              <button
+                onClick={() => setShowAddAlertReminderForm(true)}
+                className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-xs font-medium"
+              >
+                <Plus className="h-3 w-3" />
+                Add
+              </button>
+            </div>
+          </div>
+          <div className="p-4">
+            {alerts.length > 0 ? (
+              <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {alerts.slice(0, 2).map((alert) => (
+                    <div
+                      key={alert.id}
+                      className="aspect-square p-3 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 rounded-lg border border-purple-100 dark:border-gray-600 flex flex-col justify-between"
                     >
-                      <Plus className="h-4 w-4" />
-                      Add New
-                    </button>
-                  </div>
-                </div>
-                <div className="p-6">
-                  {alerts.length > 0 ? (
-                    <div className="space-y-4">
-                      {alerts.map((alert) => (
-                        <div
-                          key={alert.id}
-                          className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 rounded-lg border border-purple-100 dark:border-gray-600"
-                        >
-                          <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                            {alert.topic}
-                          </h4>
-                          <div className="grid grid-cols-2 gap-2 text-xs">
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(alert.date).toLocaleDateString()}
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300">
-                              <Clock className="h-3 w-3" />
-                              {alert.time}
-                            </div>
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-300 col-span-2">
-                              <Bell className="h-3 w-3" />
-                              {alert.remainder}
-                            </div>
+                      <div>
+                        <h4 className="font-medium text-gray-900 dark:text-white mb-2 text-sm line-clamp-1">
+                          {alert.topic}
+                        </h4>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
+                            <Calendar className="h-2.5 w-2.5" />
+                            {new Date(alert.date).toLocaleDateString()}
                           </div>
-                          {alert.description && (
-                            <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 p-2 bg-white/50 dark:bg-gray-800/50 rounded">
-                              {alert.description}
-                            </p>
-                          )}
+                          <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
+                            <Clock className="h-2.5 w-2.5" />
+                            {alert.time}
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 mx-auto bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mb-4">
-                        <Calendar className="h-8 w-8 text-gray-400" />
                       </div>
-                      <p className="text-gray-500 dark:text-gray-400 mb-2">No alerts or reminders</p>
-                      <p className="text-sm text-gray-400 dark:text-gray-500">Create your first alert to get started</p>
+                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        <Bell className="h-2.5 w-2.5" />
+                        <span className="truncate">{alert.remainder}</span>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-                <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700 rounded-b-xl">
-                  <button
-                    onClick={() => navigate("/all-alerts-reminders")}
-                    className="text-sm font-medium text-purple-600 hover:text-purple-700 flex items-center gap-2"
-                  >
-                    View All Events
-                    <ArrowRight className="h-4 w-4" />
-                  </button>
-                </div>
+                
+                {alerts.length > 2 && (
+                  <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+                    +{alerts.length - 2} more
+                  </p>
+                )}
               </div>
+            ) : (
+              <div className="text-center py-6">
+                <Calendar className="h-8 w-8 mx-auto text-gray-400 mb-2" />
+                <p className="text-sm text-gray-500 dark:text-gray-400">No alerts yet</p>
+              </div>
+            )}
+          </div>
+          <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-b-xl">
+            <button
+              onClick={() => navigate("/all-alerts-reminders")}
+              className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
+            >
+              View All
+              <ArrowRight className="h-3 w-3" />
+            </button>
+          </div>
+        </div>
 
               {/* Quick Actions */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">

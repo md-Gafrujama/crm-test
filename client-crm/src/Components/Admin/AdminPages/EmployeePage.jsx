@@ -86,73 +86,79 @@ const EmployeePage = ({collapsed}) => {
   chartData[3].percentage = ((totalDepartments / (totalDepartments + totalEmployees)) * 100).toFixed(1);
 
   // Simple pie chart component
-  const PieChart = ({ data }) => {
-    const size = 200;
-    const center = size / 2;
-    const radius = size / 2 - 20;
-    
-    let cumulativePercentage = 0;
-    
-    return (
-      <div className="flex flex-col lg:flex-row items-center gap-8">
-        <div className="relative">
-          <svg width={size} height={size} className="transform -rotate-90">
-            {data.map((item, index) => {
-              if (item.value === 0) return null;
-              
-              const percentage = item.name === 'Total Employees' ? 30 : 
-                              item.name === 'Active Employees' ? 40 :
-                              item.name === 'Inactive Employees' ? 20 : 10;
-              
-              const startAngle = (cumulativePercentage / 100) * 360;
-              const endAngle = ((cumulativePercentage + percentage) / 100) * 360;
-              
-              const x1 = center + radius * Math.cos((startAngle * Math.PI) / 180);
-              const y1 = center + radius * Math.sin((startAngle * Math.PI) / 180);
-              const x2 = center + radius * Math.cos((endAngle * Math.PI) / 180);
-              const y2 = center + radius * Math.sin((endAngle * Math.PI) / 180);
-              
-              const largeArcFlag = percentage > 50 ? 1 : 0;
-              
-              const pathData = [
-                `M ${center} ${center}`,
-                `L ${x1} ${y1}`,
-                `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-                'Z'
-              ].join(' ');
-              
-              cumulativePercentage += percentage;
-              
-              return (
-                <path
-                  key={index}
-                  d={pathData}
-                  fill={item.color}
-                  stroke="#fff"
-                  strokeWidth="2"
-                />
-              );
-            })}
-          </svg>
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          {data.map((item, index) => (
-            <div key={index} className="flex items-center gap-3">
-              <div 
-                className="w-4 h-4 rounded"
-                style={{ backgroundColor: item.color }}
+const PieChart = ({ data }) => {
+  const size = 320;
+  const center = size / 2;
+  const radius = size / 2 - 30;
+  
+  let cumulativePercentage = 0;
+  
+  return (
+    <div className="flex flex-col lg:flex-row items-center justify-center gap-12">
+      <div className="relative flex-shrink-0">
+        <svg width={size} height={size} className="transform -rotate-90">
+          {data.map((item, index) => {
+            if (item.value === 0) return null;
+            
+            const percentage = item.name === 'Total Employees' ? 30 : 
+                            item.name === 'Active Employees' ? 40 :
+                            item.name === 'Inactive Employees' ? 20 : 10;
+            
+            const startAngle = (cumulativePercentage / 100) * 360;
+            const endAngle = ((cumulativePercentage + percentage) / 100) * 360;
+            
+            const x1 = center + radius * Math.cos((startAngle * Math.PI) / 180);
+            const y1 = center + radius * Math.sin((startAngle * Math.PI) / 180);
+            const x2 = center + radius * Math.cos((endAngle * Math.PI) / 180);
+            const y2 = center + radius * Math.sin((endAngle * Math.PI) / 180);
+            
+            const largeArcFlag = percentage > 50 ? 1 : 0;
+            
+            const pathData = [
+              `M ${center} ${center}`,
+              `L ${x1} ${y1}`,
+              `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+              'Z'
+            ].join(' ');
+            
+            cumulativePercentage += percentage;
+            
+            return (
+              <path
+                key={index}
+                d={pathData}
+                fill={item.color}
+                stroke="#fff"
+                strokeWidth="2"
               />
-              <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.name}</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white">{item.value}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+            );
+          })}
+        </svg>
       </div>
-    );
-  };
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 min-w-0">
+        {data.map((item, index) => (
+          <div key={index} className="flex items-center gap-3">
+            <div 
+              className="w-4 h-4 rounded flex-shrink-0"
+              style={{ backgroundColor: item.color }}
+            />
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+                {item.name}
+              </p>
+              <p className="text-lg font-bold text-gray-900 dark:text-white">
+                {item.value}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+
 
   const handleEditUser = (userId) => {
     setSelectedUserId(userId);
@@ -320,123 +326,143 @@ const EmployeePage = ({collapsed}) => {
               </div>
             </div>
 
-            {/* Employee Cards */}
-            {filteredEmployees.length === 0 ? (
-              <div className="max-w-7xl mx-auto text-center py-12">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
-                  <Users className="h-8 w-8 text-gray-400" />
-                </div>
-                <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">
-                  {searchTerm || departmentFilter !== 'All' ? 'No employees match your criteria.' : 'No employees found.'}
-                </p>
-                <p className="text-gray-500 dark:text-gray-500 text-sm">
-                  Try adjusting your search or filter options.
-                </p>
-              </div>
-            ) : (
-              <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
-                {filteredEmployees.map((employee) => (
-                  <div
-                    key={employee.id}
-                    className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-600 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1"
-                  >
-                    {/* Profile Section */}
-                    <div className="relative pt-6 pb-4">
-                      {/* Circular Profile Image */}
-                      <div className="flex justify-center mb-3">
-                        <img
-                          src={employee.photo || 'https://randomuser.me/api/portraits/men/1.jpg'}
-                          alt={`${employee.firstName} ${employee.lastName}`}
-                          className="w-16 h-16 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-sm"
-                          onError={(e) => {
-                            e.target.src = 'https://randomuser.me/api/portraits/men/1.jpg';
-                          }}
-                        />
-                      </div>
-                      
-                      {/* Name and Username */}
-                      <div className="text-center mb-3">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {employee.firstName} {employee.lastName}
-                        </h3>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">@{employee.username}</p>
-                      </div>
+{/* Employee Cards - Show only first 4 */}
+{filteredEmployees.length === 0 ? (
+  <div className="max-w-7xl mx-auto text-center py-12">
+    <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
+      <Users className="h-8 w-8 text-gray-400" />
+    </div>
+    <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">
+      {searchTerm || departmentFilter !== 'All' ? 'No employees match your criteria.' : 'No employees found.'}
+    </p>
+    <p className="text-gray-500 dark:text-gray-500 text-sm">
+      Try adjusting your search or filter options.
+    </p>
+  </div>
+) : (
+  <>
+    <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
+      {filteredEmployees.slice(0, 4).map((employee) => (
+        <div
+          key={employee.id}
+          className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-600 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1"
+        >
+          {/* Your existing employee card content - keep exactly as is */}
+          <div className="relative pt-6 pb-4">
+            <div className="flex justify-center mb-3">
+              <img
+                src={employee.photo || 'https://randomuser.me/api/portraits/men/1.jpg'}
+                alt={`${employee.firstName} ${employee.lastName}`}
+                className="w-16 h-16 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-sm"
+                onError={(e) => {
+                  e.target.src = 'https://randomuser.me/api/portraits/men/1.jpg';
+                }}
+              />
+            </div>
+            
+            <div className="text-center mb-3">
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                {employee.firstName} {employee.lastName}
+              </h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">@{employee.username}</p>
+            </div>
 
-                      {/* Status and Department Badges */}
-                      <div className="flex justify-center gap-2 mb-3">
-                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                          employee.status === 'inactive'
-                            ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                            : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                        }`}>
-                          {employee.status === 'inactive' ? 'Inactive' : 'Active'}
-                        </span>
-                        {employee.department && (
-                          <span className="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-xs font-medium rounded-full">
-                            {employee.department}
-                          </span>
-                        )}
-                      </div>
+            <div className="flex justify-center gap-2 mb-3">
+              <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                employee.status === 'inactive'
+                  ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                  : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+              }`}>
+                {employee.status === 'inactive' ? 'Inactive' : 'Active'}
+              </span>
+              {employee.department && (
+                <span className="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 text-xs font-medium rounded-full">
+                  {employee.department}
+                </span>
+              )}
+            </div>
 
-                      {/* Edit Button */}
-                      <div className="absolute top-2 right-2">
-                        <button
-                          onClick={() => handleEditUser(employee.id)}
-                          className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
-                          aria-label="Edit employee"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                          </svg>
-                        </button>
-                      </div>
-                    </div>
+            <div className="absolute top-2 right-2">
+              <button
+                onClick={() => handleEditUser(employee.id)}
+                className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
+                aria-label="Edit employee"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                </svg>
+              </button>
+            </div>
+          </div>
 
-                    {/* Contact Information */}
-                    <div className="px-4 pb-4 space-y-2 text-xs text-gray-600 dark:text-gray-400">
-                      <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                          <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                          <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                        </svg>
-                        <span className="truncate">{employee.email}</span>
-                      </div>
+          <div className="px-4 pb-4 space-y-2 text-xs text-gray-600 dark:text-gray-400">
+            <div className="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+              </svg>
+              <span className="truncate">{employee.email}</span>
+            </div>
 
-                      {employee.phoneNumber && (
-                        <div className="flex items-center gap-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-                          </svg>
-                          <span>{employee.phoneNumber}</span>
-                        </div>
-                      )}
-
-                      <div className="flex items-center gap-2">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                        </svg>
-                        <span>Joined {new Date(employee.joiningDate).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+            {employee.phoneNumber && (
+              <div className="flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M7 2a2 2 0 00-2 2v12a2 2 0 002 2h6a2 2 0 002-2V4a2 2 0 00-2-2H7zm3 14a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                </svg>
+                <span>{employee.phoneNumber}</span>
               </div>
             )}
 
-            {/* Pie Chart Section */}
-            {filteredEmployees.length > 0 && (
-              <div className="max-w-7xl mx-auto mb-6">
-                <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-6">
-                  <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-6 text-center">Employee Statistics Overview</h2>
-                  <div className="flex justify-center">
-                    <PieChart data={chartData} />
-                  </div>
-                </div>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+              </svg>
+              <span>Joined {new Date(employee.joiningDate).toLocaleDateString()}</span>
+            </div>
           </div>
         </div>
+      ))}
+    </div>
 
+    {/* View All Button */}
+    {filteredEmployees.length > 4 && (
+      <div className="max-w-7xl mx-auto">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Showing 4 of {filteredEmployees.length} employees ({filteredEmployees.length - 4} more)
+            </div>
+            <button
+              onClick={() => navigate('/all-employees')}
+              className="flex items-center gap-2 px-4 py-2 bg-[#ff8633] hover:bg-[#e57328] text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              View All Employees
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
+)}
+
+{/* Pie Chart Section */}
+{filteredEmployees.length > 0 && (
+  <div className="max-w-7xl mx-auto mb-6">
+    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-8">
+      <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-8 text-center">
+        Employee Statistics Overview
+      </h2>
+      <div className="overflow-x-auto">
+        <PieChart data={chartData} />
+      </div>
+    </div>
+  </div>
+)}
+          </div>
+        </div>
         {/* Edit Modal */}
         {isEditModalOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">

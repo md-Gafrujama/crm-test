@@ -152,43 +152,69 @@ const handleUnlock = async (userId) => {
         </div>
       </div>
 
-      {users.lockedAccounts && users.lockedAccounts.length === 0 ? (
-        <div className="max-w-6xl mx-auto text-center py-12">
-          <p className="text-gray-600 text-lg">No Locked Users found.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6">
-          {users.lockedAccounts?.map((user) => (
-            <div key={user.email} className="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="p-4">
-                <h2 className="text-xl font-semibold text-left text-gray-800 dark:text-gray-200">
-                  {user.firstName} {user.lastName}
-                </h2>
-                <p className="text-gray-600 text-left dark:text-gray-300 mb-2 capitalize">{user.statusOfWork || 'Status not available'}</p>
+{users.lockedAccounts && users.lockedAccounts.length === 0 ? (
+  <div className="max-w-6xl mx-auto text-center py-12">
+    <p className="text-gray-600 text-lg">No Locked Users found.</p>
+  </div>
+) : (
+  <>
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-6">
+      {users.lockedAccounts?.slice(0, 4).map((user) => (
+        <div key={user.email} className="bg-white dark:bg-slate-800 rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+          <div className="p-4">
+            <h2 className="text-xl font-semibold text-left text-gray-800 dark:text-gray-200">
+              {user.firstName} {user.lastName}
+            </h2>
+            <p className="text-gray-600 text-left dark:text-gray-300 mb-2 capitalize">{user.statusOfWork || 'Status not available'}</p>
 
-                <div className="flex items-center text-gray-500 dark:text-gray-400 mb-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                    <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                  </svg>
-                  <span className="truncate">{user.email}</span>
-                </div>
-            <button
-  onClick={() => handleUnlock(user.id)}
-  disabled={isLoading}
-  className={`w-full px-4 py-2 text-white rounded focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
-    isLoading
-      ? 'bg-gray-400 cursor-not-allowed'
-      : 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
-  }`}
->
-  {isLoading ? 'Processing...' : 'Unlock User'}
-</button>
-              </div>
+            <div className="flex items-center text-gray-500 dark:text-gray-400 mb-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+              </svg>
+              <span className="truncate">{user.email}</span>
             </div>
-          ))}
+            
+            <button
+              onClick={() => handleUnlock(user.id)}
+              disabled={isLoading}
+              className={`w-full px-4 py-2 text-white rounded focus:outline-none focus:ring-2 focus:ring-opacity-50 ${
+                isLoading
+                  ? 'bg-gray-400 cursor-not-allowed'
+                  : 'bg-green-500 hover:bg-green-600 focus:ring-green-500'
+              }`}
+            >
+              {isLoading ? 'Processing...' : 'Unlock User'}
+            </button>
+          </div>
         </div>
-      )}
+      ))}
+    </div>
+
+    {/* View All Button */}
+    {users.lockedAccounts && users.lockedAccounts.length > 4 && (
+      <div className="max-w-6xl mx-auto">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
+              Showing 4 of {users.lockedAccounts.length} locked users ({users.lockedAccounts.length - 4} more)
+            </div>
+            <button
+              onClick={() => navigate('/all-locked-users')}
+              className="flex items-center gap-2 px-4 py-2 bg-[#ff8633] hover:bg-[#e57328] text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              View All Locked Users
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+  </>
+)}
+
     </div>
     </div>
     </Sidebar>
@@ -198,5 +224,3 @@ const handleUnlock = async (userId) => {
 };
 
 export default Lockedusers;
-
-

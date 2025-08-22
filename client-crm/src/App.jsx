@@ -32,7 +32,10 @@ import AdminAnalytics from './Components/Admin/AdminPages/AdminAnalytics.jsx';
 import Lockedusers from './Components/Admin/AdminPages/Lockedusers.jsx';
 import CombinedAlertReminderDisplay from './Components/CombinedForUser&Admin/CombinedAlertReminderDisplay.jsx';
 import AllActivities from './Components/CombinedForUser&Admin/AllActivities.jsx';
+import ViewAllUsers from './Components/CombinedForUser&Admin/ViewAllUsers.jsx';
+import AllEmployees from './Components/CombinedForUser&Admin/AllEmployees.jsx';
 import EmployeePage from './Components/Admin/AdminPages/EmployeePage.jsx';
+import AllLockedUsers from './Components/CombinedForUser&Admin/AllLockedUsers.jsx';
 import { SearchProvider } from './contexts/SearchContext.jsx';
 
 function App() {
@@ -129,6 +132,9 @@ function App() {
           <Route path="/all-alerts-reminders" element={<CombinedAlertReminderDisplay/>} />
           <Route path="/all-activities" element={<AllActivities/>} />
           <Route path="/employee-page" element={<EmployeePage/>} />
+          <Route path="/view-all-users" element={<ViewAllUsers />} />
+          <Route path="/all-employees" element={<AllEmployees />} />
+          <Route path="/all-locked-users" element={<AllLockedUsers />} />
         </Route>
 
         {/* Fallback */}

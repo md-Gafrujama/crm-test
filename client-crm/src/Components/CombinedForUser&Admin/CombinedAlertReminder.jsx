@@ -1,44 +1,3 @@
-
-// import 'react-toastify/dist/ReactToastify.css';
-// import { Header } from '../Admin/common/Header';
-// import { Sidebar,useSidebar } from '../Admin/common/sidebar';
-// import AlertsandReminderForm from '../Admin/Forms/AlertsandReminderForm';
-// import { UserHeader } from '../User/common/UserHeader';
-// import { UserSidebar ,useSidebarUser} from '../User/common/UserSidebar';
-// import { UserFooter } from '../User/common/UserFooter';
-// import Footer from '../Admin/common/Footer';
-
-
-// const CombinedAlertReminder = ({collapsed}) => {
-// const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
-// const { isSidebarOpenUser, toggleSidebarUser, closeSidebarUser } = useSidebarUser();
-//   return (
-//     <>
-// {localStorage.getItem('userType') === 'admin' && (
-// <>
-//  <Header onToggleSidebar={toggleSidebar} />
-//   <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} >
-//    <AlertsandReminderForm />
-//   </Sidebar>
-//   <Footer/>
-//   </>
-// )}
-  
-// {localStorage.getItem('userType') === 'user' && (
-//   <>
-//     <UserHeader onToggleSidebar={toggleSidebarUser} />
-//   <UserSidebar isOpen={isSidebarOpenUser} onClose={closeSidebarUser} >
-//    <AlertsandReminderForm />
-//    </UserSidebar>
-//    <UserFooter/>
-//   </>
-// )}
-//    </>
-//   );
-// };
-
-
-// export default CombinedAlertReminder;
 import 'react-toastify/dist/ReactToastify.css';
 import React, { useEffect, useRef } from 'react';
 import AlertsandReminderForm from '../Admin/Forms/AlertsandReminderForm';
@@ -83,9 +42,9 @@ const CombinedAlertReminder = ({collapsed, isOpen, onClose}) => {
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop - No blur, just grayish overlay */}
       <div 
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+        className="fixed inset-0 bg-gray-600/30 dark:bg-gray-900/50 z-40 transition-opacity duration-300"
         onClick={onClose}
       />
 

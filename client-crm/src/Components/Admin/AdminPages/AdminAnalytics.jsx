@@ -338,59 +338,60 @@ const AdminAnalytics = ({ collapsed }) => {
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
         )}>
           <div className="space-y-6 p-6">
-            {/* First 4 Stats Cards - Leads Data */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-              {stats.map((stat) => (
-                <div
-                  key={stat.id}
-                  className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
-                  
-                  <div className="relative p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className={`${stat.lightColor} p-3 rounded-xl dark:${stat.lightColor.replace('bg-', 'bg-').replace('-50', '-900/30')}`}>
-                        <div className={`${stat.textColor} dark:${stat.textColor.replace('text-', 'text-').replace('-600', '-400')}`}>
-                          {stat.icon}
-                        </div>
-                      </div>
-                      
-                      <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                        stat.trend === "up"
-                          ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                          : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                      }`}>
-                        <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
-                        {stat.change}
-                      </div>
-                    </div>
-
-                    <div className="space-y-2 mb-4">
-                      <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{stat.title}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-                      <div className={`w-2 h-2 rounded-full ${
-                        stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
-                      }`}></div>
-                      <div className={`text-xs font-medium ${
-                        stat.trend === "up"
-                          ? "text-emerald-600 dark:text-emerald-400"
-                          : "text-red-600 dark:text-red-400"
-                      }`}>{stat.change}</div>
-                    </div>
-                  </div>
-
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
-                    <div className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
-                  </div>
-                </div>
-              ))}
+{/* First 4 Stats Cards - Leads Data */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+  {stats.map((stat) => (
+    <div
+      key={stat.id}
+      className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-0.5"
+    >
+      <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
+      
+      <div className="relative p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className={`${stat.lightColor} p-2 rounded-xl dark:${stat.lightColor.replace('bg-', 'bg-').replace('-50', '-900/30')}`}>
+            <div className={`${stat.textColor} dark:${stat.textColor.replace('text-', 'text-').replace('-600', '-400')}`}>
+              {stat.icon}
             </div>
+          </div>
+          
+          <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
+            stat.trend === "up"
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+          }`}>
+            <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
+            {stat.change}
+          </div>
+        </div>
+
+        <div className="space-y-2 mb-3">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{stat.title}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+          <div className={`w-2 h-2 rounded-full ${
+            stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
+          }`}></div>
+          <div className={`text-xs font-medium ${
+            stat.trend === "up"
+              ? "text-emerald-600 dark:text-emerald-400"
+              : "text-red-600 dark:text-red-400"
+          }`}>{stat.change}</div>
+        </div>
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
+        <div className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
+      </div>
+    </div>
+  ))}
+</div>
+
 
             {/* Chart for First 4 Cards - Pie Chart */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 mb-8">
@@ -407,48 +408,49 @@ const AdminAnalytics = ({ collapsed }) => {
               </div>
             </div>
 
-            {/* Next 4 Stats Cards - Users Data */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 mb-8">
-              {additionalStats.map(stat => (
-                <div
-                  key={stat.id}
-                  className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-1"
-                >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
-                  <div className="relative p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className={`${stat.lightColor} p-3 rounded-xl dark:${stat.lightColor.replace('bg-', 'bg-').replace('-50', '-900/30')}`}>
-                        <div className={`${stat.textColor} dark:${stat.textColor.replace('text-', 'text-').replace('-600', '-400')}`}>{stat.icon}</div>
-                      </div>
-                      <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
-                        stat.trend === "up" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                      }`}>
-                        <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
-                        {stat.change}
-                      </div>
-                    </div>
-                    <div className="space-y-2 mb-4">
-                      <h3 className="text-3xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
-                      <div className="space-y-1">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">{stat.title}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700">
-                      <div className={`w-2 h-2 rounded-full ${
-                        stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
-                      }`}></div>
-                      <div className={`text-xs font-medium ${
-                        stat.trend === "up" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-                      }`}>{stat.change}</div>
-                    </div>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
-                    <div className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+{/* Next 4 Stats Cards - Users Data */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+  {additionalStats.map(stat => (
+    <div
+      key={stat.id}
+      className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-0.5"
+    >
+      <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
+      <div className="relative p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className={`${stat.lightColor} p-2 rounded-xl dark:${stat.lightColor.replace('bg-', 'bg-').replace('-50', '-900/30')}`}>
+            <div className={`${stat.textColor} dark:${stat.textColor.replace('text-', 'text-').replace('-600', '-400')}`}>{stat.icon}</div>
+          </div>
+          <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
+            stat.trend === "up" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+          }`}>
+            <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
+            {stat.change}
+          </div>
+        </div>
+        <div className="space-y-2 mb-3">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{stat.title}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+          <div className={`w-2 h-2 rounded-full ${
+            stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
+          }`}></div>
+          <div className={`text-xs font-medium ${
+            stat.trend === "up" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+          }`}>{stat.change}</div>
+        </div>
+      </div>
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
+        <div className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
+      </div>
+    </div>
+  ))}
+</div>
+
 
             {/* Doughnut Chart for User Analytics - ONLY 4 FIELDS */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">

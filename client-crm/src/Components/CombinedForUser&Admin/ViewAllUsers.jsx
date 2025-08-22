@@ -1,17 +1,16 @@
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import EditUser from '../Forms/EditUser';
+import EditUser from '../Admin/Forms/EditUser';
 import axios from 'axios';
-import { Header } from '../common/Header';
-import { Sidebar, useSidebar } from '../common/sidebar';
-import { cn } from "../../../utils/cn";
-import { useTheme } from '../../../hooks/use-theme';
-import Footer from '../common/Footer';
-import Sign from '../Forms/sign';
-import { API_BASE_URL } from "../../../config/api";
-import { Search, Users, UserCheck, Filter, Shield, Activity, UserX } from 'lucide-react';
+import { Header } from '../Admin/common/Header';
+import { Sidebar, useSidebar } from '../Admin/common/sidebar';
+import { cn } from "../../utils/cn";
+import Footer from '../Admin/common/Footer';
+import Sign from '../Admin/Forms/sign';
+import { API_BASE_URL } from "../../config/api";
+import { Search, Users, UserCheck, Filter, Shield, Activity, UserX, ArrowLeft } from 'lucide-react';
 
-const AllUsers = ({collapsed}) => {
+const ViewAllUsers = ({collapsed}) => {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -126,11 +125,19 @@ const AllUsers = ({collapsed}) => {
         )}>
           <div className="container mx-auto px-4 py-6">
 
-            {/* Header Section */}
+            {/* Header Section with Back Button */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 max-w-7xl mx-auto gap-6">
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-200">
-                Users Management
-              </h1>
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                >
+                  <ArrowLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                </button>
+                <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-200">
+                  All Users ({totalCount})
+                </h1>
+              </div>
               
               {/* Controls Section */}
               <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
@@ -248,7 +255,7 @@ const AllUsers = ({collapsed}) => {
               </div>
             </div>
 
-            {/* User Cards Grid - Show only first 4 */}
+            {/* User Cards Grid - Show ALL users (no slice limit) */}
             {filteredByRole.length === 0 ? (
               <div className="max-w-7xl mx-auto text-center py-12">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
@@ -262,131 +269,107 @@ const AllUsers = ({collapsed}) => {
                 </p>
               </div>
             ) : (
-              <>
-                <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-                  {filteredByRole.slice(0, 4).map((user) => (
-                    <div key={user.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-600 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1">
-                      <div className="relative">
-                        {/* Circular Profile Image */}
-                        <div className="flex justify-center pt-4">
-                          <img
-                            src={user.photo || 'https://randomuser.me/api/portraits/men/1.jpg'}
-                            alt={`${user.firstName} ${user.lastName}`}
-                            className="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-sm"
-                            onError={(e) => {
-                              e.target.src = 'https://randomuser.me/api/portraits/men/1.jpg';
-                            }}
-                          />
-                        </div>
-                        
-                        <div className="absolute top-2 right-2">
-                          <button
-                            onClick={() => handleEditUser(user.id)}
-                            className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
-                            aria-label="Edit user"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                            </svg>
-                          </button>
-                        </div>
-                        
-                        {/* Status Badge  */}
-                        <div className="absolute top-2 left-2">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
-                            user.isActive !== false
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                              : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                          }`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${
-                              user.isActive !== false ? 'bg-green-500' : 'bg-red-500'
-                            }`}></div>
-                            {user.isActive !== false ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
+              <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {filteredByRole.map((user) => (
+                  <div key={user.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-600 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1">
+                    <div className="relative">
+                      {/* Circular Profile Image */}
+                      <div className="flex justify-center pt-4">
+                        <img
+                          src={user.photo || 'https://randomuser.me/api/portraits/men/1.jpg'}
+                          alt={`${user.firstName} ${user.lastName}`}
+                          className="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-sm"
+                          onError={(e) => {
+                            e.target.src = 'https://randomuser.me/api/portraits/men/1.jpg';
+                          }}
+                        />
                       </div>
-
-                      <div className="p-4 pt-2">
-                        {/* Role Badge - Now positioned below profile picture */}
-                        <div className="flex justify-center mb-3">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            user.role?.toLowerCase() === 'admin' 
-                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                              : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-                          }`}>
-                            {user.role}
-                          </span>
-                        </div>
-
-                        <div className="mb-2 text-center">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                            {user.firstName} {user.lastName}
-                          </h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.username}</p>
-                        </div>
-
-                        <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-                          <div className="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                            </svg>
-                            <span className="truncate">{user.email}</span>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                            </svg>
-                            <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-
-                        {user.assignedWork && (
-                          <div className="mt-2 p-2 bg-gray-50 dark:bg-slate-700 rounded-md">
-                            <p className="text-xs text-gray-700 dark:text-gray-300">
-                              <span className="font-medium">Task:</span> {user.assignedWork}
-                            </p>
-                          </div>
-                        )}
-
-                        {user.statusOfWork && (
-                          <div className="mt-2">
-                            <div className="flex items-center gap-2 justify-center">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                              <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                                {user.statusOfWork}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* View All Button */}
-                {filteredByRole.length > 4 && (
-                  <div className="max-w-7xl mx-auto">
-                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          Showing 4 of {filteredByRole.length} users ({filteredByRole.length - 4} more)
-                        </div>
+                      
+                      <div className="absolute top-2 right-2">
                         <button
-                          onClick={() => navigate('/view-all-users')}
-                          className="flex items-center gap-2 px-4 py-2 bg-[#ff8633] hover:bg-[#e57328] text-white rounded-lg transition-colors text-sm font-medium"
+                          onClick={() => handleEditUser(user.id)}
+                          className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
+                          aria-label="Edit user"
                         >
-                          View All Users
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                           </svg>
                         </button>
                       </div>
+                      
+                      {/* Status Badge  */}
+                      <div className="absolute top-2 left-2">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
+                          user.isActive !== false
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                        }`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${
+                            user.isActive !== false ? 'bg-green-500' : 'bg-red-500'
+                          }`}></div>
+                          {user.isActive !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-4 pt-2">
+                      {/* Role Badge - Now positioned below profile picture */}
+                      <div className="flex justify-center mb-3">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                          user.role?.toLowerCase() === 'admin' 
+                            ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+                            : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+                        }`}>
+                          {user.role}
+                        </span>
+                      </div>
+
+                      <div className="mb-2 text-center">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {user.firstName} {user.lastName}
+                        </h3>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.username}</p>
+                      </div>
+
+                      <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                            <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                          </svg>
+                          <span className="truncate">{user.email}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
+                          </svg>
+                          <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+
+                      {user.assignedWork && (
+                        <div className="mt-2 p-2 bg-gray-50 dark:bg-slate-700 rounded-md">
+                          <p className="text-xs text-gray-700 dark:text-gray-300">
+                            <span className="font-medium">Task:</span> {user.assignedWork}
+                          </p>
+                        </div>
+                      )}
+
+                      {user.statusOfWork && (
+                        <div className="mt-2">
+                          <div className="flex items-center gap-2 justify-center">
+                            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                            <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
+                              {user.statusOfWork}
+                            </span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
-              </>
+                ))}
+              </div>
             )}
           </div>
         </div>
@@ -416,4 +399,4 @@ const AllUsers = ({collapsed}) => {
   );
 };
 
-export default AllUsers;
+export default ViewAllUsers;
