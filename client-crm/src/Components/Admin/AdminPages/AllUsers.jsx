@@ -30,11 +30,11 @@ const AllUsers = ({collapsed}) => {
     )
   );
 
-  // Filter by role
+  // Filter by role and status
   const filteredByRole = filteredUsers.filter(user => {
     if (roleFilter === 'All') return true;
-    if (roleFilter === 'Active') return user.isActive !== false;
-    if (roleFilter === 'Inactive') return user.isActive === false;
+    if (roleFilter === 'Active') return user.statusOfWork === 'active';
+    if (roleFilter === 'Inactive') return user.statusOfWork === 'inactive';
     return user.role?.toLowerCase() === roleFilter.toLowerCase();
   });
 
@@ -42,8 +42,8 @@ const AllUsers = ({collapsed}) => {
   const totalCount = filteredByRole.length;
   const userCount = filteredByRole.filter(user => user.role?.toLowerCase() === 'user').length;
   const adminCount = filteredByRole.filter(user => user.role?.toLowerCase() === 'admin').length;
-  const activeCount = filteredByRole.filter(user => user.isActive !== false).length;
-  const inactiveCount = filteredByRole.filter(user => user.isActive === false).length;
+  const activeCount = filteredByRole.filter(user => user.statusOfWork === 'active').length;
+  const inactiveCount = filteredByRole.filter(user => user.statusOfWork === 'inactive').length;
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -53,24 +53,55 @@ const AllUsers = ({collapsed}) => {
           throw new Error('Please login to view users');
         }
 
-        const response = await axios.get(`${API_BASE_URL}/api/allUser`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        // Fetch both active and inactive users
+        const [activeResponse, inactiveResponse] = await Promise.all([
+          axios.get(`${API_BASE_URL}/api/allUser/active`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          }),
+          axios.get(`${API_BASE_URL}/api/allUser/inactive`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+        ]);
 
-        if (response.status === 401) {
+        // Check for authentication errors
+        if (activeResponse.status === 401 || inactiveResponse.status === 401) {
           localStorage.removeItem('token');
           throw new Error('Session expired. Please login again.');
         }
 
-        setUsers(response.data);
+        // Combine the data from both APIs
+        const activeUsers = activeResponse.data.data || [];
+        const inactiveUsers = inactiveResponse.data.data || [];
+        
+        // Mark users as active or inactive based on which API they came from
+        const markedActiveUsers = activeUsers.map(user => ({
+          ...user,
+          isActive: true,
+          statusOfWork: user.statusOfWork || 'active'
+        }));
+        
+        const markedInactiveUsers = inactiveUsers.map(user => ({
+          ...user,
+          isActive: false,
+          statusOfWork: user.statusOfWork || 'inactive'
+        }));
+
+        // Combine all users
+        const allUsers = [...markedActiveUsers, ...markedInactiveUsers];
+        setUsers(allUsers);
+
       } catch (err) {
-        setError(err.message);
+        console.error('Error fetching users:', err);
+        setError(err.message || 'Failed to fetch users');
       } finally {
         setLoading(false);
       }
     };
+
     fetchUsers();
   }, []);
 
@@ -173,7 +204,7 @@ const AllUsers = ({collapsed}) => {
                   className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#ff8633] text-white rounded-lg transition-all duration-200 hover:bg-[#e57328] hover:shadow-md whitespace-nowrap text-sm font-medium"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 616 6H2a6 6 0 616-6z" />
+                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 616 6H2a6 6 0 016-6z" />
                   </svg>
                   Add User
                 </button>
@@ -294,14 +325,14 @@ const AllUsers = ({collapsed}) => {
                         {/* Status Badge  */}
                         <div className="absolute top-2 left-2">
                           <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
-                            user.isActive !== false
+                            user.statusOfWork === 'active'
                               ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                               : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                           }`}>
                             <div className={`w-1.5 h-1.5 rounded-full ${
-                              user.isActive !== false ? 'bg-green-500' : 'bg-red-500'
+                              user.statusOfWork === 'active' ? 'bg-green-500' : 'bg-red-500'
                             }`}></div>
-                            {user.isActive !== false ? 'Active' : 'Inactive'}
+                            {user.statusOfWork === 'active' ? 'Active' : 'Inactive'}
                           </span>
                         </div>
                       </div>
@@ -353,7 +384,9 @@ const AllUsers = ({collapsed}) => {
                         {user.statusOfWork && (
                           <div className="mt-2">
                             <div className="flex items-center gap-2 justify-center">
-                              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                              <div className={`w-2 h-2 rounded-full ${
+                                user.statusOfWork === 'active' ? 'bg-green-500' : 'bg-red-500'
+                              }`}></div>
                               <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                                 {user.statusOfWork}
                               </span>
