@@ -24,7 +24,7 @@ const AllUsers = ({collapsed}) => {
   const [roleFilter, setRoleFilter] = useState('All');
 
   // Filter users by search term
-  const filteredUsers = users.filter(user => 
+  const filteredUsers = users.filter(user =>
     ['firstName', 'lastName', 'email', 'username', 'role'].some(field =>
       user[field]?.toLowerCase().includes(searchTerm.toLowerCase())
     )
@@ -33,8 +33,8 @@ const AllUsers = ({collapsed}) => {
   // Filter by role and status
   const filteredByRole = filteredUsers.filter(user => {
     if (roleFilter === 'All') return true;
-    if (roleFilter === 'Active') return user.statusOfWork === 'active';
-    if (roleFilter === 'Inactive') return user.statusOfWork === 'inactive';
+    if (roleFilter === 'Active') return user.isActive !== false;
+    if (roleFilter === 'Inactive') return user.isActive === false;
     return user.role?.toLowerCase() === roleFilter.toLowerCase();
   });
 
@@ -42,68 +42,134 @@ const AllUsers = ({collapsed}) => {
   const totalCount = filteredByRole.length;
   const userCount = filteredByRole.filter(user => user.role?.toLowerCase() === 'user').length;
   const adminCount = filteredByRole.filter(user => user.role?.toLowerCase() === 'admin').length;
-  const activeCount = filteredByRole.filter(user => user.statusOfWork === 'active').length;
-  const inactiveCount = filteredByRole.filter(user => user.statusOfWork === 'inactive').length;
+  const activeCount = filteredByRole.filter(user => user.isActive !== false).length;
+  const inactiveCount = filteredByRole.filter(user => user.isActive === false).length;
+
+  // Fetch all users (your existing API)
+  const fetchAllUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login to view users');
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/api/allUser`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        throw new Error('Session expired. Please login again.');
+      }
+
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  // NEW: Fetch active users API
+  const fetchActiveUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login to view users');
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/api/allUser/active`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        throw new Error('Session expired. Please login again.');
+      }
+
+      return response.data.data || response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  // NEW: Fetch inactive users API
+  const fetchInactiveUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Please login to view users');
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/api/allUser/inactive`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.status === 401) {
+        localStorage.removeItem('token');
+        throw new Error('Session expired. Please login again.');
+      }
+
+      return response.data.data || response.data;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  // Main fetch function - uses your existing all users API
+  const fetchUsers = async () => {
+    setLoading(true);
+    try {
+      const allUsers = await fetchAllUsers();
+      setUsers(allUsers);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NEW: Function to get active users only
+  const getActiveUsers = async () => {
+    setLoading(true);
+    try {
+      const activeUsers = await fetchActiveUsers();
+      setUsers(activeUsers);
+      setRoleFilter('Active'); // Update filter to show we're viewing active users
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // NEW: Function to get inactive users only
+  const getInactiveUsers = async () => {
+    setLoading(true);
+    try {
+      const inactiveUsers = await fetchInactiveUsers();
+      setUsers(inactiveUsers);
+      setRoleFilter('Inactive'); // Update filter to show we're viewing inactive users
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          throw new Error('Please login to view users');
-        }
-
-        // Fetch both active and inactive users
-        const [activeResponse, inactiveResponse] = await Promise.all([
-          axios.get(`${API_BASE_URL}/api/allUser/active`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }),
-          axios.get(`${API_BASE_URL}/api/allUser/inactive`, {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          })
-        ]);
-
-        // Check for authentication errors
-        if (activeResponse.status === 401 || inactiveResponse.status === 401) {
-          localStorage.removeItem('token');
-          throw new Error('Session expired. Please login again.');
-        }
-
-        // Combine the data from both APIs
-        const activeUsers = activeResponse.data.data || [];
-        const inactiveUsers = inactiveResponse.data.data || [];
-        
-        // Mark users as active or inactive based on which API they came from
-        const markedActiveUsers = activeUsers.map(user => ({
-          ...user,
-          isActive: true,
-          statusOfWork: user.statusOfWork || 'active'
-        }));
-        
-        const markedInactiveUsers = inactiveUsers.map(user => ({
-          ...user,
-          isActive: false,
-          statusOfWork: user.statusOfWork || 'inactive'
-        }));
-
-        // Combine all users
-        const allUsers = [...markedActiveUsers, ...markedInactiveUsers];
-        setUsers(allUsers);
-
-      } catch (err) {
-        console.error('Error fetching users:', err);
-        setError(err.message || 'Failed to fetch users');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUsers();
+    fetchUsers(); // Load all users by default
   }, []);
+
+  // Handle new user creation - refresh the list
+  const handleUserAdded = () => {
+    fetchUsers(); // Refresh entire list to show new user
+    setShowAddUserForm(false);
+  };
 
   const handleEditUser = (userId) => {
     setSelectedUserId(userId);
@@ -204,12 +270,13 @@ const AllUsers = ({collapsed}) => {
                   className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#ff8633] text-white rounded-lg transition-all duration-200 hover:bg-[#e57328] hover:shadow-md whitespace-nowrap text-sm font-medium"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 616 6H2a6 6 0 016-6z" />
+                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 616 6H2a6 6 0 616-6z" />
                   </svg>
                   Add User
                 </button>
               </div>
             </div>
+
 
             {/* Stats Cards */}
             <div className="max-w-7xl mx-auto mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -325,14 +392,14 @@ const AllUsers = ({collapsed}) => {
                         {/* Status Badge  */}
                         <div className="absolute top-2 left-2">
                           <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
-                            user.statusOfWork === 'active'
+                            user.isActive !== false
                               ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                               : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                           }`}>
                             <div className={`w-1.5 h-1.5 rounded-full ${
-                              user.statusOfWork === 'active' ? 'bg-green-500' : 'bg-red-500'
+                              user.isActive !== false ? 'bg-green-500' : 'bg-red-500'
                             }`}></div>
-                            {user.statusOfWork === 'active' ? 'Active' : 'Inactive'}
+                            {user.isActive !== false ? 'Active' : 'Inactive'}
                           </span>
                         </div>
                       </div>
@@ -385,7 +452,7 @@ const AllUsers = ({collapsed}) => {
                           <div className="mt-2">
                             <div className="flex items-center gap-2 justify-center">
                               <div className={`w-2 h-2 rounded-full ${
-                                user.statusOfWork === 'active' ? 'bg-green-500' : 'bg-red-500'
+                                user.isActive !== false ? 'bg-green-500' : 'bg-red-500'
                               }`}></div>
                               <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
                                 {user.statusOfWork}
@@ -442,6 +509,7 @@ const AllUsers = ({collapsed}) => {
         <Sign 
           isOpen={showAddUserForm} 
           onClose={() => setShowAddUserForm(false)}
+          onUserAdded={handleUserAdded}
         />
       </Sidebar>
       <Footer/>
