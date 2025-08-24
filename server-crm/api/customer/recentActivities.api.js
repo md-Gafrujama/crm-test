@@ -10,19 +10,28 @@ router.get("/", jwtTokenMiddleware, async (req, res) => {
     const companyId = req.user.companyId;
 
     const users = await prisma.User.findMany({
-    where: { companyId },
-  });
-
-  const updatedUserDetails = users.filter(
-    user => user.createdAt.getTime() !== user.updatedAt.getTime()
-  );
-    const lockedUsers = await prisma.user.findMany({ where: { locked: true ,  companyId: companyId } });
-    const employees = await prisma.employee.findMany({  
-      where:{ companyId: companyId },orderBy: { createdAt: "desc" },  take: 10,
+      where: { companyId },
     });
-    const totalEmployees = await prisma.employee.count({where:{companyId:companyId}});
-   const leads = await prisma.lead.findMany({   where: { isCurrentVersion: true, companyId: companyId,  },
-    orderBy: { createdAt: 'desc', },  take: 10,});
+
+    const updatedUserDetails = users.filter(
+      (user) => user.createdAt.getTime() !== user.updatedAt.getTime()
+    );
+    const lockedUsers = await prisma.user.findMany({
+      where: { locked: true, companyId: companyId },
+    });
+    const employees = await prisma.employee.findMany({
+      where: { companyId: companyId },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
+    const totalEmployees = await prisma.employee.count({
+      where: { companyId: companyId },
+    });
+    const leads = await prisma.lead.findMany({
+      where: { isCurrentVersion: true, companyId: companyId },
+      orderBy: { createdAt: "desc" },
+      take: 10,
+    });
 
     const userCount = await prisma.user.count({
       where: { companyId: companyId },
@@ -33,11 +42,11 @@ router.get("/", jwtTokenMiddleware, async (req, res) => {
 
     res.status(200).json({
       msg: " Got data from mongodb",
-      updatedUser  : updatedUserDetails,
-      lockedUser : lockedUsers, 
+      updatedUser: updatedUserDetails,
+      lockedUser: lockedUsers,
       userData: users,
-      lockedUser : lockedUsers,
-      lastCreatedEmployee : employees,
+      lockedUser: lockedUsers,
+      lastCreatedEmployee: employees,
       leads: leads,
       userNumber: userCount,
       leadsNumber: leadsCount,
