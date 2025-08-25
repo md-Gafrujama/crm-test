@@ -20,7 +20,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Pie, Doughnut } from 'react-chartjs-2';
+import { Pie, Doughnut, Bar } from 'react-chartjs-2';
 
 // Register Chart.js components
 ChartJS.register(
@@ -124,7 +124,9 @@ const AdminAnalytics = ({ collapsed }) => {
           icon: <Package className="h-6 w-6" />,
           change: "+5.2%",
           trend: "up",
-          color: "blue",
+          color: "from-blue-500 to-blue-600",
+          lightColor: "bg-blue-50",
+          textColor: "text-blue-600",
           subtitle: "This month"
         },
         {
@@ -134,7 +136,9 @@ const AdminAnalytics = ({ collapsed }) => {
           icon: <ShoppingCart className="h-6 w-6" />,
           change: "+12.3%",
           trend: "up",
-          color: "emerald",
+          color: "from-emerald-500 to-emerald-600",
+          lightColor: "bg-emerald-50",
+          textColor: "text-emerald-600",
           subtitle: "Active pipeline"
         },
         {
@@ -144,7 +148,9 @@ const AdminAnalytics = ({ collapsed }) => {
           icon: <Activity className="h-6 w-6" />,
           change: "+0.5%",
           trend: "up",
-          color: "purple",
+          color: "from-purple-500 to-purple-600",
+          lightColor: "bg-purple-50",
+          textColor: "text-purple-600",
           subtitle: "Awaiting follow-up"
         },
         {
@@ -154,7 +160,9 @@ const AdminAnalytics = ({ collapsed }) => {
           icon: <TrendingUp className="h-6 w-6" />,
           change: leadsData.lossLeads > 0 ? "-8.1%" : "0.0%",
           trend: leadsData.lossLeads > 0 ? "down" : "up",
-          color: "orange",
+          color: "from-orange-500 to-orange-600",
+          lightColor: "bg-orange-50",
+          textColor: "text-orange-600",
           subtitle: "Lost opportunities"
         },
       ]);
@@ -172,7 +180,9 @@ const AdminAnalytics = ({ collapsed }) => {
           icon: <User className="h-6 w-6" />,
           change: "+7.5%",
           trend: "up",
-          color: "indigo",
+          color: "from-indigo-500 to-indigo-600",
+          lightColor: "bg-indigo-50",
+          textColor: "text-indigo-600",
           subtitle: "This year"
         },
         {
@@ -182,7 +192,9 @@ const AdminAnalytics = ({ collapsed }) => {
           icon: <Users className="h-6 w-6" />,
           change: "+3.2%",
           trend: "up",
-          color: "green",
+          color: "from-green-400 to-green-500",
+          lightColor: "bg-green-50",
+          textColor: "text-green-600",
           subtitle: "Last month"
         },
         {
@@ -192,7 +204,9 @@ const AdminAnalytics = ({ collapsed }) => {
           icon: <MessageSquare className="h-6 w-6" />,
           change: "+1.1%",
           trend: "up",
-          color: "pink",
+          color: "from-pink-500 to-pink-600",
+          lightColor: "bg-pink-50",
+          textColor: "text-pink-600",
           subtitle: "Employee/Active ratio"
         },
         {
@@ -202,7 +216,9 @@ const AdminAnalytics = ({ collapsed }) => {
           icon: <Users2 className="h-6 w-6" />,
           change: "+4.8%",
           trend: "up",
-          color: "yellow",
+          color: "from-yellow-500 to-yellow-600",
+          lightColor: "bg-yellow-50",
+          textColor: "text-yellow-600",
           subtitle: "This quarter"
         }
       ]);
@@ -246,10 +262,10 @@ const AdminAnalytics = ({ collapsed }) => {
       {
         label: 'User Analytics',
         data: [
-          usersData.totalUser,                    // e.g., 3
-          usersData.activeUser,                   // e.g., 3
-          usersData.conversionRateFromActive,     // e.g., 133.3
-          usersData.totalEmployee                 // e.g., 4
+          usersData.totalUser,                    // 3
+          usersData.activeUser,                   // 3
+          usersData.conversionRateFromActive,     // 133.3
+          usersData.totalEmployee                 // 4
         ],
         backgroundColor: [
           '#6366F1', // Indigo for Total Users
@@ -322,39 +338,62 @@ const AdminAnalytics = ({ collapsed }) => {
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
         )}>
           <div className="space-y-6 p-6">
-            {/* Leads Stats Section - Modern flat design without traditional cards */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Leads Overview</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {stats.map((stat) => (
-                  <div
-                    key={stat.id}
-                    className="group p-4 rounded-xl bg-white dark:bg-gray-800 hover:bg-gradient-to-br hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 hover:scale-105"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-full bg-${stat.color}-100 text-${stat.color}-600 dark:bg-${stat.color}-900/30 dark:text-${stat.color}-400`}>
-                        {stat.icon}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.title}</p>
-                        <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{stat.value}</h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-sm font-semibold ${stat.trend === "up" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                            {stat.change}
-                          </span>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-3 h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div className={`h-full transition-all duration-500 ${stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"} group-hover:w-full w-0`}></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+{/* First 4 Stats Cards - Leads Data */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+  {stats.map((stat) => (
+    <div
+      key={stat.id}
+      className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-0.5"
+    >
+      <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
+      
+      <div className="relative p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className={`${stat.lightColor} p-2 rounded-xl dark:${stat.lightColor.replace('bg-', 'bg-').replace('-50', '-900/30')}`}>
+            <div className={`${stat.textColor} dark:${stat.textColor.replace('text-', 'text-').replace('-600', '-400')}`}>
+              {stat.icon}
             </div>
+          </div>
+          
+          <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
+            stat.trend === "up"
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+          }`}>
+            <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
+            {stat.change}
+          </div>
+        </div>
 
-            {/* Chart for Leads - Pie Chart */}
+        <div className="space-y-2 mb-3">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{stat.title}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+          <div className={`w-2 h-2 rounded-full ${
+            stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
+          }`}></div>
+          <div className={`text-xs font-medium ${
+            stat.trend === "up"
+              ? "text-emerald-600 dark:text-emerald-400"
+              : "text-red-600 dark:text-red-400"
+          }`}>{stat.change}</div>
+        </div>
+      </div>
+
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
+        <div className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
+      </div>
+    </div>
+  ))}
+</div>
+
+
+            {/* Chart for First 4 Cards - Pie Chart */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 mb-8">
               <div className="mb-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
@@ -369,37 +408,49 @@ const AdminAnalytics = ({ collapsed }) => {
               </div>
             </div>
 
-            {/* Users Stats Section - Modern flat design without traditional cards */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Users Overview</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {additionalStats.map((stat) => (
-                  <div
-                    key={stat.id}
-                    className="group p-4 rounded-xl bg-white dark:bg-gray-800 hover:bg-gradient-to-br hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 hover:scale-105"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 rounded-full bg-${stat.color}-100 text-${stat.color}-600 dark:bg-${stat.color}-900/30 dark:text-${stat.color}-400`}>
-                        {stat.icon}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.title}</p>
-                        <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{stat.value}</h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`text-sm font-semibold ${stat.trend === "up" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
-                            {stat.change}
-                          </span>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-3 h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                      <div className={`h-full transition-all duration-500 ${stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"} group-hover:w-full w-0`}></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+{/* Next 4 Stats Cards - Users Data */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+  {additionalStats.map(stat => (
+    <div
+      key={stat.id}
+      className="relative overflow-hidden bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-100 dark:border-gray-700 hover:shadow-xl transition-all duration-300 group hover:-translate-y-0.5"
+    >
+      <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-5 group-hover:opacity-10 transition-opacity duration-300`}></div>
+      <div className="relative p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className={`${stat.lightColor} p-2 rounded-xl dark:${stat.lightColor.replace('bg-', 'bg-').replace('-50', '-900/30')}`}>
+            <div className={`${stat.textColor} dark:${stat.textColor.replace('text-', 'text-').replace('-600', '-400')}`}>{stat.icon}</div>
+          </div>
+          <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-semibold ${
+            stat.trend === "up" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+          }`}>
+            <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
+            {stat.change}
+          </div>
+        </div>
+        <div className="space-y-2 mb-3">
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{stat.value}</h3>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">{stat.title}</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
+          </div>
+        </div>
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
+          <div className={`w-2 h-2 rounded-full ${
+            stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
+          }`}></div>
+          <div className={`text-xs font-medium ${
+            stat.trend === "up" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+          }`}>{stat.change}</div>
+        </div>
+      </div>
+      <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100 dark:bg-gray-700">
+        <div className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500`}></div>
+      </div>
+    </div>
+  ))}
+</div>
+
 
             {/* Doughnut Chart for User Analytics - ONLY 4 FIELDS */}
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
