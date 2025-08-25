@@ -41,14 +41,24 @@ const OptimizedUserDashboard = ({ collapsed }) => {
   const [showAddUserForm, setShowAddUserForm] = useState(false);
   const [viewAll, setViewAll] = useState(false);
 
-  // Helper function to determine if user is active based on API data
+  // FIXED: Helper function to determine if user is active based on API data
   const isUserActive = useCallback((user) => {
-    // First check the statusOfWork field - this seems to be the primary indicator
+    // Primary check: statusOfWork field
     if (user.hasOwnProperty('statusOfWork')) {
-      // If statusOfWork is "active" or contains "active", user is active
       if (typeof user.statusOfWork === 'string') {
-        const statusLower = user.statusOfWork.toLowerCase();
-        return statusLower === 'active' || statusLower.includes('active');
+        const statusLower = user.statusOfWork.toLowerCase().trim();
+        // Explicitly check for inactive first
+        if (statusLower === 'inactive' || statusLower.includes('inactive')) {
+          return false;
+        }
+        // Then check for active
+        if (statusLower === 'active' || statusLower.includes('active')) {
+          return true;
+        }
+        // Check for other active-indicating statuses
+        if (statusLower === 'in progress' || statusLower === 'working' || statusLower === 'busy') {
+          return true;
+        }
       }
       // If statusOfWork is boolean
       if (typeof user.statusOfWork === 'boolean') {
@@ -56,7 +66,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
       }
     }
     
-    // Check various other possible field names that might indicate active status
+    // Check other possible status fields
     if (user.hasOwnProperty('isActive')) {
       return user.isActive === true;
     }
@@ -65,40 +75,35 @@ const OptimizedUserDashboard = ({ collapsed }) => {
     }
     if (user.hasOwnProperty('status')) {
       if (typeof user.status === 'string') {
-        const statusLower = user.status.toLowerCase();
+        const statusLower = user.status.toLowerCase().trim();
         return statusLower === 'active';
       }
       return user.status === true;
     }
     if (user.hasOwnProperty('userStatus')) {
       if (typeof user.userStatus === 'string') {
-        const statusLower = user.userStatus.toLowerCase();
+        const statusLower = user.userStatus.toLowerCase().trim();
         return statusLower === 'active';
       }
       return user.userStatus === true;
     }
     if (user.hasOwnProperty('accountStatus')) {
       if (typeof user.accountStatus === 'string') {
-        const statusLower = user.accountStatus.toLowerCase();
+        const statusLower = user.accountStatus.toLowerCase().trim();
         return statusLower === 'active';
       }
       return user.accountStatus === true;
     }
     
-    // Check if user has assigned work AND the work status is not explicitly inactive
+    // If no explicit status found, check if user has work assigned
+    // But be more conservative - only consider active if explicitly stated
     if (user.assignedWork && user.assignedWork.trim() !== '' && user.assignedWork.toLowerCase() !== 'none') {
-      // If they have work but statusOfWork shows inactive, respect that
-      if (user.statusOfWork && typeof user.statusOfWork === 'string') {
-        const statusLower = user.statusOfWork.toLowerCase();
-        if (statusLower === 'inactive' || statusLower.includes('inactive')) {
-          return false;
-        }
-      }
-      // If they have work and no explicit inactive status, consider them active
-      return true;
+      // If they have work but no explicit status, default to inactive for safety
+      // This ensures we don't incorrectly mark inactive users as active
+      return false;
     }
     
-    // Default to false if no clear indication of active status
+    // Default to false if no clear indication of status
     return false;
   }, []);
 
@@ -279,6 +284,18 @@ const OptimizedUserDashboard = ({ collapsed }) => {
       const allUsers = await fetchAllUsers();
       console.log('Fetched users:', allUsers); // Debug log
       
+      // Debug: Log each user's status for troubleshooting
+      if (Array.isArray(allUsers)) {
+        console.log('User status breakdown:');
+        allUsers.forEach(user => {
+          console.log(`${user.firstName} ${user.lastName}:`, {
+            statusOfWork: user.statusOfWork,
+            assignedWork: user.assignedWork,
+            calculatedActive: isUserActive(user)
+          });
+        });
+      }
+      
       // Ensure we always set an array
       if (Array.isArray(allUsers)) {
         setUsers(allUsers);
@@ -293,7 +310,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
     } finally {
       setLoading(false);
     }
-  }, [fetchAllUsers]);
+  }, [fetchAllUsers, isUserActive]);
 
   // Specialized fetch functions
   const getActiveUsers = useCallback(async () => {
@@ -365,7 +382,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
       );
     }
 
-    // Role/Status filter - Using API data properly
+    // Role/Status filter - Using fixed logic
     if (roleFilter !== 'All') {
       switch (roleFilter) {
         case 'Active':
@@ -394,16 +411,28 @@ const OptimizedUserDashboard = ({ collapsed }) => {
     return filtered;
   }, [users, searchTerm, roleFilter, isUserActive]);
 
-  // Memoized statistics - Using API data properly
+  // FIXED: Memoized statistics - Using corrected logic
   const stats = useMemo(() => {
     const allUsers = Array.isArray(users) ? users : [];
+    
+    const activeCount = allUsers.filter(user => isUserActive(user)).length;
+    const inactiveCount = allUsers.filter(user => !isUserActive(user)).length;
+    
+    // Debug logging
+    console.log('Stats calculation:', {
+      total: allUsers.length,
+      active: activeCount,
+      inactive: inactiveCount,
+      users: allUsers.filter(user => user.role?.toLowerCase() === 'user').length,
+      admins: allUsers.filter(user => user.role?.toLowerCase() === 'admin').length
+    });
     
     return {
       total: allUsers.length,
       users: allUsers.filter(user => user.role?.toLowerCase() === 'user').length,
       admins: allUsers.filter(user => user.role?.toLowerCase() === 'admin').length,
-      active: allUsers.filter(user => isUserActive(user)).length,
-      inactive: allUsers.filter(user => !isUserActive(user)).length
+      active: activeCount,
+      inactive: inactiveCount
     };
   }, [users, isUserActive]);
 
@@ -491,7 +520,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
                 e.target.src = `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=6366f1&color=fff&size=80`;
               }}
             />
-            {/* Status indicator - Using API data */}
+            {/* Status indicator - Using fixed logic */}
             <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-3 border-white dark:border-gray-800 flex items-center justify-center ${
               isUserActive(user) ? 'bg-green-500' : 'bg-red-500'
             }`}>
@@ -536,7 +565,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
             @{user.username}
           </p>
           
-          {/* Status Badge - Using API data */}
+          {/* Status Badge - Using fixed logic */}
           <div className="flex justify-center">
             <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
               isUserActive(user)
@@ -711,7 +740,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
               </div>
             </div>
 
-            {/* Stats Cards - Now using proper API-based counting */}
+            {/* Stats Cards - Now using corrected logic */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
               <StatCard 
                 icon={Users} 
