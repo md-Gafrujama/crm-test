@@ -1,5 +1,5 @@
 import prisma from "../../prisma/prismaClient.js";
-import client from "../../middleware/redis.middleware.js";
+// import client from "../../middleware/redis.middleware.js";
 
 const data = {
   async getData(req, res) {
@@ -34,16 +34,16 @@ const data = {
         });
       }
 
-      const cacheKey = `userLeadsData:${userId}:${companyId}`;
-      const cachedData = await client.get(cacheKey);
+      // const cacheKey = `userLeadsData:${userId}:${companyId}`;
+      // const cachedData = await client.get(cacheKey);
 
-      if (cachedData) {
-        return res.status(200).json({
-          success: true,
-          message: "User and leads data fetched from cache.",
-          data: JSON.parse(cachedData),
-        });
-      }
+      // if (cachedData) {
+      //   return res.status(200).json({
+      //     success: true,
+      //     message: "User and leads data fetched from cache.",
+      //     data: JSON.parse(cachedData),
+      //   });
+      // }
 
       const allLeads = await prisma.Lead.count({
         where: {
@@ -89,7 +89,7 @@ const data = {
         }, {}),
       };
 
-      await client.set(cacheKey, JSON.stringify(responseData), "EX", 600);
+      // await client.set(cacheKey, JSON.stringify(responseData), "EX", 600);
 
       return res.status(200).json({
         success: true,

@@ -1,7 +1,7 @@
 import express from "express";
 import prisma from "../../prisma/prismaClient.js";
 import { uploadToCloudinary } from "../../utilis/fileUpload.js";
-import client from "../../middleware/redis.middleware.js";
+// import client from "../../middleware/redis.middleware.js";
 
 const employee = {
   async addEmployee(req, res) {
@@ -93,22 +93,22 @@ const employee = {
     try {
       const companyId = req.user.companyId;
 
-      const cacheKey = `employeesData:${companyId}`;
-      const cachedData = await client.get(cacheKey);
+      // const cacheKey = `employeesData:${companyId}`;
+      // const cachedData = await client.get(cacheKey);
 
-      if (cachedData) {
-        return res.status(200).json({
-          success: true,
-          message: "Fetched employee data from cache.",
-          employees: JSON.parse(cachedData),
-        });
-      }
+      // if (cachedData) {
+      //   return res.status(200).json({
+      //     success: true,
+      //     message: "Fetched employee data from cache.",
+      //     employees: JSON.parse(cachedData),
+      //   });
+      // }
 
       const employees = await prisma.employee.findMany({
         where: { companyId: companyId },
       });
 
-      await client.set(cacheKey, JSON.stringify(employees), "EX", 600);
+      // await client.set(cacheKey, JSON.stringify(employees), "EX", 600);
 
       return res.status(200).json({
         success: true,

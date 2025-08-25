@@ -1,5 +1,5 @@
 import prisma from "../../prisma/prismaClient.js";
-import client from "../../middleware/redis.middleware.js";
+// import client from "../../middleware/redis.middleware.js";
 
 const allUsersDetail = {
   async allData(req, res) {
@@ -13,15 +13,15 @@ const allUsersDetail = {
         });
       }
 
-      const cacheKey = `usersData:${companyId}`;
-      const cachedData = await client.get(cacheKey);
+      // const cacheKey = `usersData:${companyId}`;
+      // const cachedData = await client.get(cacheKey);
 
-      if (cachedData) {
-        return res.status(200).json({
-          msg: "Fetched users data from cache.",
-          users: JSON.parse(cachedData),
-        });
-      }
+      // if (cachedData) {
+      //   return res.status(200).json({
+      //     msg: "Fetched users data from cache.",
+      //     users: JSON.parse(cachedData),
+      //   });
+      // }
 
       const users = await prisma.user.findMany({
         where: { companyId: companyId },
@@ -33,7 +33,7 @@ const allUsersDetail = {
         });
       }
 
-      await client.set(cacheKey, JSON.stringify(users), "EX", 600); 
+      // await client.set(cacheKey, JSON.stringify(users), "EX", 600); 
       return res.status(200).json({
         msg: "Successfully fetched users data from DB.",
         users: users,
