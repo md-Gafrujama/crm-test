@@ -1,52 +1,48 @@
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import EditUser from '../Forms/EditUser';
 import axios from 'axios';
+import { 
+  Search, 
+  Users, 
+  UserCheck, 
+  Filter, 
+  Shield, 
+  Activity, 
+  UserX, 
+  Plus,
+  Edit3,
+  Mail,
+  Calendar,
+  Eye,
+  ChevronRight,
+  Loader2,
+  AlertCircle
+} from 'lucide-react';
+import EditUser from '../Forms/EditUser';
 import { Header } from '../common/Header';
 import { Sidebar, useSidebar } from '../common/sidebar';
 import { cn } from "../../../utils/cn";
-import { useTheme } from '../../../hooks/use-theme';
 import Footer from '../common/Footer';
 import Sign from '../Forms/sign';
 import { API_BASE_URL } from "../../../config/api";
-import { Search, Users, UserCheck, Filter, Shield, Activity, UserX } from 'lucide-react';
 
-const AllUsers = ({collapsed}) => {
+const OptimizedUserDashboard = ({ collapsed }) => {
   const navigate = useNavigate();
+  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
+  
+  // State management
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState(null);
-  const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
-  const [showAddUserForm, setShowAddUserForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('All');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+  const [showAddUserForm, setShowAddUserForm] = useState(false);
+  const [viewAll, setViewAll] = useState(false);
 
-  // Filter users by search term
-  const filteredUsers = users.filter(user =>
-    ['firstName', 'lastName', 'email', 'username', 'role'].some(field =>
-      user[field]?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
-  );
-
-  // Filter by role and status
-  const filteredByRole = filteredUsers.filter(user => {
-    if (roleFilter === 'All') return true;
-    if (roleFilter === 'Active') return user.isActive !== false;
-    if (roleFilter === 'Inactive') return user.isActive === false;
-    return user.role?.toLowerCase() === roleFilter.toLowerCase();
-  });
-
-  // Count users and admins
-  const totalCount = filteredByRole.length;
-  const userCount = filteredByRole.filter(user => user.role?.toLowerCase() === 'user').length;
-  const adminCount = filteredByRole.filter(user => user.role?.toLowerCase() === 'admin').length;
-  const activeCount = filteredByRole.filter(user => user.isActive !== false).length;
-  const inactiveCount = filteredByRole.filter(user => user.isActive === false).length;
-
-  // Fetch all users (your existing API)
-  const fetchAllUsers = async () => {
+  // API functions - optimized with error handling
+  const fetchAllUsers = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -54,9 +50,8 @@ const AllUsers = ({collapsed}) => {
       }
 
       const response = await axios.get(`${API_BASE_URL}/api/allUser`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` },
+        timeout: 10000 // 10 second timeout
       });
 
       if (response.status === 401) {
@@ -64,14 +59,48 @@ const AllUsers = ({collapsed}) => {
         throw new Error('Session expired. Please login again.');
       }
 
-      return response.data;
+      // Handle different response structures
+      const data = response.data;
+      
+      // Check if data is directly an array
+      if (Array.isArray(data)) {
+        return data;
+      }
+      
+      // Check common response structures
+      if (data.users && Array.isArray(data.users)) {
+        return data.users;
+      }
+      
+      if (data.data && Array.isArray(data.data)) {
+        return data.data;
+      }
+      
+      if (data.result && Array.isArray(data.result)) {
+        return data.result;
+      }
+      
+      // If none of the above, try to find any array property
+      const possibleArrays = Object.values(data).filter(value => Array.isArray(value));
+      if (possibleArrays.length > 0) {
+        return possibleArrays[0];
+      }
+      
+      // Log the actual response structure for debugging
+      console.log('API Response structure:', data);
+      
+      // Return empty array if no valid structure found
+      return [];
     } catch (error) {
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Request timeout. Please try again.');
+      }
+      console.error('Fetch users error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  // NEW: Fetch active users API
-  const fetchActiveUsers = async () => {
+  const fetchActiveUsers = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -79,9 +108,8 @@ const AllUsers = ({collapsed}) => {
       }
 
       const response = await axios.get(`${API_BASE_URL}/api/allUser/active`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` },
+        timeout: 10000
       });
 
       if (response.status === 401) {
@@ -89,14 +117,45 @@ const AllUsers = ({collapsed}) => {
         throw new Error('Session expired. Please login again.');
       }
 
-      return response.data.data || response.data;
+      // Handle different response structures
+      const data = response.data;
+      
+      // Check if data is directly an array
+      if (Array.isArray(data)) {
+        return data;
+      }
+      
+      // Check common response structures
+      if (data.users && Array.isArray(data.users)) {
+        return data.users;
+      }
+      
+      if (data.data && Array.isArray(data.data)) {
+        return data.data;
+      }
+      
+      if (data.result && Array.isArray(data.result)) {
+        return data.result;
+      }
+      
+      // If none of the above, try to find any array property
+      const possibleArrays = Object.values(data).filter(value => Array.isArray(value));
+      if (possibleArrays.length > 0) {
+        return possibleArrays[0];
+      }
+      
+      console.log('Active Users API Response:', data);
+      return [];
     } catch (error) {
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Request timeout. Please try again.');
+      }
+      console.error('Fetch active users error:', error);
       throw error;
     }
-  };
+  }, []);
 
-  // NEW: Fetch inactive users API
-  const fetchInactiveUsers = async () => {
+  const fetchInactiveUsers = useCallback(async () => {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
@@ -104,9 +163,8 @@ const AllUsers = ({collapsed}) => {
       }
 
       const response = await axios.get(`${API_BASE_URL}/api/allUser/inactive`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        headers: { 'Authorization': `Bearer ${token}` },
+        timeout: 10000
       });
 
       if (response.status === 401) {
@@ -114,102 +172,419 @@ const AllUsers = ({collapsed}) => {
         throw new Error('Session expired. Please login again.');
       }
 
-      return response.data.data || response.data;
+      // Handle different response structures
+      const data = response.data;
+      
+      // Check if data is directly an array
+      if (Array.isArray(data)) {
+        return data;
+      }
+      
+      // Check common response structures
+      if (data.users && Array.isArray(data.users)) {
+        return data.users;
+      }
+      
+      if (data.data && Array.isArray(data.data)) {
+        return data.data;
+      }
+      
+      if (data.result && Array.isArray(data.result)) {
+        return data.result;
+      }
+      
+      // If none of the above, try to find any array property
+      const possibleArrays = Object.values(data).filter(value => Array.isArray(value));
+      if (possibleArrays.length > 0) {
+        return possibleArrays[0];
+      }
+      
+      console.log('Inactive Users API Response:', data);
+      return [];
     } catch (error) {
+      if (error.code === 'ECONNABORTED') {
+        throw new Error('Request timeout. Please try again.');
+      }
+      console.error('Fetch inactive users error:', error);
       throw error;
     }
-  };
-
-  // Main fetch function - uses your existing all users API
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      const allUsers = await fetchAllUsers();
-      setUsers(allUsers);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // NEW: Function to get active users only
-  const getActiveUsers = async () => {
-    setLoading(true);
-    try {
-      const activeUsers = await fetchActiveUsers();
-      setUsers(activeUsers);
-      setRoleFilter('Active'); // Update filter to show we're viewing active users
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // NEW: Function to get inactive users only
-  const getInactiveUsers = async () => {
-    setLoading(true);
-    try {
-      const inactiveUsers = await fetchInactiveUsers();
-      setUsers(inactiveUsers);
-      setRoleFilter('Inactive'); // Update filter to show we're viewing inactive users
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers(); // Load all users by default
   }, []);
 
-  // Handle new user creation - refresh the list
-  const handleUserAdded = () => {
-    fetchUsers(); // Refresh entire list to show new user
-    setShowAddUserForm(false);
-  };
+  // Main fetch function with loading state
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const allUsers = await fetchAllUsers();
+      console.log('Fetched users:', allUsers); // Debug log
+      
+      // Ensure we always set an array
+      if (Array.isArray(allUsers)) {
+        setUsers(allUsers);
+      } else {
+        console.warn('API did not return an array:', allUsers);
+        setUsers([]);
+      }
+    } catch (err) {
+      console.error('Error in fetchUsers:', err);
+      setError(err.message || 'Failed to fetch users');
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchAllUsers]);
 
-  const handleEditUser = (userId) => {
+  // Specialized fetch functions
+  const getActiveUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const activeUsers = await fetchActiveUsers();
+      console.log('Fetched active users:', activeUsers); // Debug log
+      
+      if (Array.isArray(activeUsers)) {
+        setUsers(activeUsers);
+        setRoleFilter('Active');
+      } else {
+        console.warn('Active users API did not return an array:', activeUsers);
+        setUsers([]);
+        setRoleFilter('Active');
+      }
+    } catch (err) {
+      console.error('Error in getActiveUsers:', err);
+      setError(err.message || 'Failed to fetch active users');
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchActiveUsers]);
+
+  const getInactiveUsers = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const inactiveUsers = await fetchInactiveUsers();
+      console.log('Fetched inactive users:', inactiveUsers); // Debug log
+      
+      if (Array.isArray(inactiveUsers)) {
+        setUsers(inactiveUsers);
+        setRoleFilter('Inactive');
+      } else {
+        console.warn('Inactive users API did not return an array:', inactiveUsers);
+        setUsers([]);
+        setRoleFilter('Inactive');
+      }
+    } catch (err) {
+      console.error('Error in getInactiveUsers:', err);
+      setError(err.message || 'Failed to fetch inactive users');
+      setUsers([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchInactiveUsers]);
+
+  // Initial data fetch
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  // Memoized filtered users for better performance
+  const filteredUsers = useMemo(() => {
+    if (!Array.isArray(users)) return [];
+    
+    let filtered = users;
+
+    // Search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(user =>
+        ['firstName', 'lastName', 'email', 'username', 'role'].some(field =>
+          user[field]?.toString().toLowerCase().includes(searchLower)
+        )
+      );
+    }
+
+    // Role/Status filter - Fixed logic
+    if (roleFilter !== 'All') {
+      switch (roleFilter) {
+        case 'Active':
+          // Only show users where isActive is true or undefined/null (default active)
+          filtered = filtered.filter(user => 
+            user.isActive === true || user.isActive === undefined || user.isActive === null
+          );
+          break;
+        case 'Inactive':
+          // Only show users where isActive is explicitly false
+          filtered = filtered.filter(user => user.isActive === false);
+          break;
+        case 'User':
+          filtered = filtered.filter(user => 
+            user.role?.toLowerCase() === 'user'
+          );
+          break;
+        case 'Admin':
+          filtered = filtered.filter(user => 
+            user.role?.toLowerCase() === 'admin'
+          );
+          break;
+        default:
+          filtered = filtered.filter(user => 
+            user.role?.toLowerCase() === roleFilter.toLowerCase()
+          );
+      }
+    }
+
+    return filtered;
+  }, [users, searchTerm, roleFilter]);
+
+  // Memoized statistics - Fixed counting logic
+  const stats = useMemo(() => ({
+    total: filteredUsers.length,
+    users: filteredUsers.filter(user => user.role?.toLowerCase() === 'user').length,
+    admins: filteredUsers.filter(user => user.role?.toLowerCase() === 'admin').length,
+    // Fixed active/inactive counting
+    active: filteredUsers.filter(user => 
+      user.isActive === true || user.isActive === undefined || user.isActive === null
+    ).length,
+    inactive: filteredUsers.filter(user => user.isActive === false).length
+  }), [filteredUsers]);
+
+  // Event handlers
+  const handleSearch = useCallback((value) => {
+    setSearchTerm(value);
+  }, []);
+
+  const handleRoleFilterChange = useCallback((value) => {
+    setRoleFilter(value);
+    // Reset search when changing filters
+    if (value !== 'All' && searchTerm) {
+      setSearchTerm('');
+    }
+  }, [searchTerm]);
+
+  const handleEditUser = useCallback((userId) => {
     setSelectedUserId(userId);
     setIsEditModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setIsEditModalOpen(false);
     setSelectedUserId(null);
-  };
+  }, []);
 
-  const handleUserUpdated = (updatedUser) => {
-    setUsers(users.map(user => 
-      user.id === updatedUser.id ? updatedUser : user
-    ));
+  const handleUserAdded = useCallback(() => {
+    fetchUsers();
+    setShowAddUserForm(false);
+  }, [fetchUsers]);
+
+  const handleUserUpdated = useCallback((updatedUser) => {
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === updatedUser.id ? { ...user, ...updatedUser } : user
+      )
+    );
     handleCloseModal();
-  };
+  }, [handleCloseModal]);
 
-  const handleUserDeleted = (userId) => {
-    setUsers(users.filter(user => user.id !== userId));
+  const handleUserDeleted = useCallback((userId) => {
+    setUsers(prevUsers => prevUsers.filter(user => user.id !== userId));
     handleCloseModal();
-  };
+  }, [handleCloseModal]);
 
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#ff8633]"></div>
+  // Display users (limit to 4 unless viewAll is true)
+  const displayUsers = useMemo(() => 
+    viewAll ? filteredUsers : filteredUsers.slice(0, 4),
+    [filteredUsers, viewAll]
+  );
+
+  // Components
+  const StatCard = ({ icon: Icon, title, value, color, bgColor }) => (
+    <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-blue-200 dark:hover:border-blue-600">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+            {title}
+          </p>
+          <p className={`text-3xl font-bold transition-colors duration-200 ${color}`}>
+            {value}
+          </p>
+        </div>
+        <div className={`p-3 rounded-xl transition-all duration-200 group-hover:scale-110 ${bgColor}`}>
+          <Icon className="h-6 w-6 text-white" />
         </div>
       </div>
+    </div>
+  );
+
+  const UserCard = ({ user }) => (
+    <div className="group bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2 hover:border-blue-200 dark:hover:border-blue-600">
+      <div className="relative">
+        {/* Header with gradient */}
+        <div className="h-20 bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500"></div>
+        
+        {/* Profile Image */}
+        <div className="absolute top-8 left-1/2 transform -translate-x-1/2">
+          <div className="relative">
+            <img
+              src={user.photo || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=6366f1&color=fff&size=80`}
+              alt={`${user.firstName} ${user.lastName}`}
+              className="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-gray-800 shadow-lg transition-transform duration-200 group-hover:scale-110"
+              onError={(e) => {
+                e.target.src = `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=6366f1&color=fff&size=80`;
+              }}
+            />
+            {/* Status indicator */}
+            <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-3 border-white dark:border-gray-800 flex items-center justify-center ${
+              user.isActive === true || user.isActive === undefined || user.isActive === null ? 'bg-green-500' : 'bg-red-500'
+            }`}>
+              <div className={`w-2 h-2 rounded-full bg-white`}></div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Edit button */}
+        <button
+          onClick={() => handleEditUser(user.id)}
+          className="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-white hover:scale-110"
+          aria-label="Edit user"
+        >
+          <Edit3 className="h-4 w-4 text-gray-600" />
+        </button>
+      </div>
+
+      <div className="pt-12 pb-6 px-6">
+        {/* Role Badge */}
+        <div className="flex justify-center mb-4">
+          <span className={`px-3 py-1 text-xs font-semibold rounded-full flex items-center gap-1.5 ${
+            user.role?.toLowerCase() === 'admin' 
+              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+              : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+          }`}>
+            {user.role?.toLowerCase() === 'admin' ? (
+              <Shield className="h-3 w-3" />
+            ) : (
+              <UserCheck className="h-3 w-3" />
+            )}
+            {user.role}
+          </span>
+        </div>
+
+        {/* User Info */}
+        <div className="text-center mb-4">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+            {user.firstName} {user.lastName}
+          </h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+            @{user.username}
+          </p>
+          
+          {/* Status Badge */}
+          <div className="flex justify-center">
+            <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
+              user.isActive === true || user.isActive === undefined || user.isActive === null
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+            }`}>
+              <Activity className="h-3 w-3" />
+              {user.isActive === true || user.isActive === undefined || user.isActive === null ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+        </div>
+
+        {/* Contact Info */}
+        <div className="space-y-3 text-sm">
+          <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+            <Mail className="h-4 w-4 flex-shrink-0 text-blue-500" />
+            <span className="truncate">{user.email}</span>
+          </div>
+          
+          <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+            <Calendar className="h-4 w-4 flex-shrink-0 text-green-500" />
+            <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
+          </div>
+        </div>
+
+        {/* Work Info */}
+        {user.assignedWork && (
+          <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+            <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Current Task
+            </p>
+            <p className="text-sm text-gray-900 dark:text-white">
+              {user.assignedWork}
+            </p>
+            {user.statusOfWork && (
+              <div className="flex items-center gap-2 mt-2">
+                <div className={`w-2 h-2 rounded-full ${
+                  user.statusOfWork.toLowerCase().includes('progress') ? 'bg-yellow-500' :
+                  user.statusOfWork.toLowerCase().includes('completed') ? 'bg-green-500' :
+                  'bg-gray-400'
+                }`}></div>
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                  {user.statusOfWork}
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  // Loading state
+  if (loading) {
+    return (
+      <>
+        <Header onToggleSidebar={toggleSidebar} />
+        <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
+          <div className={cn(
+            "transition-[margin] duration-300 ease-in-out",
+            collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
+          )}>
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <Loader2 className="h-12 w-12 animate-spin text-blue-500 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-400">Loading users...</p>
+              </div>
+            </div>
+          </div>
+        </Sidebar>
+        <Footer />
+      </>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-6xl mx-auto bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          <p>Error: {error}</p>
-        </div>
-      </div>
+      <>
+        <Header onToggleSidebar={toggleSidebar} />
+        <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
+          <div className={cn(
+            "transition-[margin] duration-300 ease-in-out",
+            collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
+          )}>
+            <div className="container mx-auto px-4 py-8">
+              <div className="max-w-md mx-auto bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-6 py-4 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <AlertCircle className="h-5 w-5 flex-shrink-0" />
+                  <div>
+                    <p className="font-medium">Error loading users</p>
+                    <p className="text-sm mt-1">{error}</p>
+                    <button 
+                      onClick={fetchUsers}
+                      className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors text-sm"
+                    >
+                      Try Again
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Sidebar>
+        <Footer />
+      </>
     );
   }
 
@@ -218,38 +593,43 @@ const AllUsers = ({collapsed}) => {
       <Header onToggleSidebar={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
         <div className={cn(
-          "transition-[margin] duration-300 ease-in-out",
+          "transition-[margin] duration-300 ease-in-out min-h-screen",
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
         )}>
-          <div className="container mx-auto px-4 py-6">
-
+          <div className="container mx-auto px-4 py-6 max-w-7xl">
+            
             {/* Header Section */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 max-w-7xl mx-auto gap-6">
-              <h1 className="text-2xl lg:text-3xl font-bold text-gray-800 dark:text-gray-200">
-                Users Management
-              </h1>
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-8 gap-6">
+              <div>
+                <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+                  User Management
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400">
+                  Manage your team members and their permissions
+                </p>
+              </div>
               
               {/* Controls Section */}
-              <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
                 {/* Search Input */}
                 <div className="relative w-full sm:w-80">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search users..."
                     value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                    onChange={(e) => handleSearch(e.target.value)}
+                    className="w-full pl-11 pr-4 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white transition-all duration-200 hover:border-blue-300"
                   />
                 </div>
                 
                 {/* Role Filter Dropdown */}
-                <div className="relative w-full sm:w-44">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <div className="relative w-full sm:w-48">
+                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <select
                     value={roleFilter}
-                    onChange={(e) => setRoleFilter(e.target.value)}
-                    className="w-full pl-10 pr-8 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent dark:bg-slate-700 dark:border-slate-600 dark:text-white appearance-none bg-white cursor-pointer"
+                    onChange={(e) => handleRoleFilterChange(e.target.value)}
+                    className="w-full pl-11 pr-8 py-3 text-sm border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:text-white appearance-none bg-white cursor-pointer transition-all duration-200 hover:border-blue-300"
                   >
                     <option value="All">All Users</option>
                     <option value="User">Users Only</option>
@@ -257,233 +637,130 @@ const AllUsers = ({collapsed}) => {
                     <option value="Active">Active Only</option>
                     <option value="Inactive">Inactive Only</option>
                   </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+                  <ChevronRight className="absolute right-3 top-1/2 transform -translate-y-1/2 rotate-90 h-4 w-4 text-gray-400 pointer-events-none" />
                 </div>
                 
                 {/* Add User Button */}
                 <button
                   onClick={() => setShowAddUserForm(true)}
-                  className="flex items-center justify-center gap-2 px-6 py-2.5 bg-[#ff8633] text-white rounded-lg transition-all duration-200 hover:bg-[#e57328] hover:shadow-md whitespace-nowrap text-sm font-medium"
+                  className="flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl transition-all duration-200 hover:from-blue-600 hover:to-purple-700 hover:shadow-lg hover:-translate-y-0.5 whitespace-nowrap text-sm font-medium"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                    <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 616 6H2a6 6 0 616-6z" />
-                  </svg>
+                  <Plus className="h-4 w-4" />
                   Add User
                 </button>
               </div>
             </div>
 
-
             {/* Stats Cards */}
-            <div className="max-w-7xl mx-auto mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-              {/* Total Users */}
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                    <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Admins */}
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                    <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Admins</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{adminCount}</p>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Users */}
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                    <UserCheck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Users</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{userCount}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Active Users */}
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                    <Activity className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active</p>
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">{activeCount}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Inactive Users */}
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                    <UserX className="h-5 w-5 text-red-600 dark:text-red-400" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Inactive</p>
-                    <p className="text-2xl font-bold text-red-600 dark:text-red-400">{inactiveCount}</p>
-                  </div>
-                </div>
-              </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+              <StatCard 
+                icon={Users} 
+                title="Total Users" 
+                value={stats.total} 
+                color="text-blue-600 dark:text-blue-400"
+                bgColor="bg-gradient-to-br from-blue-500 to-blue-600"
+              />
+              <StatCard 
+                icon={Shield} 
+                title="Admins" 
+                value={stats.admins} 
+                color="text-purple-600 dark:text-purple-400"
+                bgColor="bg-gradient-to-br from-purple-500 to-purple-600"
+              />
+              <StatCard 
+                icon={UserCheck} 
+                title="Users" 
+                value={stats.users} 
+                color="text-indigo-600 dark:text-indigo-400"
+                bgColor="bg-gradient-to-br from-indigo-500 to-indigo-600"
+              />
+              <StatCard 
+                icon={Activity} 
+                title="Active" 
+                value={stats.active} 
+                color="text-green-600 dark:text-green-400"
+                bgColor="bg-gradient-to-br from-green-500 to-green-600"
+              />
+              <StatCard 
+                icon={UserX} 
+                title="Inactive" 
+                value={stats.inactive} 
+                color="text-red-600 dark:text-red-400"
+                bgColor="bg-gradient-to-br from-red-500 to-red-600"
+              />
             </div>
 
-            {/* User Cards Grid - Show only first 4 */}
-            {filteredByRole.length === 0 ? (
-              <div className="max-w-7xl mx-auto text-center py-12">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
-                  <Users className="h-8 w-8 text-gray-400" />
+            {/* User Cards Grid */}
+            {filteredUsers.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 dark:bg-gray-700 rounded-full mb-6">
+                  <Users className="h-10 w-10 text-gray-400" />
                 </div>
-                <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">
-                  {searchTerm ? 'No users match your search criteria.' : 'No users found.'}
+                <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
+                  {searchTerm || roleFilter !== 'All' ? 'No users match your criteria' : 'No users found'}
+                </h3>
+                <p className="text-gray-500 dark:text-gray-400 mb-6">
+                  {searchTerm || roleFilter !== 'All' 
+                    ? 'Try adjusting your search or filter options.'
+                    : 'Get started by adding your first user.'
+                  }
                 </p>
-                <p className="text-gray-500 dark:text-gray-500 text-sm">
-                  Try adjusting your search or filter options.
-                </p>
+                {(!searchTerm && roleFilter === 'All') && (
+                  <button
+                    onClick={() => setShowAddUserForm(true)}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Your First User
+                  </button>
+                )}
               </div>
             ) : (
               <>
-                <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-6">
-                  {filteredByRole.slice(0, 4).map((user) => (
-                    <div key={user.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-600 overflow-hidden hover:shadow-md transition-all duration-200 hover:-translate-y-1">
-                      <div className="relative">
-                        {/* Circular Profile Image */}
-                        <div className="flex justify-center pt-4">
-                          <img
-                            src={user.photo || 'https://randomuser.me/api/portraits/men/1.jpg'}
-                            alt={`${user.firstName} ${user.lastName}`}
-                            className="w-20 h-20 rounded-full object-cover border-4 border-white dark:border-slate-700 shadow-sm"
-                            onError={(e) => {
-                              e.target.src = 'https://randomuser.me/api/portraits/men/1.jpg';
-                            }}
-                          />
-                        </div>
-                        
-                        <div className="absolute top-2 right-2">
-                          <button
-                            onClick={() => handleEditUser(user.id)}
-                            className="p-1.5 bg-white/90 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
-                            aria-label="Edit user"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                            </svg>
-                          </button>
-                        </div>
-                        
-                        {/* Status Badge  */}
-                        <div className="absolute top-2 left-2">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
-                            user.isActive !== false
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
-                              : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                          }`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${
-                              user.isActive !== false ? 'bg-green-500' : 'bg-red-500'
-                            }`}></div>
-                            {user.isActive !== false ? 'Active' : 'Inactive'}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="p-4 pt-2">
-                        {/* Role Badge - Now positioned below profile picture */}
-                        <div className="flex justify-center mb-3">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                            user.role?.toLowerCase() === 'admin' 
-                              ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
-                              : 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
-                          }`}>
-                            {user.role}
-                          </span>
-                        </div>
-
-                        <div className="mb-2 text-center">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                            {user.firstName} {user.lastName}
-                          </h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">@{user.username}</p>
-                        </div>
-
-                        <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-                          <div className="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                              <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-                            </svg>
-                            <span className="truncate">{user.email}</span>
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clipRule="evenodd" />
-                            </svg>
-                            <span>Joined {new Date(user.createdAt).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-
-                        {user.assignedWork && (
-                          <div className="mt-2 p-2 bg-gray-50 dark:bg-slate-700 rounded-md">
-                            <p className="text-xs text-gray-700 dark:text-gray-300">
-                              <span className="font-medium">Task:</span> {user.assignedWork}
-                            </p>
-                          </div>
-                        )}
-
-                        {user.statusOfWork && (
-                          <div className="mt-2">
-                            <div className="flex items-center gap-2 justify-center">
-                              <div className={`w-2 h-2 rounded-full ${
-                                user.isActive !== false ? 'bg-green-500' : 'bg-red-500'
-                              }`}></div>
-                              <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
-                                {user.statusOfWork}
-                              </span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+                  {displayUsers.map((user) => (
+                    <UserCard key={user.id} user={user} />
                   ))}
                 </div>
 
                 {/* View All Button */}
-                {filteredByRole.length > 4 && (
-                  <div className="max-w-7xl mx-auto">
-                    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">
-                          Showing 4 of {filteredByRole.length} users ({filteredByRole.length - 4} more)
-                        </div>
+                {!viewAll && filteredUsers.length > 4 && (
+                  <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+                    <div className="flex items-center justify-between">
+                      <div className="text-gray-600 dark:text-gray-400">
+                        Showing 4 of {filteredUsers.length} users
+                        <span className="text-blue-600 dark:text-blue-400 font-medium ml-1">
+                          ({filteredUsers.length - 4} more)
+                        </span>
+                      </div>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => setViewAll(true)}
+                          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg transition-all duration-200 hover:shadow-md text-sm font-medium"
+                        >
+                          <Eye className="h-4 w-4" />
+                          View All
+                        </button>
                         <button
                           onClick={() => navigate('/view-all-users')}
-                          className="flex items-center gap-2 px-4 py-2 bg-[#ff8633] hover:bg-[#e57328] text-white rounded-lg transition-colors text-sm font-medium"
+                          className="flex items-center gap-2 px-4 py-2 border border-gray-300 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-600 text-gray-700 dark:text-gray-300 rounded-lg transition-colors text-sm font-medium"
                         >
-                          View All Users
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
+                          Full Page View
+                          <ChevronRight className="h-4 w-4" />
                         </button>
                       </div>
                     </div>
+                  </div>
+                )}
+
+                {viewAll && filteredUsers.length > 4 && (
+                  <div className="text-center">
+                    <button
+                      onClick={() => setViewAll(false)}
+                      className="px-6 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 transition-colors text-sm font-medium"
+                    >
+                      Show Less
+                    </button>
                   </div>
                 )}
               </>
@@ -492,9 +769,9 @@ const AllUsers = ({collapsed}) => {
         </div>
 
         {/* Edit Modal */}
-        {isEditModalOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        {isEditModalOpen && selectedUserId && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
               <EditUser 
                 userId={selectedUserId} 
                 onUpdate={handleUserUpdated}
@@ -506,15 +783,17 @@ const AllUsers = ({collapsed}) => {
         )}
 
         {/* Add User Modal */}
-        <Sign 
-          isOpen={showAddUserForm} 
-          onClose={() => setShowAddUserForm(false)}
-          onUserAdded={handleUserAdded}
-        />
+        {showAddUserForm && (
+          <Sign 
+            isOpen={showAddUserForm} 
+            onClose={() => setShowAddUserForm(false)}
+            onUserAdded={handleUserAdded}
+          />
+        )}
       </Sidebar>
-      <Footer/>
+      <Footer />
     </>
   );
 };
 
-export default AllUsers;
+export default OptimizedUserDashboard;
