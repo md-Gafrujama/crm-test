@@ -1418,7 +1418,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
           </p>
           
           {/* Status Badge - Using fixed logic */}
-          {/* <div className="flex justify-center">
+          <div className="flex justify-center">
             <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
               isUserActive(user)
                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
@@ -1427,7 +1427,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
               <Activity className="h-3 w-3" />
               {isUserActive(user) ? 'Active' : 'Inactive'}
             </span>
-          </div> */}
+          </div>
         </div>
 
         {/* Contact Info */}
@@ -1459,7 +1459,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
                   user.statusOfWork.toLowerCase().includes('progress') ? 'bg-yellow-500' :
                   user.statusOfWork.toLowerCase().includes('completed') ? 'bg-blue-500' :
                   user.statusOfWork.toLowerCase().includes('inactive') ? 'bg-red-500' :
-                  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                  'bg-gray-400'
                 }`}></div>
                 <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
                   {user.statusOfWork}
