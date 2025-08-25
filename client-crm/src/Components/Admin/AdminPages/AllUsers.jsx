@@ -43,7 +43,20 @@ const OptimizedUserDashboard = ({ collapsed }) => {
 
   // Helper function to determine if user is active based on API data
   const isUserActive = useCallback((user) => {
-    // Check various possible field names that might indicate active status
+    // First check the statusOfWork field - this seems to be the primary indicator
+    if (user.hasOwnProperty('statusOfWork')) {
+      // If statusOfWork is "active" or contains "active", user is active
+      if (typeof user.statusOfWork === 'string') {
+        const statusLower = user.statusOfWork.toLowerCase();
+        return statusLower === 'active' || statusLower.includes('active');
+      }
+      // If statusOfWork is boolean
+      if (typeof user.statusOfWork === 'boolean') {
+        return user.statusOfWork === true;
+      }
+    }
+    
+    // Check various other possible field names that might indicate active status
     if (user.hasOwnProperty('isActive')) {
       return user.isActive === true;
     }
@@ -51,17 +64,37 @@ const OptimizedUserDashboard = ({ collapsed }) => {
       return user.active === true;
     }
     if (user.hasOwnProperty('status')) {
-      return user.status === 'active' || user.status === 'Active' || user.status === true;
+      if (typeof user.status === 'string') {
+        const statusLower = user.status.toLowerCase();
+        return statusLower === 'active';
+      }
+      return user.status === true;
     }
     if (user.hasOwnProperty('userStatus')) {
-      return user.userStatus === 'active' || user.userStatus === 'Active';
+      if (typeof user.userStatus === 'string') {
+        const statusLower = user.userStatus.toLowerCase();
+        return statusLower === 'active';
+      }
+      return user.userStatus === true;
     }
     if (user.hasOwnProperty('accountStatus')) {
-      return user.accountStatus === 'active' || user.accountStatus === 'Active';
+      if (typeof user.accountStatus === 'string') {
+        const statusLower = user.accountStatus.toLowerCase();
+        return statusLower === 'active';
+      }
+      return user.accountStatus === true;
     }
     
-    // If user has assigned work, consider them active by default
-    if (user.assignedWork && user.assignedWork.trim() !== '') {
+    // Check if user has assigned work AND the work status is not explicitly inactive
+    if (user.assignedWork && user.assignedWork.trim() !== '' && user.assignedWork.toLowerCase() !== 'none') {
+      // If they have work but statusOfWork shows inactive, respect that
+      if (user.statusOfWork && typeof user.statusOfWork === 'string') {
+        const statusLower = user.statusOfWork.toLowerCase();
+        if (statusLower === 'inactive' || statusLower.includes('inactive')) {
+          return false;
+        }
+      }
+      // If they have work and no explicit inactive status, consider them active
       return true;
     }
     
@@ -530,7 +563,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
         </div>
 
         {/* Work Info */}
-        {user.assignedWork && (
+        {user.assignedWork && user.assignedWork.toLowerCase() !== 'none' && (
           <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
             <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
               Current Task
@@ -541,8 +574,10 @@ const OptimizedUserDashboard = ({ collapsed }) => {
             {user.statusOfWork && (
               <div className="flex items-center gap-2 mt-2">
                 <div className={`w-2 h-2 rounded-full ${
+                  user.statusOfWork.toLowerCase().includes('active') ? 'bg-green-500' :
                   user.statusOfWork.toLowerCase().includes('progress') ? 'bg-yellow-500' :
-                  user.statusOfWork.toLowerCase().includes('completed') ? 'bg-green-500' :
+                  user.statusOfWork.toLowerCase().includes('completed') ? 'bg-blue-500' :
+                  user.statusOfWork.toLowerCase().includes('inactive') ? 'bg-red-500' :
                   'bg-gray-400'
                 }`}></div>
                 <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
