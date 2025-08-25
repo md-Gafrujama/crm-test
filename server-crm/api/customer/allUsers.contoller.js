@@ -33,12 +33,11 @@ const allUsersDetail = {
         });
       }
 
-      // await client.set(cacheKey, JSON.stringify(users), "EX", 600); 
+      // await client.set(cacheKey, JSON.stringify(users), "EX", 600);
       return res.status(200).json({
         msg: "Successfully fetched users data from DB.",
         users: users,
       });
-
     } catch (error) {
       return res.status(500).json({
         msg: "Internal server error",
@@ -119,74 +118,76 @@ const allUsersDetail = {
     }
   },
 
-  async onlyActive(req,res){
+  async onlyActive(req, res) {
     const companyId = req.user.companyId;
     const userType = req.user.userType;
-    try{
-
-      if(userType!== "admin"){
+    try {
+      if (userType !== "admin") {
         res.status(500).json({
-          msg : "Sorry you are not an authorized person to get the data",
-        })
+          msg: "Sorry you are not an authorized person to get the data",
+        });
         return;
       }
-      
-      const data = await prisma.User.findMany({where:{
-        statusOfWork : "active",
-        companyId : companyId,
-      }})
 
+      const data = await prisma.User.findMany({
+        where: {
+          statusOfWork: "active",
+          companyId: companyId,
+        },
+      });
 
-      const dataCount = await prisma.User.count({where:{
-        statusOfWork : "active",
-        companyId : companyId,
-      }})
+      const dataCount = await prisma.User.count({
+        where: {
+          statusOfWork: "active",
+          companyId: companyId,
+        },
+      });
 
       res.status(200).json({
         data: data,
-        count : dataCount
-      })
-    }
-    catch(error){
+        count: dataCount,
+      });
+    } catch (error) {
       res.status(500).json({
-        msg:"Something went wrong in server. We will soon fix it",
-        error: error.message || error
-      })
+        msg: "Something went wrong in server. We will soon fix it",
+        error: error.message || error,
+      });
     }
   },
 
-  async onlyInactive(req,res){
+  async onlyInactive(req, res) {
     const companyId = req.user.companyId;
     const userType = req.user.userType;
-    try{
-
-      if(userType!== "admin"){
+    try {
+      if (userType !== "admin") {
         res.status(500).json({
-          msg : "Sorry you are not an authorized person to get the data",
-        })
+          msg: "Sorry you are not an authorized person to get the data",
+        });
         return;
       }
-      const data = await prisma.User.findMany({where:{
-        statusOfWork : "active",
-        companyId : companyId,
-      }})
+      const data = await prisma.User.findMany({
+        where: {
+          statusOfWork: "inactive",
+          companyId: companyId,
+        },
+      });
 
-      
-      const dataCount = await prisma.User.count({where:{
-        statusOfWork : "" || "inactive",
-        companyId : companyId
-      }})
+      const dataCount = await prisma.user.count({
+        where: {
+          companyId: companyId,
+          OR: [{ statusOfWork: null }, { statusOfWork: "inactive" }],
+        },
+      });
 
       res.status(200).json({
-        data:data,
-        count : dataCount
-      })
-    }
-    catch(error){
+        data: data,
+        count: dataCount,
+      });
+    } catch (error) {
       res.status(500).json({
-        msg:"Something went wrong in server. We will soon fix it",
-        error: error.message || error
-      })
+        msg: "Something went wrong in server. We will soon fix it",
+        error: error.message || error,
+      });
     }
   },
 };
