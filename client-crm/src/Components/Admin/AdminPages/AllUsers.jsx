@@ -41,6 +41,34 @@ const OptimizedUserDashboard = ({ collapsed }) => {
   const [showAddUserForm, setShowAddUserForm] = useState(false);
   const [viewAll, setViewAll] = useState(false);
 
+  // Helper function to determine if user is active based on API data
+  const isUserActive = useCallback((user) => {
+    // Check various possible field names that might indicate active status
+    if (user.hasOwnProperty('isActive')) {
+      return user.isActive === true;
+    }
+    if (user.hasOwnProperty('active')) {
+      return user.active === true;
+    }
+    if (user.hasOwnProperty('status')) {
+      return user.status === 'active' || user.status === 'Active' || user.status === true;
+    }
+    if (user.hasOwnProperty('userStatus')) {
+      return user.userStatus === 'active' || user.userStatus === 'Active';
+    }
+    if (user.hasOwnProperty('accountStatus')) {
+      return user.accountStatus === 'active' || user.accountStatus === 'Active';
+    }
+    
+    // If user has assigned work, consider them active by default
+    if (user.assignedWork && user.assignedWork.trim() !== '') {
+      return true;
+    }
+    
+    // Default to false if no clear indication of active status
+    return false;
+  }, []);
+
   // API functions - optimized with error handling
   const fetchAllUsers = useCallback(async () => {
     try {
@@ -304,18 +332,14 @@ const OptimizedUserDashboard = ({ collapsed }) => {
       );
     }
 
-    // Role/Status filter - Fixed logic
+    // Role/Status filter - Using API data properly
     if (roleFilter !== 'All') {
       switch (roleFilter) {
         case 'Active':
-          // Only show users where isActive is true or undefined/null (default active)
-          filtered = filtered.filter(user => 
-            user.isActive === true || user.isActive === undefined || user.isActive === null
-          );
+          filtered = filtered.filter(user => isUserActive(user));
           break;
         case 'Inactive':
-          // Only show users where isActive is explicitly false
-          filtered = filtered.filter(user => user.isActive === false);
+          filtered = filtered.filter(user => !isUserActive(user));
           break;
         case 'User':
           filtered = filtered.filter(user => 
@@ -335,19 +359,20 @@ const OptimizedUserDashboard = ({ collapsed }) => {
     }
 
     return filtered;
-  }, [users, searchTerm, roleFilter]);
+  }, [users, searchTerm, roleFilter, isUserActive]);
 
-  // Memoized statistics - Fixed counting logic
-  const stats = useMemo(() => ({
-    total: filteredUsers.length,
-    users: filteredUsers.filter(user => user.role?.toLowerCase() === 'user').length,
-    admins: filteredUsers.filter(user => user.role?.toLowerCase() === 'admin').length,
-    // Fixed active/inactive counting
-    active: filteredUsers.filter(user => 
-      user.isActive === true || user.isActive === undefined || user.isActive === null
-    ).length,
-    inactive: filteredUsers.filter(user => user.isActive === false).length
-  }), [filteredUsers]);
+  // Memoized statistics - Using API data properly
+  const stats = useMemo(() => {
+    const allUsers = Array.isArray(users) ? users : [];
+    
+    return {
+      total: allUsers.length,
+      users: allUsers.filter(user => user.role?.toLowerCase() === 'user').length,
+      admins: allUsers.filter(user => user.role?.toLowerCase() === 'admin').length,
+      active: allUsers.filter(user => isUserActive(user)).length,
+      inactive: allUsers.filter(user => !isUserActive(user)).length
+    };
+  }, [users, isUserActive]);
 
   // Event handlers
   const handleSearch = useCallback((value) => {
@@ -433,9 +458,9 @@ const OptimizedUserDashboard = ({ collapsed }) => {
                 e.target.src = `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=6366f1&color=fff&size=80`;
               }}
             />
-            {/* Status indicator */}
+            {/* Status indicator - Using API data */}
             <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-3 border-white dark:border-gray-800 flex items-center justify-center ${
-              user.isActive === true || user.isActive === undefined || user.isActive === null ? 'bg-green-500' : 'bg-red-500'
+              isUserActive(user) ? 'bg-green-500' : 'bg-red-500'
             }`}>
               <div className={`w-2 h-2 rounded-full bg-white`}></div>
             </div>
@@ -478,15 +503,15 @@ const OptimizedUserDashboard = ({ collapsed }) => {
             @{user.username}
           </p>
           
-          {/* Status Badge */}
+          {/* Status Badge - Using API data */}
           <div className="flex justify-center">
             <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
-              user.isActive === true || user.isActive === undefined || user.isActive === null
+              isUserActive(user)
                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                 : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
             }`}>
               <Activity className="h-3 w-3" />
-              {user.isActive === true || user.isActive === undefined || user.isActive === null ? 'Active' : 'Inactive'}
+              {isUserActive(user) ? 'Active' : 'Inactive'}
             </span>
           </div>
         </div>
@@ -651,7 +676,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
               </div>
             </div>
 
-            {/* Stats Cards */}
+            {/* Stats Cards - Now using proper API-based counting */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
               <StatCard 
                 icon={Users} 
