@@ -20,7 +20,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
-import { Pie, Doughnut, Bar } from 'react-chartjs-2';
+import { Pie, Doughnut } from 'react-chartjs-2';
 
 // Register Chart.js components
 ChartJS.register(
@@ -121,52 +121,40 @@ const AdminAnalytics = ({ collapsed }) => {
           id: 1,
           title: "Total Leads",
           value: leadsData.totalLeads.toLocaleString(),
-          icon: <Package className="h-5 w-5" />,
+          icon: <Package className="h-6 w-6" />,
           change: "+5.2%",
           trend: "up",
-          color: "from-blue-500 to-blue-600",
-          bgColor: "bg-blue-50",
-          iconColor: "text-blue-600",
-          trendColor: "text-blue-700",
+          color: "blue",
           subtitle: "This month"
         },
         {
           id: 2,
           title: "Qualified Leads",
           value: leadsData.qualifiedLeads.toLocaleString(),
-          icon: <ShoppingCart className="h-5 w-5" />,
+          icon: <ShoppingCart className="h-6 w-6" />,
           change: "+12.3%",
           trend: "up",
-          color: "from-emerald-500 to-emerald-600",
-          bgColor: "bg-emerald-50",
-          iconColor: "text-emerald-600",
-          trendColor: "text-emerald-700",
+          color: "emerald",
           subtitle: "Active pipeline"
         },
         {
           id: 3,
           title: "Pending Leads",
           value: leadsData.pendingLeads.toLocaleString(),
-          icon: <Activity className="h-5 w-5" />,
+          icon: <Activity className="h-6 w-6" />,
           change: "+0.5%",
           trend: "up",
-          color: "from-purple-500 to-purple-600",
-          bgColor: "bg-purple-50",
-          iconColor: "text-purple-600",
-          trendColor: "text-purple-700",
+          color: "purple",
           subtitle: "Awaiting follow-up"
         },
         {
           id: 4,
           title: "Loss Leads",
           value: leadsData.lossLeads.toLocaleString(),
-          icon: <TrendingUp className="h-5 w-5" />,
+          icon: <TrendingUp className="h-6 w-6" />,
           change: leadsData.lossLeads > 0 ? "-8.1%" : "0.0%",
           trend: leadsData.lossLeads > 0 ? "down" : "up",
-          color: "from-orange-500 to-orange-600",
-          bgColor: "bg-orange-50",
-          iconColor: "text-orange-600",
-          trendColor: "text-orange-700",
+          color: "orange",
           subtitle: "Lost opportunities"
         },
       ]);
@@ -179,54 +167,42 @@ const AdminAnalytics = ({ collapsed }) => {
       setAdditionalStats([
         {
           id: 5,
-          title: "Total Users",
+          title: "Total User",
           value: usersData.totalUser.toLocaleString(),
-          icon: <User className="h-5 w-5" />,
+          icon: <User className="h-6 w-6" />,
           change: "+7.5%",
           trend: "up",
-          color: "from-indigo-500 to-indigo-600",
-          bgColor: "bg-indigo-50",
-          iconColor: "text-indigo-600",
-          trendColor: "text-indigo-700",
+          color: "indigo",
           subtitle: "This year"
         },
         {
           id: 6,
-          title: "Active Users",
+          title: "Active User",
           value: usersData.activeUser.toLocaleString(),
-          icon: <Users className="h-5 w-5" />,
+          icon: <Users className="h-6 w-6" />,
           change: "+3.2%",
           trend: "up",
-          color: "from-green-400 to-green-500",
-          bgColor: "bg-green-50",
-          iconColor: "text-green-600",
-          trendColor: "text-green-700",
+          color: "green",
           subtitle: "Last month"
         },
         {
           id: 7,
           title: "Conversation Rate",
           value: `${usersData.conversionRateFromActive.toFixed(1)}%`,
-          icon: <MessageSquare className="h-5 w-5" />,
+          icon: <MessageSquare className="h-6 w-6" />,
           change: "+1.1%",
           trend: "up",
-          color: "from-pink-500 to-pink-600",
-          bgColor: "bg-pink-50",
-          iconColor: "text-pink-600",
-          trendColor: "text-pink-700",
+          color: "pink",
           subtitle: "Employee/Active ratio"
         },
         {
           id: 8,
-          title: "Employees",
+          title: "Total Employee",
           value: usersData.totalEmployee.toLocaleString(),
-          icon: <Users2 className="h-5 w-5" />,
+          icon: <Users2 className="h-6 w-6" />,
           change: "+4.8%",
           trend: "up",
-          color: "from-yellow-500 to-yellow-600",
-          bgColor: "bg-yellow-50",
-          iconColor: "text-yellow-600",
-          trendColor: "text-yellow-700",
+          color: "yellow",
           subtitle: "This quarter"
         }
       ]);
@@ -246,50 +222,50 @@ const AdminAnalytics = ({ collapsed }) => {
           leadsData.lossLeads
         ],
         backgroundColor: [
-          'rgba(59, 130, 246, 0.8)', // Blue
-          'rgba(16, 185, 129, 0.8)', // Emerald
-          'rgba(139, 92, 246, 0.8)', // Purple
-          'rgba(249, 115, 22, 0.8)', // Orange
+          '#3B82F6', // Blue
+          '#10B981', // Emerald
+          '#8B5CF6', // Purple
+          '#F97316', // Orange
         ],
         borderColor: [
-          'rgb(59, 130, 246)',
-          'rgb(16, 185, 129)',
-          'rgb(139, 92, 246)',
-          'rgb(249, 115, 22)',
+          '#2563EB',
+          '#059669',
+          '#7C3AED',
+          '#EA580C',
         ],
-        borderWidth: 3,
-        hoverOffset: 8,
+        borderWidth: 2,
+        hoverOffset: 10,
       },
     ],
   };
 
-  // Doughnut Chart Data for User Analytics
+  // Doughnut Chart Data for User Analytics - ONLY 4 FIELDS
   const userDoughnutData = {
     labels: ['Total Users', 'Active Users', 'Conversation Rate', 'Total Employee'],
     datasets: [
       {
         label: 'User Analytics',
         data: [
-          usersData.totalUser,
-          usersData.activeUser,
-          usersData.conversionRateFromActive,
-          usersData.totalEmployee
+          usersData.totalUser,                    // e.g., 3
+          usersData.activeUser,                   // e.g., 3
+          usersData.conversionRateFromActive,     // e.g., 133.3
+          usersData.totalEmployee                 // e.g., 4
         ],
         backgroundColor: [
-          'rgba(99, 102, 241, 0.8)', // Indigo
-          'rgba(34, 197, 94, 0.8)', // Green  
-          'rgba(236, 72, 153, 0.8)', // Pink
-          'rgba(234, 179, 8, 0.8)', // Yellow
+          '#6366F1', // Indigo for Total Users
+          '#22C55E', // Green for Active Users  
+          '#EC4899', // Pink for Conversation Rate
+          '#EAB308', // Yellow for Total Employee
         ],
         borderColor: [
-          'rgb(99, 102, 241)',
-          'rgb(34, 197, 94)',
-          'rgb(236, 72, 153)', 
-          'rgb(234, 179, 8)',
+          '#4F46E5',
+          '#16A34A',
+          '#DB2777', 
+          '#CA8A04',
         ],
-        borderWidth: 3,
-        cutout: '65%',
-        hoverOffset: 8,
+        borderWidth: 2,
+        cutout: '60%',
+        hoverOffset: 10,
       },
     ],
   };
@@ -301,23 +277,16 @@ const AdminAnalytics = ({ collapsed }) => {
       legend: {
         position: 'bottom',
         labels: {
-          padding: 16,
+          padding: 20,
           font: {
-            size: 11,
-            weight: '500'
+            size: 12,
           },
-          usePointStyle: true,
-          pointStyle: 'circle',
         },
       },
       tooltip: {
-        backgroundColor: 'rgba(17, 24, 39, 0.9)',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
         titleColor: 'white',
         bodyColor: 'white',
-        borderColor: 'rgba(75, 85, 99, 0.5)',
-        borderWidth: 1,
-        cornerRadius: 8,
-        displayColors: true,
         callbacks: {
           label: function(context) {
             const label = context.label || '';
@@ -334,67 +303,12 @@ const AdminAnalytics = ({ collapsed }) => {
         }
       },
     },
-    animation: {
-      animateRotate: true,
-      animateScale: true,
-      duration: 1000,
-      easing: 'easeInOutQuart'
-    }
   };
-
-  const StatCard = ({ stat }) => (
-    <div className="group relative overflow-hidden bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-lg border border-gray-200/50 dark:border-gray-700/50 transition-all duration-300 hover:scale-[1.02]">
-      {/* Gradient background overlay */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
-      
-      <div className="relative p-4">
-        {/* Header with icon and trend */}
-        <div className="flex items-center justify-between mb-3">
-          <div className={`${stat.bgColor} dark:bg-gray-700 p-2.5 rounded-lg transition-all duration-300 group-hover:scale-110`}>
-            <div className={`${stat.iconColor} dark:text-gray-300`}>
-              {stat.icon}
-            </div>
-          </div>
-          
-          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-            stat.trend === "up"
-              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-          }`}>
-            <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""}`} />
-            {stat.change}
-          </div>
-        </div>
-
-        {/* Main content */}
-        <div className="space-y-1">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white leading-tight">
-            {stat.value}
-          </h3>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-            {stat.title}
-          </p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
-            {stat.subtitle}
-          </p>
-        </div>
-      </div>
-
-      {/* Bottom accent line */}
-      <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gray-100 dark:bg-gray-700">
-        <div className={`h-full bg-gradient-to-r ${stat.color} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-500 ease-out`}></div>
-      </div>
-    </div>
-  );
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <div className="relative">
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 dark:border-gray-700"></div>
-          <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#ff8633] border-t-transparent absolute top-0 left-0"></div>
-        </div>
-        <p className="text-gray-600 dark:text-gray-400 font-medium">Loading analytics...</p>
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#ff8633]"></div>
       </div>
     );
   }
@@ -404,83 +318,101 @@ const AdminAnalytics = ({ collapsed }) => {
       <Header onToggleSidebar={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
         <div className={cn(
-          "transition-all duration-300 ease-in-out min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900",
+          "transition-all duration-300 ease-in-out min-h-screen bg-slate-100 dark:bg-slate-900",
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
         )}>
-          {/* Main content container */}
-          <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-            
-            {/* Header section */}
+          <div className="space-y-6 p-6">
+            {/* Leads Stats Section - Modern flat design without traditional cards */}
             <div className="mb-8">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
-                Analytics Dashboard
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Monitor your leads and user analytics performance
-              </p>
-            </div>
-
-            {/* Leads Analytics Section */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-1 h-6 bg-gradient-to-b from-blue-500 to-purple-600 rounded-full"></div>
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                  Lead Analytics
-                </h2>
-              </div>
-              
-              {/* Leads Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Leads Overview</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((stat) => (
-                  <StatCard key={stat.id} stat={stat} />
+                  <div
+                    key={stat.id}
+                    className="group p-4 rounded-xl bg-white dark:bg-gray-800 hover:bg-gradient-to-br hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 hover:scale-105"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-full bg-${stat.color}-100 text-${stat.color}-600 dark:bg-${stat.color}-900/30 dark:text-${stat.color}-400`}>
+                        {stat.icon}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.title}</p>
+                        <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{stat.value}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-sm font-semibold ${stat.trend === "up" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                            {stat.change}
+                          </span>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className={`h-full transition-all duration-500 ${stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"} group-hover:w-full w-0`}></div>
+                    </div>
+                  </div>
                 ))}
-              </div>
-
-              {/* Leads Chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200/50 dark:border-gray-700/50 p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    Lead Distribution
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Visual breakdown of all leads by status
-                  </p>
-                </div>
-                <div className="h-80 lg:h-96">
-                  <Pie data={leadsPieData} options={chartOptions} />
-                </div>
               </div>
             </div>
 
-            {/* User Analytics Section */}
-            <div className="space-y-6">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="w-1 h-6 bg-gradient-to-b from-emerald-500 to-blue-600 rounded-full"></div>
-                <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200">
-                  User Analytics
-                </h2>
+            {/* Chart for Leads - Pie Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 mb-8">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  Lead Distribution Analysis
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Breakdown of all leads by status and performance
+                </p>
               </div>
-              
-              {/* User Stats Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+              <div style={{ height: '400px' }}>
+                <Pie data={leadsPieData} options={chartOptions} />
+              </div>
+            </div>
+
+            {/* Users Stats Section - Modern flat design without traditional cards */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">Users Overview</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {additionalStats.map((stat) => (
-                  <StatCard key={stat.id} stat={stat} />
+                  <div
+                    key={stat.id}
+                    className="group p-4 rounded-xl bg-white dark:bg-gray-800 hover:bg-gradient-to-br hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 transition-all duration-300 hover:scale-105"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`p-3 rounded-full bg-${stat.color}-100 text-${stat.color}-600 dark:bg-${stat.color}-900/30 dark:text-${stat.color}-400`}>
+                        {stat.icon}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">{stat.title}</p>
+                        <h3 className="text-3xl font-extrabold text-gray-900 dark:text-white">{stat.value}</h3>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`text-sm font-semibold ${stat.trend === "up" ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                            {stat.change}
+                          </span>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{stat.subtitle}</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-3 h-1 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div className={`h-full transition-all duration-500 ${stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"} group-hover:w-full w-0`}></div>
+                    </div>
+                  </div>
                 ))}
               </div>
+            </div>
 
-              {/* User Analytics Chart */}
-              <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200/50 dark:border-gray-700/50 p-6">
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                    User Analytics Overview
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Distribution of users, active users, conversion rate & employees
-                  </p>
-                </div>
-                <div className="h-80 lg:h-96">
-                  <Doughnut data={userDoughnutData} options={chartOptions} />
-                </div>
+            {/* Doughnut Chart for User Analytics - ONLY 4 FIELDS */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  User Analytics Overview
+                </h3>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Distribution of Total Users, Active Users, Conversation Rate & Total Employee
+                </p>
+              </div>
+              <div style={{ height: "400px" }}>
+                <Doughnut data={userDoughnutData} options={chartOptions} />
               </div>
             </div>
           </div>
