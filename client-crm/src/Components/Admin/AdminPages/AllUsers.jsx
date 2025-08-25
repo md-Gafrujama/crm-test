@@ -1459,7 +1459,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
                   user.statusOfWork.toLowerCase().includes('progress') ? 'bg-yellow-500' :
                   user.statusOfWork.toLowerCase().includes('completed') ? 'bg-blue-500' :
                   user.statusOfWork.toLowerCase().includes('inactive') ? 'bg-red-500' :
-                  'bg-gray-400'
+                  'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                 }`}></div>
                 <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
                   {user.statusOfWork}
