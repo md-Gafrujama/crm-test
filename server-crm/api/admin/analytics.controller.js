@@ -1,6 +1,6 @@
 import express from "express";
 import prisma from "../../prisma/prismaClient.js";
-// import client from "../../middleware/redis.middleware.js";
+import client from "../../middleware/redis.middleware.js";
 
 const analytics = {
   async getLeadsData(req, res) {
@@ -15,15 +15,15 @@ const analytics = {
         return;
       }
 
-      // const cacheKey = `leadsData:${companyId}`;
-      // const cachedData = await client.get(cacheKey);
+      const cacheKey = `leadsData:${companyId}`;
+      const cachedData = await client.get(cacheKey);
 
-      // if (cachedData) {
-      //   return res.status(200).json({
-      //     msg: "Fetched leads data from cache.",
-      //     ...JSON.parse(cachedData),
-      //   });
-      // }
+      if (cachedData) {
+        return res.status(200).json({
+          msg: "Fetched leads data from cache.",
+          ...JSON.parse(cachedData),
+        });
+      }
 
       const qualifiedLeads = await prisma.Lead.count({
         where: {
@@ -67,7 +67,7 @@ const analytics = {
         totalLeads,qualifiedLeads,pendingLeads,lossLeads
       }
 
-      // await client.set(cacheKey, JSON.stringify(responseData), "EX", 600);
+      await client.set(cacheKey, JSON.stringify(responseData), "EX", 600);
 
       // const qualifiedLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Qualified"}});
       // const lossLeads = await prisma.Lead.count({where:{companyId:companyId,isCurrentVersion:true,status:"Do Not Contact"}});

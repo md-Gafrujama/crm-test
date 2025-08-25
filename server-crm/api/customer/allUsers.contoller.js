@@ -1,24 +1,47 @@
 import prisma from "../../prisma/prismaClient.js";
+import client from "../../middleware/redis.middleware.js";
 
 const allUsersDetail = {
   async allData(req, res) {
     try {
+      const userType = req.user.userType;
       const companyId = req.user.companyId;
+
+      if (userType !== "admin") {
+        return res.status(200).json({
+          msg: "You are not the admin so we cannot fetch the request data.",
+        });
+      }
+
+      const cacheKey = `usersData:${companyId}`;
+      const cachedData = await client.get(cacheKey);
+
+      if (cachedData) {
+        return res.status(200).json({
+          msg: "Fetched users data from cache.",
+          users: JSON.parse(cachedData),
+        });
+      }
+
       const users = await prisma.user.findMany({
-        where: {
-          companyId: companyId,
-        },
+        where: { companyId: companyId },
       });
+
       if (!users || users.length === 0) {
         return res.status(404).json({
-          message: "No users found.",
+          msg: "No users found.",
         });
-      } else {
-        return res.status(200).json(users);
       }
+
+      await client.set(cacheKey, JSON.stringify(users), "EX", 600); 
+      return res.status(200).json({
+        msg: "Successfully fetched users data from DB.",
+        users: users,
+      });
+
     } catch (error) {
       return res.status(500).json({
-        message: "Internal server error",
+        msg: "Internal server error",
         error: error.message,
       });
     }

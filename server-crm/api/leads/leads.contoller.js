@@ -1,6 +1,16 @@
 import prisma from "../../prisma/prismaClient.js";
-import {  fetchLeadsByUser,  fetchTimelyLeadsByUser,  createLead,  deleteLeadById,  updateLeadById,  fetchLeadWithHistory,} from "./leads.services.js";
-import { convertLeadsToCSV, convertStringToISODateString} from "../../utilis/csvExporter.js";
+import {
+  fetchLeadsByUser,
+  fetchTimelyLeadsByUser,
+  createLead,
+  deleteLeadById,
+  updateLeadById,
+  fetchLeadWithHistory,
+} from "./leads.services.js";
+import {
+  convertLeadsToCSV,
+  convertStringToISODateString,
+} from "../../utilis/csvExporter.js";
 
 const leadsWork = {
   async addLeads(req, res) {
@@ -57,41 +67,69 @@ const leadsWork = {
   async getLeads(req, res) {
     try {
       const { uid, userType, username, companyId } = req.user;
+
+      const cacheKey = `leadsData:${uid}:${companyId}`;
+      const cachedLeads = await client.get(cacheKey);
+
+      if (cachedLeads) {
+        return res.status(200).json({
+          message: "Fetched leads data from cache.",
+          leads: JSON.parse(cachedLeads),
+        });
+      }
+
       const leads = await fetchLeadsByUser(uid, userType, username, companyId);
-      res.status(200).json(leads);
+
+      await client.set(cacheKey, JSON.stringify(leads), "EX", 600);
+
+      return res.status(200).json({
+        message: "Fetched leads data from database.",
+        leads: leads,
+      });
     } catch (error) {
       console.error("Get Leads Error:", error);
-      res.status(500).json({ error: "Failed to fetch leads" });
+      return res.status(500).json({
+        error: "Failed to fetch leads",
+      });
     }
   },
 
-  async getLeadsWeekly(req,res){
-    try {
-      const today = new Date();
-     const { uid, userType, username, companyId } = req.user;
-      const leads = await fetchTimelyLeadsByUser(uid, userType, username, companyId);
-      res.status(200).json(leads);
-    }
-    catch(error){
-      res.status(500).json({
-        msg:"Something went wrong in the server.",
-        error: error.message|| error,
-      })
-    }
-  },
-
-  async getLeadsMonthly(req,res){
+  async getLeadsWeekly(req, res) {
     try {
       const today = new Date();
       const { uid, userType, username, companyId } = req.user;
-      const leads = await fetchTimelyLeadsByUser(uid, userType, username, companyId,today);
+      const leads = await fetchTimelyLeadsByUser(
+        uid,
+        userType,
+        username,
+        companyId
+      );
       res.status(200).json(leads);
-    }
-    catch(error){
+    } catch (error) {
       res.status(500).json({
-        msg:"Something went wrong in the server.",
-        error: error.message|| error,
-      })
+        msg: "Something went wrong in the server.",
+        error: error.message || error,
+      });
+    }
+  },
+
+  async getLeadsMonthly(req, res) {
+    try {
+      const today = new Date();
+      const { uid, userType, username, companyId } = req.user;
+      const leads = await fetchTimelyLeadsByUser(
+        uid,
+        userType,
+        username,
+        companyId,
+        today
+      );
+      res.status(200).json(leads);
+    } catch (error) {
+      res.status(500).json({
+        msg: "Something went wrong in the server.",
+        error: error.message || error,
+      });
     }
   },
 
@@ -140,7 +178,7 @@ const leadsWork = {
       }
     }
   },
-  
+
   async getLeadHistory(req, res) {
     try {
       const { id } = req.params;
