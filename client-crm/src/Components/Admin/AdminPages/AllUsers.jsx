@@ -566,7 +566,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
           </p>
           
           {/* Status Badge - Using fixed logic */}
-          <div className="flex justify-center">
+          {/* <div className="flex justify-center">
             <span className={`px-2 py-1 text-xs font-medium rounded-full flex items-center gap-1 ${
               isUserActive(user)
                 ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
@@ -575,7 +575,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
               <Activity className="h-3 w-3" />
               {isUserActive(user) ? 'Active' : 'Inactive'}
             </span>
-          </div>
+          </div> */}
         </div>
 
         {/* Contact Info */}
