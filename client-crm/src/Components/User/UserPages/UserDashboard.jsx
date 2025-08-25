@@ -4,7 +4,7 @@ import { UserHeader } from "../common/UserHeader";
 import { UserSidebar, useSidebarUser } from "../common/UserSidebar";
 import { UserFooter } from "../common/UserFooter";
 import { PersonalDetails } from "../common/PersonalDetails";
-import { Calendar } from "lucide-react";
+import { Calendar, Clock, Bell, Plus, ArrowRight } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTheme } from "../../../hooks/use-theme";
 import axios from "axios";
@@ -26,7 +26,7 @@ const UserDashboard = ({ onLogout }) => {
     const fetchAlerts = async () => {
       try {
         const token = localStorage.getItem("token");
-        const userId = localStorage.getItem("userId"); // Get the logged-in user's ID
+        const userId = localStorage.getItem("userId");
 
         if (!token || !userId) {
           throw new Error("Please login to view alerts");
@@ -36,10 +36,9 @@ const UserDashboard = ({ onLogout }) => {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Filter alerts to show ONLY the current user's alerts
         const userAlerts = response.data.data
-          .filter((alert) => alert.uid === userId) // Keep only alerts where uid matches userId
-          .sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by newest first
+          .filter((alert) => alert.uid === userId)
+          .sort((a, b) => new Date(b.date) - new Date(a.date));
 
         setAlerts(userAlerts);
       } catch (err) {
@@ -63,39 +62,11 @@ const UserDashboard = ({ onLogout }) => {
     fetchAlerts();
   }, []);
 
-  // Sample data
   const stats = [
-    { title: "Total Projects", value: "24", change: "+12%", trend: "up" },
-    { title: "Tasks Completed", value: "156", change: "+5%", trend: "up" },
-    { title: "Pending Requests", value: "8", change: "-2%", trend: "down" },
-    { title: "Team Members", value: "14", change: "+3%", trend: "up" },
-  ];
-
-  const recentActivities = [
-    {
-      id: 1,
-      action: 'Completed project "Website Redesign"',
-      time: "2 hours ago",
-      icon: "✅",
-    },
-    {
-      id: 2,
-      action: 'Received feedback on "Mobile App"',
-      time: "5 hours ago",
-      icon: "💬",
-    },
-    {
-      id: 3,
-      action: 'Started new project "Dashboard UI"',
-      time: "1 day ago",
-      icon: "🚀",
-    },
-    {
-      id: 4,
-      action: "Meeting with client at 3 PM",
-      time: "2 days ago",
-      icon: "📅",
-    },
+    { title: "Total Leads", value: "24", change: "+12%", trend: "up" },
+    { title: "Qualified Leads", value: "156", change: "+5%", trend: "up" },
+    { title: "Pending Leads", value: "8", change: "-2%", trend: "down" },
+    { title: "Loss Leads", value: "14", change: "+3%", trend: "up" },
   ];
 
   const projects = [
@@ -136,114 +107,182 @@ const UserDashboard = ({ onLogout }) => {
         <div className="flex h-screen bg-gray-100 dark:bg-slate-900">
           <div className="flex-1 overflow-auto">
             <main className="p-6">
-              <div className="flex flex-row justify-between rounded-lg py-4 p-5 mb-4 items-center bg-[#ff8633]">
-                <div className="bg-[#ff8633] rounded-lg p-6 mb-6 text-white">
-                  <h1 className="text-2xl font-bold mb-2">
-                    Welcome back, {user.name} !
-                  </h1>
-                  <p className="opacity-90">
-                    Your Assigned Work:{" "}
-                    {user.assignedWork || "Nothing is assigned to you."}.
-                  </p>
-                </div>
-                <div>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-white p-5 justify-center hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md">
-                    Upload Data
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                        transform="rotate(180 10 10)"
-                      />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
               {/* Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                {stats.map((stat, index) => (
-                  <div
-                    key={index}
-                    className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm"
-                  >
-                    <h3 className="text-gray-500 text-sm font-medium">
-                      {stat.title}
-                    </h3>
-                    <div className="flex items-end mt-2">
-                      <span className="text-2xl font-bold text-gray-800 dark:text-gray-400 ">
-                        {stat.value}
-                      </span>
-                      <span
-                        className={`ml-2 text-sm font-medium ${
-                          stat.trend === "up"
-                            ? "text-green-500"
-                            : "text-red-500"
-                        }`}
-                      >
-                        {stat.change}
-                      </span>
+                {stats.map((stat, index) => {
+                  const colorSchemes = [
+                    { 
+                      bg: 'bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 dark:from-blue-900/30 dark:to-blue-800/50',
+                      border: 'border-l-4 border-blue-500',
+                      valueColor: 'text-blue-700 dark:text-blue-300',
+                      changeUp: 'text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400',
+                      changeDown: 'text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400'
+                    },
+                    { 
+                      bg: 'bg-gradient-to-br from-emerald-50 via-emerald-100 to-emerald-200 dark:from-emerald-900/30 dark:to-emerald-800/50',
+                      border: 'border-l-4 border-emerald-500',
+                      valueColor: 'text-emerald-700 dark:text-emerald-300',
+                      changeUp: 'text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400',
+                      changeDown: 'text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400'
+                    },
+                    { 
+                      bg: 'bg-gradient-to-br from-purple-50 via-purple-100 to-purple-200 dark:from-purple-900/30 dark:to-purple-800/50',
+                      border: 'border-l-4 border-purple-500',
+                      valueColor: 'text-purple-700 dark:text-purple-300',
+                      changeUp: 'text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400',
+                      changeDown: 'text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400'
+                    },
+                    { 
+                      bg: 'bg-gradient-to-br from-orange-50 via-orange-100 to-orange-200 dark:from-orange-900/30 dark:to-orange-800/50',
+                      border: 'border-l-4 border-orange-500',
+                      valueColor: 'text-orange-700 dark:text-orange-300',
+                      changeUp: 'text-green-600 bg-green-50 dark:bg-green-900/20 dark:text-green-400',
+                      changeDown: 'text-red-600 bg-red-50 dark:bg-red-900/20 dark:text-red-400'
+                    }
+                  ];
+                  
+                  const scheme = colorSchemes[index % 4];
+                  
+                  return (
+                    <div
+                      key={index}
+                      className={`${scheme.bg} ${scheme.border} rounded-xl p-6 shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 relative overflow-hidden`}
+                    >
+                      <div className="absolute top-0 right-0 -mr-4 -mt-4 w-16 h-16 rounded-full bg-white/10 blur-xl"></div>
+                      <div className="absolute bottom-0 left-0 -ml-2 -mb-2 w-8 h-8 rounded-full bg-white/5"></div>
+                      
+                      <div className="relative">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-gray-600 dark:text-gray-300 text-sm font-semibold uppercase tracking-wider">
+                            {stat.title}
+                          </h3>
+                          <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                            stat.trend === "up" ? scheme.changeUp : scheme.changeDown
+                          }`}>
+                            {stat.change}
+                          </div>
+                        </div>
+                        
+                        <div className="mb-2">
+                          <span className={`text-4xl font-extrabold ${scheme.valueColor} tracking-tight`}>
+                            {stat.value}
+                          </span>
+                        </div>
+                        
+                        <div className="w-full bg-white/30 dark:bg-black/20 rounded-full h-1.5">
+                          <div 
+                            className={`h-1.5 rounded-full ${
+                              scheme.border.includes('blue') ? 'bg-blue-500' :
+                              scheme.border.includes('emerald') ? 'bg-emerald-500' :
+                              scheme.border.includes('purple') ? 'bg-purple-500' : 'bg-orange-500'
+                            } transition-all duration-1000 ease-out`}
+                            style={{ 
+                              width: stat.trend === "up" ? '75%' : '45%'
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
-                <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
-                  <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex flex-row justify-between">
-                    <h2 className="text-lg dark:text-gray-400 font-semibold flex items-center">
-                      <Calendar className="h-5 w-5 mr-2 text-red-500" />
-                      Alerts and Reminders
-                    </h2>
-                     <button onClick={() => setShowAddAlertReminderForm(true)} className="flex items-center gap-2 px-4 py-2 bg-[#ff8633] hover:bg-orange-500 text-white rounded-md transition-colors">
-          Add Alerts and Reminder
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-          </svg>
-        </button>
+                {/* Alerts & Reminders */}
+                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+                  <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
+                        <Calendar className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                        Alerts & Reminders
+                      </h2>
+                      <button
+                        onClick={() => setShowAddAlertReminderForm(true)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-xs font-medium"
+                      >
+                        <Plus className="h-3 w-3" />
+                        Add
+                      </button>
+                    </div>
                   </div>
                   <div className="p-6">
-                    {alerts.map((alert) => (
-                      <div
-                        key={alert.id}
-                        className="dark:text-gray-400 bg-white dark:bg-gray-800 p-3 rounded shadow-sm flex items-center gap-4 overflow-x-auto"
-                      >
-                        <span className="font-medium text-gray-900 text-left dark:text-white min-w-[100px]">
-                          {alert.topic}
-                        </span>
-                        <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                          📅 {new Date(alert.date).toLocaleDateString()}
-                        </span>
-                        <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                          ⏰ {alert.time}
-                        </span>
-                        <span className="text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap">
-                          🔔 {alert.remainder}
-                        </span>
-                        {alert.description && (
-                          <span className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
-                            📝 {alert.description}
-                          </span>
+                    {alerts.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          {alerts.slice(0, 4).map((alert, index) => {
+                            const colors = [
+                              { bg: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30', 
+                                iconBg: 'bg-blue-100 dark:bg-blue-800/50 group-hover:bg-blue-200 dark:group-hover:bg-blue-700/50',
+                                iconColor: 'text-blue-600 dark:text-blue-400' },
+                              { bg: 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30',
+                                iconBg: 'bg-emerald-100 dark:bg-emerald-800/50 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-700/50',
+                                iconColor: 'text-emerald-600 dark:text-emerald-400' },
+                              { bg: 'bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30',
+                                iconBg: 'bg-purple-100 dark:bg-purple-800/50 group-hover:bg-purple-200 dark:group-hover:bg-purple-700/50',
+                                iconColor: 'text-purple-600 dark:text-purple-400' },
+                              { bg: 'bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30',
+                                iconBg: 'bg-orange-100 dark:bg-orange-800/50 group-hover:bg-orange-200 dark:group-hover:bg-orange-700/50',
+                                iconColor: 'text-orange-600 dark:text-orange-400' }
+                            ];
+                            const colorScheme = colors[index % 4];
+                            
+                            return (
+                              <div
+                                key={alert.id}
+                                className={`p-4 ${colorScheme.bg} rounded-lg transition-colors group cursor-pointer`}
+                              >
+                                <div className={`w-10 h-10 ${colorScheme.iconBg} rounded-lg flex items-center justify-center mb-3 transition-colors`}>
+                                  <Bell className={`h-5 w-5 ${colorScheme.iconColor}`} />
+                                </div>
+                                <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
+                                  {alert.topic}
+                                </p>
+                                <div className="space-y-1 mb-2">
+                                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <Calendar className="h-3 w-3" />
+                                    {new Date(alert.date).toLocaleDateString()}
+                                  </div>
+                                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                    <Clock className="h-3 w-3" />
+                                    {alert.time}
+                                  </div>
+                                </div>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                                  {alert.remainder}
+                                </p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        
+                        {alerts.length > 4 && (
+                          <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+                            +{alerts.length - 4} more alerts
+                          </p>
                         )}
                       </div>
-                    ))}
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Calendar className="h-8 w-8 text-gray-400" />
+                        </div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">No alerts yet</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Create your first alert or reminder</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700 text-right">
+                  <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700 rounded-b-xl border-t border-gray-200 dark:border-gray-600">
                     <button
                       onClick={() => navigate("/all-alerts-reminders")}
-                      className="text-sm font-medium text-[#ff8633]"
+                      className="text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 flex items-center gap-2 transition-colors"
                     >
-                      View All Events →
+                      View All Alerts
+                      <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
 
+                {/* Projects */}
                 <div className="w-full bg-white dark:bg-slate-800 p-6 rounded-lg shadow-sm">
                   <div className="flex justify-between items-center mb-4">
                     <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-400">
@@ -251,7 +290,7 @@ const UserDashboard = ({ onLogout }) => {
                     </h2>
                     <Link
                       to="#"
-                      className="px-4 py-2 bg-[#ff8633] text-white rounded-lg  text-sm"
+                      className="px-4 py-2 bg-[#ff8633] hover:bg-orange-700 text-white rounded-lg text-sm transition-colors"
                     >
                       + New Project
                     </Link>
@@ -280,7 +319,7 @@ const UserDashboard = ({ onLogout }) => {
                             <td className="px-4 py-4 whitespace-nowrap text-left">
                               <Link
                                 to={`/projects/${project.id}`}
-                                className="text-[#ff8633] text-left font-medium"
+                                className="text-[#ff8633] text-left font-medium hover:text-orange-700 transition-colors"
                               >
                                 {project.name}
                               </Link>
@@ -301,7 +340,7 @@ const UserDashboard = ({ onLogout }) => {
                             <td className="px-4 py-4 whitespace-nowrap">
                               <div className="w-full bg-gray-200 rounded-full h-2.5">
                                 <div
-                                  className={`h-2.5 rounded-full ${
+                                  className={`h-2.5 rounded-full transition-all duration-300 ${
                                     project.progress === 100
                                       ? "bg-green-600"
                                       : "bg-blue-600"
@@ -323,10 +362,10 @@ const UserDashboard = ({ onLogout }) => {
             </main>
           </div>
         </div>
-          <CombinedAlertReminder 
-                      isOpen={showAddAlertReminderForm} 
-                      onClose={() => setShowAddAlertReminderForm(false)}
-                    />
+        <CombinedAlertReminder 
+          isOpen={showAddAlertReminderForm} 
+          onClose={() => setShowAddAlertReminderForm(false)}
+        />
       </UserSidebar>
       <UserFooter />
     </>
@@ -334,3 +373,4 @@ const UserDashboard = ({ onLogout }) => {
 };
 
 export default UserDashboard;
+

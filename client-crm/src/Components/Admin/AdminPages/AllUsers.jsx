@@ -554,7 +554,7 @@ const OptimizedUserDashboard = ({ collapsed }) => {
             <p className="text-sm text-gray-900 dark:text-white">
               {user.assignedWork}
             </p>
-            {user.statusOfWork && (
+            {/* {user.statusOfWork && (
               <div className="flex items-center gap-2 mt-2">
                 <div className={`w-2 h-2 rounded-full ${
                   user.statusOfWork.toLowerCase().includes('active') ? 'bg-green-500' :
@@ -563,11 +563,11 @@ const OptimizedUserDashboard = ({ collapsed }) => {
                   user.statusOfWork.toLowerCase().includes('inactive') ? 'bg-red-500' :
                   'bg-gray-400'
                 }`}></div>
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                { <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
                   {user.statusOfWork}
-                </span>
+                </span> }
               </div>
-            )}
+            )} */}
           </div>
         )}
       </div>

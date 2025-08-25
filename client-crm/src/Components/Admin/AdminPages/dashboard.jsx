@@ -474,78 +474,102 @@ useEffect(() => {
 
             {/* Bottom Section */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        {/* Alerts & Reminders */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Calendar className="h-4 w-4 text-purple-600" />
-                Alerts & Reminders
-              </h2>
-              <button
-                onClick={() => setShowAddAlertReminderForm(true)}
-                className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-xs font-medium"
+{/* Alerts & Reminders */}
+<div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">
+  <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+    <div className="flex items-center justify-between">
+      <h2 className="text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
+        <Calendar className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+        Alerts & Reminders
+      </h2>
+      <button
+        onClick={() => setShowAddAlertReminderForm(true)}
+        className="flex items-center gap-1 px-3 py-1.5 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors text-xs font-medium"
+      >
+        <Plus className="h-3 w-3" />
+        Add
+      </button>
+    </div>
+  </div>
+  <div className="p-6">
+    {alerts.length > 0 ? (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          {alerts.slice(0, 4).map((alert, index) => {
+            // Color variations for different cards
+            const colors = [
+              { bg: 'bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/20 dark:hover:bg-blue-900/30', 
+                iconBg: 'bg-blue-100 dark:bg-blue-800/50 group-hover:bg-blue-200 dark:group-hover:bg-blue-700/50',
+                iconColor: 'text-blue-600 dark:text-blue-400' },
+              { bg: 'bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-900/20 dark:hover:bg-emerald-900/30',
+                iconBg: 'bg-emerald-100 dark:bg-emerald-800/50 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-700/50',
+                iconColor: 'text-emerald-600 dark:text-emerald-400' },
+              { bg: 'bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/20 dark:hover:bg-purple-900/30',
+                iconBg: 'bg-purple-100 dark:bg-purple-800/50 group-hover:bg-purple-200 dark:group-hover:bg-purple-700/50',
+                iconColor: 'text-purple-600 dark:text-purple-400' },
+              { bg: 'bg-orange-50 hover:bg-orange-100 dark:bg-orange-900/20 dark:hover:bg-orange-900/30',
+                iconBg: 'bg-orange-100 dark:bg-orange-800/50 group-hover:bg-orange-200 dark:group-hover:bg-orange-700/50',
+                iconColor: 'text-orange-600 dark:text-orange-400' }
+            ];
+            const colorScheme = colors[index % 4];
+            
+            return (
+              <div
+                key={alert.id}
+                className={`p-4 ${colorScheme.bg} rounded-lg transition-colors group cursor-pointer`}
               >
-                <Plus className="h-3 w-3" />
-                Add
-              </button>
-            </div>
-          </div>
-          <div className="p-4">
-            {alerts.length > 0 ? (
-              <div className="space-y-3">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {alerts.slice(0, 2).map((alert) => (
-                    <div
-                      key={alert.id}
-                      className="aspect-square p-3 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 rounded-lg border border-purple-100 dark:border-gray-600 flex flex-col justify-between"
-                    >
-                      <div>
-                        <h4 className="font-medium text-gray-900 dark:text-white mb-2 text-sm line-clamp-1">
-                          {alert.topic}
-                        </h4>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
-                            <Calendar className="h-2.5 w-2.5" />
-                            {new Date(alert.date).toLocaleDateString()}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-300">
-                            <Clock className="h-2.5 w-2.5" />
-                            {alert.time}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        <Bell className="h-2.5 w-2.5" />
-                        <span className="truncate">{alert.remainder}</span>
-                      </div>
-                    </div>
-                  ))}
+                <div className={`w-10 h-10 ${colorScheme.iconBg} rounded-lg flex items-center justify-center mb-3 transition-colors`}>
+                  <Bell className={`h-5 w-5 ${colorScheme.iconColor}`} />
                 </div>
-                
-                {alerts.length > 2 && (
-                  <p className="text-xs text-center text-gray-500 dark:text-gray-400">
-                    +{alerts.length - 2} more
-                  </p>
-                )}
+                <p className="text-sm font-semibold text-gray-900 dark:text-white mb-1 line-clamp-1">
+                  {alert.topic}
+                </p>
+                <div className="space-y-1 mb-2">
+                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <Calendar className="h-3 w-3" />
+                    {new Date(alert.date).toLocaleDateString()}
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <Clock className="h-3 w-3" />
+                    {alert.time}
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
+                  {alert.remainder}
+                </p>
               </div>
-            ) : (
-              <div className="text-center py-6">
-                <Calendar className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                <p className="text-sm text-gray-500 dark:text-gray-400">No alerts yet</p>
-              </div>
-            )}
-          </div>
-          <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700 rounded-b-xl">
-            <button
-              onClick={() => navigate("/all-alerts-reminders")}
-              className="text-xs font-medium text-purple-600 hover:text-purple-700 flex items-center gap-1"
-            >
-              View All
-              <ArrowRight className="h-3 w-3" />
-            </button>
-          </div>
+            );
+          })}
         </div>
+        
+        {alerts.length > 4 && (
+          <p className="text-xs text-center text-gray-500 dark:text-gray-400">
+            +{alerts.length - 4} more alerts
+          </p>
+        )}
+      </div>
+    ) : (
+      <div className="text-center py-8">
+        <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Calendar className="h-8 w-8 text-gray-400" />
+        </div>
+        <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">No alerts yet</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Create your first alert or reminder</p>
+      </div>
+    )}
+  </div>
+  <div className="px-6 py-3 bg-gray-50 dark:bg-gray-700 rounded-b-xl border-t border-gray-200 dark:border-gray-600">
+    <button
+      onClick={() => navigate("/all-alerts-reminders")}
+      className="text-sm font-medium text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 flex items-center gap-2 transition-colors"
+    >
+      View All Alerts
+      <ArrowRight className="h-4 w-4" />
+    </button>
+  </div>
+</div>
+
+
 
               {/* Quick Actions */}
               <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700">

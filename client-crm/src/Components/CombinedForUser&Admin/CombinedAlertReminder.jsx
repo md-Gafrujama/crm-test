@@ -42,7 +42,7 @@ const CombinedAlertReminder = ({collapsed, isOpen, onClose}) => {
 
   return (
     <>
-      {/* Backdrop - No blur, just grayish overlay */}
+      {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-gray-600/30 dark:bg-gray-900/50 z-40 transition-opacity duration-300"
         onClick={onClose}

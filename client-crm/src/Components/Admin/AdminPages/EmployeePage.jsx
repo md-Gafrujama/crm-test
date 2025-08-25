@@ -451,7 +451,7 @@ const PieChart = ({ data }) => {
 {/* Pie Chart Section */}
 {filteredEmployees.length > 0 && (
   <div className="max-w-7xl mx-auto mb-6">
-    <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-8">
+    <div className=" dark:bg-slate-800  border-gray-200 dark:border-slate-600 p-8">
       <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-8 text-center">
         Employee Statistics Overview
       </h2>

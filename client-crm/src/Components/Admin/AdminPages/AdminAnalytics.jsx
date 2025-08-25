@@ -394,7 +394,7 @@ const AdminAnalytics = ({ collapsed }) => {
 
 
             {/* Chart for First 4 Cards - Pie Chart */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6 mb-8">
+            <div className=" dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6 mb-8">
               <div className="mb-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                   Lead Distribution Analysis
@@ -453,7 +453,7 @@ const AdminAnalytics = ({ collapsed }) => {
 
 
             {/* Doughnut Chart for User Analytics - ONLY 4 FIELDS */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700 p-6">
+            <div className=" dark:bg-gray-800 rounded-2xl border border-gray-100 dark:border-gray-700 p-6">
               <div className="mb-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                   User Analytics Overview
