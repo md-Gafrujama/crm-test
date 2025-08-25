@@ -64,10 +64,10 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
     return (
       <div 
       ref={panelRef}
-      className={`fixed inset-y-0 right-0 w-full max-w-md dark:bg-slate-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out`}
+      className={`fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-slate-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out`}
     >
-      <div className="fixed inset-0  flex items-center justify-center z-50 px-2">
-        <div className=" dark:bg-slate-800 px-2 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 px-2">
+        <div className="bg-gray-50 dark:bg-slate-800 px-2 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-400">Edit Profile</h2>
             <button
@@ -103,7 +103,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                     name="phoneNumber"
                     value={editedProfile.phoneNumber || ''}
                     onChange={handleChangeEdit}
-                    className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border  focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                    className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                   />
                 </div>
               </div>
@@ -400,7 +400,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
       <UserSidebar isOpen={isSidebarOpen} onClose={closeSidebar} >
 
         <div className={cn(
-          "transition-all duration-300 ease-in-out min-h-screen  dark:bg-slate-900",
+          "transition-all duration-300 ease-in-out min-h-screen dark:bg-slate-900",
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
         )}>
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 dark:bg-slate-900">
@@ -534,38 +534,3 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
 };
 
 export default ProfileofUser;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
