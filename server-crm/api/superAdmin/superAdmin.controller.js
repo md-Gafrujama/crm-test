@@ -3,10 +3,11 @@ import prisma from "../../prisma/prismaClient.js";
 import bcrypt from "bcrypt";
 
 const superAdmin = {
-  //if we keep this system then anyone can become super admin 
+  //if we keep this system then anyone can become super admin
   async createSuperAdmin(req, res) {
     try {
-      const { firstName, lastName, userName, email, phone, password } =  req.body;
+      const { firstName, lastName, userName, email, phone, password } =
+        req.body;
       const hashedPassword = await bcrypt.hash(password, 10);
 
       const existingUser = await prisma.superAdmin.findUnique({
@@ -14,7 +15,9 @@ const superAdmin = {
       });
 
       if (existingUser) {
-        return res.status(409).json({ msg: "User with this email already exists." });
+        return res
+          .status(409)
+          .json({ msg: "User with this email already exists." });
       }
 
       const newUser = await prisma.superAdmin.create({
@@ -41,46 +44,123 @@ const superAdmin = {
   },
 
   async getAllData(req, res) {
-    try {
-      const { uid, userType } = req.user;
+    const userType = req.user.userType;
 
-      if (userType === "superAdmin") {
-        const adminCount = await prisma.user.count({
-          where: {
-            userType: "admin",
-          },
-        });
-
-        const employeeCount = await prisma.employee.count();
-
-        const companyCount = await prisma.company.count();
-
-        const leadCount = await prisma.lead.count({
-          where: {
-            isCurrentVersion: true,
-          },
-        });
-
-        const alertCount = await prisma.alertsandremainder.count();
-
-        res.status(200).json({
-          adminCount,
-          employeeCount,
-          companyCount,
-          leadCount,
-          alertCount,
-        });
-      } else {
-        res.status(200).json({
-          msg: "Sorry you are not super admin and that's why you cannot get the data.",
-        });
-      }
-    } catch (error) {
-      res.status(500).json({
-        msg: "Soemthing went wrong. We will fix it soon.",
-        error: error,
-      });
+    if (req.user.userType !== "superAdmin") {
+      return res.status(403).json({ message: "Access denied." });
     }
+
+    try {
+      const companies = await prisma.company.findMany({
+        select: {
+          id: true,
+          companyName: true,
+        },
+      });
+
+      const companyStats = await Promise.all(
+        companies.map(async (company) => {
+          const [adminCount, employeeCount, leadCount, alertCount] =
+            await Promise.all([
+
+              prisma.user.count({
+                where: {
+                  userType: "admin",
+                  companyId: company.id,
+                },
+              }),
+
+              prisma.employee.count({
+                where: {
+                  companyId: company.id,
+                },
+              }),
+
+              prisma.lead.count({
+                where: {
+                  companyId: company.id,
+                  isCurrentVersion: true,
+                },
+              }),
+
+              prisma.alertsandremainder.count({
+                where: {
+                  companyId: company.id,
+                },
+              }),
+            ]);
+
+          return {
+            companyId: company.id,
+            companyName: company.companyName,
+            adminCount,
+            employeeCount,
+            leadCount,
+            alertCount,
+          };
+        })
+      );
+
+      const formatted = {};
+      companyStats.forEach((entry) => {
+        formatted[entry.companyId] = {
+          companyName: entry.companyName,
+          adminCount: entry.adminCount,
+          employeeCount: entry.employeeCount,
+          leadCount: entry.leadCount,
+          alertCount: entry.alertCount,
+        };
+      });
+
+      res.status(200).json(formatted);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Internal Server Error" });
+    }
+
+    // try {
+    //   const { uid, userType } = req.user;
+
+    //   if (userType === "superAdmin") {
+    //     const adminCount = await prisma.user.count({
+    //       where: {
+    //         userType: "admin",
+    //       },
+    //     });
+
+    //     const companycount = await prisma.company.count();
+    //     const companDetail = await prisma.company.findMany();
+
+    //     const employeeCount = await prisma.employee.count();
+
+    //     const companyCount = await prisma.company.count();
+
+    //     const leadCount = await prisma.lead.count({
+    //       where: {
+    //         isCurrentVersion: true,
+    //       },
+    //     });
+
+    //     const alertCount = await prisma.alertsandremainder.count();
+
+    //     res.status(200).json({
+    //       adminCount,
+    //       employeeCount,
+    //       companyCount,
+    //       leadCount,
+    //       alertCount,
+    //     });
+    //   } else {
+    //     return res.status(200).json({
+    //       msg: "Sorry you are not super admin and that's why you cannot get the data.",
+    //     });
+    //   }
+    // } catch (error) {
+    //   res.status(500).json({
+    //     msg: "Soemthing went wrong. We will fix it soon.",
+    //     error: error,
+    //   });
+    // }
   },
 
   async updateCompanyStatus(req, res) {

@@ -236,13 +236,11 @@ export const Header = ({ onToggleSidebar }) => {
         try {
             setLoading(true);
             const token = localStorage.getItem('token');
-            
-            if (!token) {
-                console.log('No token found');
-                return;
-            }
-
-            console.log('Making API call...');
+            // if (!token) {
+            //     console.log('No token found');
+            //     return;
+            // }
+            //console.log('Making API call...');
             const response = await axios.get(`${API_BASE_URL}/api/registerComp/`, {
                 headers: {
                     'Authorization': `Bearer ${token}`

@@ -40,7 +40,7 @@ const jwtTokenMiddleware = async (req, res, next) => {
     next();
   } catch (error) {
     if (error.name === 'TokenExpiredError') {
-      return res.status(401).json({ message: 'Token expired' });
+      return res.status(401).json({ message: 'Logged out sucessfully' });
     }
     if (error.name === 'JsonWebTokenError') {
       return res.status(400).json({ message: 'Invalid token' });
