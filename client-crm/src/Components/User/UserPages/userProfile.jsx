@@ -7,7 +7,6 @@ import { useSidebarUser, UserSidebar } from '../common/UserSidebar';
 import { cn } from "../../../utils/cn";
 import { useTheme } from '../../../hooks/use-theme';
 import { UserFooter } from '../common/UserFooter';
-
 const ProfileofUser = ({ collapsed, onLogout }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,12 +15,9 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
   const [apiError, setApiError] = useState(null);
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarUser();
   const { theme, setTheme } = useTheme();
-
-
   const EditProfilePanel = ({ profile, onClose, onSave }) => {
     const [editedProfile, setEditedProfile] = useState(profile);
     const panelRef = useRef(null);
-      // Close panel when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (panelRef.current && !panelRef.current.contains(event.target)) {
@@ -217,8 +213,6 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
         autoClose: 5000,
         theme: theme === 'dark' ? 'dark' : 'light',
       });
-
-      // Refresh user data
       const { data } = await axios.get(`${API_BASE_URL}/api/allUser`, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -427,7 +421,6 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
     </div>
   </div>
 </div>
-
                 {/* Profile Content */}
                 <div className="p-6 md:p-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -525,12 +518,10 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
     />
   </>
 )}
-
         </div>
       </UserSidebar>
       <UserFooter/>
     </>
   );
 };
-
 export default ProfileofUser;
