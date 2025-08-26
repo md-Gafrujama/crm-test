@@ -160,10 +160,10 @@ export async function fetchLeadWithHistory(id) {
     throw new Error("Lead not found");
   }
 
+  const rootId = currentLead.rootId || currentLead.id;
+
   const history = await prisma.lead.findMany({
-    where: {
-      OR: [{ rootId: currentLead.rootId }, { id: currentLead.rootId }],
-    },
+    where: { rootId },
     orderBy: { versionNumber: "asc" },
   });
 

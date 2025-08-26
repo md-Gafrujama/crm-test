@@ -6,6 +6,7 @@ const router = express.Router();
 router.use(express.json())
 
 router.post("/",jwtTokenMiddleware,leadsWork.addLeads);
+router.get("/dashboardLeads",jwtTokenMiddleware,leadsWork.getLeadsData);
 router.get("/",jwtTokenMiddleware,leadsWork.getLeadsWeekly);
 router.get("/weekly",jwtTokenMiddleware,leadsWork.getLeadsMonthly);
 router.get("/monthly",jwtTokenMiddleware,leadsWork.getLeads);

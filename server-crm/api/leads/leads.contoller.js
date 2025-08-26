@@ -189,5 +189,67 @@ const leadsWork = {
       res.status(404).json({ error: "Lead not found", details: error.message });
     }
   },
+
+  async getLeadsData(req, res) {
+    try {
+      const userType = req.user.userType;
+      const companyId = req.user.companyId;
+      const username = req.user.username;
+
+      const qualifiedLeads = await prisma.Lead.count({
+        where: {
+          companyId: companyId,
+          isCurrentVersion: true,
+          username: username,
+          status: {
+            in: ["Qualified", "Closed Won"],
+          },
+        },
+      });
+
+      const pendingLeads = await prisma.lead.count({
+        where: {
+          companyId: companyId,
+          isCurrentVersion: true,
+          username: username,
+          status: {
+            in: [
+              "Contacted",
+              "Engaged",
+              "On Hold",
+              "Proposal sent",
+              "Negotiation",
+            ],
+          },
+        },
+      });
+
+      const lossLeads = await prisma.Lead.count({
+        where: {
+          companyId: companyId,
+          isCurrentVersion: true,
+          username: username,
+          status: {
+            in: ["Closed Lost", "Do Not Contact"],
+          },
+        },
+      });
+
+      const totalLeads = qualifiedLeads + pendingLeads + lossLeads;
+
+      res.status(200).json({
+        msg: "Successfully fetched leads data from analytics.",
+        totalLeads: totalLeads,
+        qualifiedLeads: qualifiedLeads,
+        pendingLeads: pendingLeads,
+        lossLeads: lossLeads,
+      });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Somthing went wrong in the server. It will be solved sortly.",
+        error: error.message || error,
+      });
+    }
+  },
 };
 export default leadsWork;
