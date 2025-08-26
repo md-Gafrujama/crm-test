@@ -417,7 +417,7 @@ const UserDashboard = ({ onLogout }) => {
     <>
       <UserHeader onToggleSidebar={toggleSidebar} />
       <UserSidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
-        <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900">
+        <div className="">
           <div className="flex-1 overflow-auto">
             <main className="p-6">
               {/* Enhanced Header */}
@@ -561,7 +561,7 @@ const UserDashboard = ({ onLogout }) => {
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
                 {/* Enhanced Alerts & Reminders */}
-                <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50">
+                <div className="">
                   <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
                     <div className="flex items-center justify-between">
                       <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
@@ -655,16 +655,16 @@ const UserDashboard = ({ onLogout }) => {
                   <div className="px-6 py-4 bg-gray-50/50 dark:bg-gray-700/50 rounded-b-2xl border-t border-gray-200/50 dark:border-gray-600/50">
                     <button
                       onClick={() => navigate("/all-alerts-reminders")}
-                      className="text-sm font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 flex items-center gap-2 transition-all duration-300 group"
+                      className="text-lg font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 flex items-center gap-2 transition-all duration-300 group"
                     >
                       View All Alerts
-                      <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      <ArrowRight className="h-8 w-8 group-hover:translate-x-1 transition-transform" />
                     </button>
                   </div>
                 </div>
 
                 {/* Enhanced Projects */}
-                <div className="bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-200/50 dark:border-gray-700/50">
+                <div className="">
                   <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
                     <div className="flex justify-between items-center">
                       <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
