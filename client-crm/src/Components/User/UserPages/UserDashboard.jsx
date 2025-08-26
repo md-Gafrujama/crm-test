@@ -17,7 +17,7 @@ const UserDashboard = ({ onLogout }) => {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarUser();
   
   // Fix: Use PersonalDetails as a hook, not a function call
-  const { user, loading: userLoading } = PersonalDetails(onLogout) || {};
+  // const { user, loading: userLoading } = PersonalDetails(onLogout) || {};
   
   const [alerts, setAlerts] = useState([]);
   const [leadsData, setLeadsData] = useState({
@@ -427,14 +427,14 @@ const UserDashboard = ({ onLogout }) => {
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
                       <BarChart3 className="w-6 h-6 text-white" />
                     </div>
-                    <div>
+                    {/* <div>
                       <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                         Dashboard
                       </h1>
                       <p className="text-gray-600 dark:text-gray-400 font-medium">
                         Welcome back, {user?.name || 'User'}! Here's your lead overview.
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
                 <button
