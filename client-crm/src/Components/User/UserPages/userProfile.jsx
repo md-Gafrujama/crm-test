@@ -14,6 +14,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
   const [editPanelOpen, setEditPanelOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [apiError, setApiError] = useState(null);
+  const [authError, setAuthError] = useState(false);
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarUser();
   const { theme, setTheme } = useTheme();
 
@@ -244,12 +245,41 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
     }
   };
 
+  const checkAuthAndRedirect = () => {
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    
+    if (!token || !userId) {
+      setAuthError(true);
+      setApiError('Authentication required. Please login to continue.');
+      
+      // Auto redirect to login after 3 seconds
+      setTimeout(() => {
+        if (onLogout) {
+          onLogout();
+        } else {
+          // If onLogout is not available, redirect to login page
+          window.location.href = '/login';
+        }
+      }, 3000);
+      
+      return false;
+    }
+    
+    return true;
+  };
+
   const loadUserProfile = async () => {
     try {
       setLoading(true);
       setApiError(null);
+      setAuthError(false);
       
-      // Debug: Check what's in localStorage
+      // Check authentication first
+      if (!checkAuthAndRedirect()) {
+        return;
+      }
+
       const token = localStorage.getItem('token');
       const storedUserId = localStorage.getItem('userId');
       const storedUsername = localStorage.getItem('username');
@@ -259,14 +289,6 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
         userId: storedUserId, 
         username: storedUsername 
       });
-
-      if (!token) {
-        throw new Error('No authentication token found. Please login again.');
-      }
-
-      if (!storedUserId) {
-        throw new Error('User ID not found. Please login again.');
-      }
 
       // Try different API endpoints based on your API structure
       let response;
@@ -312,6 +334,11 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
         }
       } catch (allUsersError) {
         console.log('AllUsers endpoint failed:', allUsersError.message);
+        
+        // Check if it's an auth error
+        if (allUsersError.response?.status === 401) {
+          throw new Error('Session expired. Please login again.');
+        }
       }
 
       // Second try: Get current user profile directly
@@ -325,6 +352,10 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
           console.log('Profile endpoint response:', userData);
         } catch (profileError) {
           console.log('Profile endpoint failed:', profileError.message);
+          
+          if (profileError.response?.status === 401) {
+            throw new Error('Session expired. Please login again.');
+          }
         }
       }
 
@@ -339,6 +370,10 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
           console.log('User by ID response:', userData);
         } catch (userByIdError) {
           console.log('User by ID endpoint failed:', userByIdError.message);
+          
+          if (userByIdError.response?.status === 401) {
+            throw new Error('Session expired. Please login again.');
+          }
         }
       }
 
@@ -353,11 +388,15 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
           console.log('Me endpoint response:', userData);
         } catch (meError) {
           console.log('Me endpoint failed:', meError.message);
+          
+          if (meError.response?.status === 401) {
+            throw new Error('Session expired. Please login again.');
+          }
         }
       }
 
       if (!userData) {
-        throw new Error('Unable to fetch user data from any endpoint. Please check your API configuration.');
+        throw new Error('Unable to fetch user data from any endpoint. Please check your API configuration or login again.');
       }
 
       // Handle nested user data
@@ -377,6 +416,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
       
       if (error.response?.status === 401) {
         errorMessage = "Session expired. Please login again.";
+        setAuthError(true);
       } else if (error.response?.status === 403) {
         errorMessage = "Access denied. Please check your permissions.";
       } else if (error.response?.status === 404) {
@@ -394,10 +434,15 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
         theme: theme === 'dark' ? 'dark' : 'light',
       });
 
-      // Only logout on auth errors
-      if (error.response?.status === 401 && onLogout) {
+      // Handle auth errors
+      if (error.response?.status === 401 || error.message.includes('Session expired') || error.message.includes('Authentication required')) {
+        setAuthError(true);
         setTimeout(() => {
-          onLogout();
+          if (onLogout) {
+            onLogout();
+          } else {
+            window.location.href = '/login';
+          }
         }, 2000);
       }
     } finally {
@@ -406,6 +451,28 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
   };
 
   useEffect(() => {
+    // Check authentication immediately when component mounts
+    const token = localStorage.getItem('token');
+    const userId = localStorage.getItem('userId');
+    
+    if (!token || !userId) {
+      setAuthError(true);
+      setApiError('Please login to access your profile.');
+      setLoading(false);
+      
+      // Auto redirect after showing message
+      setTimeout(() => {
+        if (onLogout) {
+          onLogout();
+        } else {
+          window.location.href = '/login';
+        }
+      }, 3000);
+      
+      return;
+    }
+    
+    // If we have auth data, load the profile
     loadUserProfile();
   }, []);
 
@@ -431,10 +498,65 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
 
   const user = transformUserData(currentUser);
 
+  // Show authentication error screen
+  if (authError || (!loading && !currentUser && apiError)) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="mb-6">
+            <svg className="mx-auto h-16 w-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
+            Authentication Required
+          </h2>
+          
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            {apiError || "You need to login to access your profile."}
+          </p>
+          
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+            <h3 className="font-medium text-red-800 dark:text-red-200 mb-2">Debug Info:</h3>
+            <div className="text-sm text-red-700 dark:text-red-300 space-y-1">
+              <p>Token: {localStorage.getItem('token') ? '✓ Present' : '✗ Missing'}</p>
+              <p>User ID: {localStorage.getItem('userId') || '✗ Missing'}</p>
+              <p>Username: {localStorage.getItem('username') || '✗ Missing'}</p>
+              <p>API URL: {API_BASE_URL}</p>
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <button
+              onClick={() => {
+                if (onLogout) {
+                  onLogout();
+                } else {
+                  window.location.href = '/login';
+                }
+              }}
+              className="w-full px-6 py-3 bg-[#ff8633] text-white rounded-lg hover:bg-[#e67328] transition-colors font-medium"
+            >
+              Go to Login
+            </button>
+            
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Redirecting automatically in 3 seconds...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-[#ff8633]"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-[#ff8633] mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading your profile...</p>
+        </div>
       </div>
     );
   }
@@ -443,43 +565,37 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4">
-            Profile Not Found
-          </h2>
-          <p className="text-gray-600 dark:text-gray-500 mb-4">
-            {apiError || "Unable to load user profile data"}
-          </p>
-          
-          {/* Debug Information */}
-          <div className="mb-4 p-3 bg-gray-100 dark:bg-slate-800 rounded-lg text-sm text-left">
-            <p className="font-medium mb-2 text-gray-700 dark:text-gray-300">Debug Info:</p>
-            <p className="text-gray-600 dark:text-gray-400">
-              Token: {localStorage.getItem('token') ? '✓ Present' : '✗ Missing'}
-            </p>
-            <p className="text-gray-600 dark:text-gray-400">
-              User ID: {localStorage.getItem('userId') || 'Missing'}
-            </p>
-            <p className="text-gray-600 dark:text-gray-400">
-              Username: {localStorage.getItem('username') || 'Missing'}
-            </p>
-            <p className="text-gray-600 dark:text-gray-400">
-              API URL: {API_BASE_URL}
-            </p>
+          <div className="mb-6">
+            <svg className="mx-auto h-16 w-16 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.084-2.328.414-.651.886-1.259 1.414-1.828A4 4 0 0112 9c1.314 0 2.51.631 3.25 1.606M12 3v3m6.364-.636l-2.121 2.121M21 12h-3m-.636 6.364l-2.121-2.121M12 21v-3m-6.364.636l2.121-2.121M3 12h3m.636-6.364l2.121 2.121" />
+            </svg>
           </div>
+          
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4">
+            Profile Data Not Found
+          </h2>
+          
+          <p className="text-gray-600 dark:text-gray-500 mb-6">
+            {apiError || "Unable to load your profile data from the server."}
+          </p>
           
           <div className="space-y-3">
             <button
               onClick={loadUserProfile}
               disabled={loading}
-              className="px-4 py-2 bg-[#ff8633] text-white rounded-lg hover:bg-[#e67328] transition-colors disabled:opacity-50"
+              className="px-6 py-2 bg-[#ff8633] text-white rounded-lg hover:bg-[#e67328] transition-colors disabled:opacity-50"
             >
-              {loading ? 'Retrying...' : 'Retry'}
+              {loading ? 'Retrying...' : 'Try Again'}
             </button>
             
             <button
               onClick={() => {
                 localStorage.clear();
-                if (onLogout) onLogout();
+                if (onLogout) {
+                  onLogout();
+                } else {
+                  window.location.href = '/login';
+                }
               }}
               className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors ml-2"
             >
