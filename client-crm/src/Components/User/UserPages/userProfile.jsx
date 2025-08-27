@@ -247,47 +247,158 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
   const loadUserProfile = async () => {
     try {
       setLoading(true);
+      setApiError(null);
+      
+      // Debug: Check what's in localStorage
       const token = localStorage.getItem('token');
       const storedUserId = localStorage.getItem('userId');
       const storedUsername = localStorage.getItem('username');
-
-      if (!token || !storedUserId) {
-        throw new Error('Missing authentication data');
-      }
-
-      const response = await axios.get(`${API_BASE_URL}/api/allUser`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+      
+      console.log('Auth Debug:', { 
+        hasToken: !!token, 
+        userId: storedUserId, 
+        username: storedUsername 
       });
 
-      // Ensure response.data is an array
-      const allUsers = Array.isArray(response.data) ? response.data : [];
-      
-      if (allUsers.length === 0) {
-        throw new Error('No users found');
+      if (!token) {
+        throw new Error('No authentication token found. Please login again.');
       }
 
-      const matchedUser = allUsers.find(user =>
-        user.id === storedUserId && user.username === storedUsername
-      );
-
-      if (!matchedUser) {
-        throw new Error('User not found or data mismatch');
+      if (!storedUserId) {
+        throw new Error('User ID not found. Please login again.');
       }
 
-      setCurrentUser(matchedUser);
+      // Try different API endpoints based on your API structure
+      let response;
+      let userData = null;
+
+      try {
+        // First try: Get all users and find current user
+        console.log('Trying to fetch from:', `${API_BASE_URL}/api/allUser`);
+        response = await axios.get(`${API_BASE_URL}/api/allUser`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        console.log('API Response:', response.data);
+
+        // Handle different response structures
+        let allUsers = [];
+        if (Array.isArray(response.data)) {
+          allUsers = response.data;
+        } else if (response.data && Array.isArray(response.data.users)) {
+          allUsers = response.data.users;
+        } else if (response.data && Array.isArray(response.data.data)) {
+          allUsers = response.data.data;
+        } else {
+          console.log('Unexpected response structure:', response.data);
+        }
+
+        if (allUsers.length > 0) {
+          // Try different matching strategies
+          userData = allUsers.find(user => 
+            user.id === storedUserId || 
+            user._id === storedUserId ||
+            user.id === parseInt(storedUserId) ||
+            user._id === parseInt(storedUserId)
+          );
+
+          if (!userData && storedUsername) {
+            userData = allUsers.find(user => 
+              user.username === storedUsername
+            );
+          }
+
+          console.log('Matched user:', userData);
+        }
+      } catch (allUsersError) {
+        console.log('AllUsers endpoint failed:', allUsersError.message);
+      }
+
+      // Second try: Get current user profile directly
+      if (!userData) {
+        try {
+          console.log('Trying profile endpoint:', `${API_BASE_URL}/api/profile`);
+          response = await axios.get(`${API_BASE_URL}/api/profile`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          userData = response.data;
+          console.log('Profile endpoint response:', userData);
+        } catch (profileError) {
+          console.log('Profile endpoint failed:', profileError.message);
+        }
+      }
+
+      // Third try: Get user by ID
+      if (!userData && storedUserId) {
+        try {
+          console.log('Trying user by ID:', `${API_BASE_URL}/api/user/${storedUserId}`);
+          response = await axios.get(`${API_BASE_URL}/api/user/${storedUserId}`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          userData = response.data;
+          console.log('User by ID response:', userData);
+        } catch (userByIdError) {
+          console.log('User by ID endpoint failed:', userByIdError.message);
+        }
+      }
+
+      // Fourth try: Get current user info
+      if (!userData) {
+        try {
+          console.log('Trying me endpoint:', `${API_BASE_URL}/api/me`);
+          response = await axios.get(`${API_BASE_URL}/api/me`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          userData = response.data;
+          console.log('Me endpoint response:', userData);
+        } catch (meError) {
+          console.log('Me endpoint failed:', meError.message);
+        }
+      }
+
+      if (!userData) {
+        throw new Error('Unable to fetch user data from any endpoint. Please check your API configuration.');
+      }
+
+      // Handle nested user data
+      if (userData.user) {
+        userData = userData.user;
+      } else if (userData.data) {
+        userData = userData.data;
+      }
+
+      console.log('Final user data:', userData);
+      setCurrentUser(userData);
 
     } catch (error) {
       console.error('Profile loading error:', error);
-      const errorMessage = error.response?.data?.message || error.message || "Failed to load profile data";
+      
+      let errorMessage = "Failed to load profile data";
+      
+      if (error.response?.status === 401) {
+        errorMessage = "Session expired. Please login again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "Access denied. Please check your permissions.";
+      } else if (error.response?.status === 404) {
+        errorMessage = "User profile not found.";
+      } else if (error.message.includes('Network Error')) {
+        errorMessage = "Network error. Please check your connection.";
+      } else {
+        errorMessage = error.response?.data?.message || error.message || errorMessage;
+      }
 
+      setApiError(errorMessage);
       toast.error(errorMessage, {
         position: "top-right",
-        autoClose: 5000,
+        autoClose: 7000,
         theme: theme === 'dark' ? 'dark' : 'light',
       });
-      
-      if (onLogout) {
-        onLogout();
+
+      // Only logout on auth errors
+      if (error.response?.status === 401 && onLogout) {
+        setTimeout(() => {
+          onLogout();
+        }, 2000);
       }
     } finally {
       setLoading(false);
@@ -331,19 +442,50 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
   if (!user) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
-        <div className="text-center">
+        <div className="text-center max-w-md mx-auto p-6">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4">
             Profile Not Found
           </h2>
           <p className="text-gray-600 dark:text-gray-500 mb-4">
-            Unable to load user profile data
+            {apiError || "Unable to load user profile data"}
           </p>
-          <button
-            onClick={loadUserProfile}
-            className="px-4 py-2 bg-[#ff8633] text-white rounded-lg hover:bg-[#e67328] transition-colors"
-          >
-            Retry
-          </button>
+          
+          {/* Debug Information */}
+          <div className="mb-4 p-3 bg-gray-100 dark:bg-slate-800 rounded-lg text-sm text-left">
+            <p className="font-medium mb-2 text-gray-700 dark:text-gray-300">Debug Info:</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Token: {localStorage.getItem('token') ? '✓ Present' : '✗ Missing'}
+            </p>
+            <p className="text-gray-600 dark:text-gray-400">
+              User ID: {localStorage.getItem('userId') || 'Missing'}
+            </p>
+            <p className="text-gray-600 dark:text-gray-400">
+              Username: {localStorage.getItem('username') || 'Missing'}
+            </p>
+            <p className="text-gray-600 dark:text-gray-400">
+              API URL: {API_BASE_URL}
+            </p>
+          </div>
+          
+          <div className="space-y-3">
+            <button
+              onClick={loadUserProfile}
+              disabled={loading}
+              className="px-4 py-2 bg-[#ff8633] text-white rounded-lg hover:bg-[#e67328] transition-colors disabled:opacity-50"
+            >
+              {loading ? 'Retrying...' : 'Retry'}
+            </button>
+            
+            <button
+              onClick={() => {
+                localStorage.clear();
+                if (onLogout) onLogout();
+              }}
+              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors ml-2"
+            >
+              Clear Data & Login Again
+            </button>
+          </div>
         </div>
       </div>
     );
