@@ -310,7 +310,8 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
         if (!token || !storedUserId) {
           throw new Error('Missing authentication data');
         }
-
+        //shrestha8summit -> i think here it should be usersData instead of alluser.. and the the token is also missing causing webpade to auto logout
+        //for cross checking ucan go to userProfile and see application tab there is not token
         const response = await axios.get(`${API_BASE_URL}/api/allUser`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });

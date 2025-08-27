@@ -2,6 +2,39 @@ import prisma from "../../prisma/prismaClient.js";
 // import client from "../../middleware/redis.middleware.js";
 
 const allUsersDetail = {
+  async info(req, res) {
+    try {
+      const userId = req.user.uid;
+      if(!userId){
+        return res.status(500).json({
+          msg:"NO userId",
+        })
+      }
+      const data = await prisma.user.findUnique({
+        where: {
+          id : userId
+        },
+        select: {
+          firstName: true,
+          lastName: true,
+          photo: true,
+          username: true,
+        },
+      });
+
+      if (!data) {
+        return res.status(404).json({ msg: "User not found" });
+      }
+
+      return res.status(200).json(data);
+    } catch (error) {
+      return res.status(500).json({
+        msg: "Something went wrong",
+        error: error.message || error,
+      });
+    }
+  },
+
   async allData(req, res) {
     try {
       const userType = req.user.userType;

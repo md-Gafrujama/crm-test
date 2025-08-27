@@ -1,13 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import Footer from '../common/Footer';
-import { Header } from '../common/Header';
-import { Sidebar, useSidebar } from '../common/sidebar';
-import { cn } from '../../../utils/cn';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import Footer from "../common/Footer";
+import { Header } from "../common/Header";
+import { Sidebar, useSidebar } from "../common/sidebar";
+import { cn } from "../../../utils/cn";
 import { API_BASE_URL } from "../../../config/api";
-import { Package, ShoppingCart, Activity, TrendingUp } from 'lucide-react';
-import { User, Users, MessageSquare, Users2 } from 'lucide-react';
+import { Package, ShoppingCart, Activity, TrendingUp } from "lucide-react";
+import { User, Users, MessageSquare, Users2 } from "lucide-react";
 
 // Chart.js imports for Pie and Doughnut charts
 import {
@@ -19,8 +19,8 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
-import { Pie, Doughnut, Bar } from 'react-chartjs-2';
+} from "chart.js";
+import { Pie, Doughnut, Bar } from "react-chartjs-2";
 
 // Register Chart.js components
 ChartJS.register(
@@ -42,7 +42,7 @@ const AdminAnalytics = ({ collapsed }) => {
     totalLeads: 0,
     qualifiedLeads: 0,
     pendingLeads: 0,
-    lossLeads: 0
+    lossLeads: 0,
   });
 
   // State for users data
@@ -51,7 +51,7 @@ const AdminAnalytics = ({ collapsed }) => {
     activeUser: 0,
     totalEmployee: 0,
     conversionRateFromActive: 0,
-    conversionRateFromTotal: 0
+    conversionRateFromTotal: 0,
   });
 
   // State for lead stats cards
@@ -68,22 +68,30 @@ const AdminAnalytics = ({ collapsed }) => {
         if (!token) throw new Error("Please login to view analytics");
 
         // Fetch users analytics
-        const userResponse = await axios.get(`${API_BASE_URL}/api/analytics/users`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const userResponse = await axios.get(
+          `${API_BASE_URL}/api/analytics/users`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         // Fetch leads analytics
-        const leadsResponse = await axios.get(`${API_BASE_URL}/api/analytics/leads`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const leadsResponse = await axios.get(
+          `${API_BASE_URL}/api/analytics/leads`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
         if (userResponse.data) {
           setUsersData({
             totalUser: userResponse.data.totalUser || 0,
             activeUser: userResponse.data.activeUser || 0,
             totalEmployee: userResponse.data.totalEmployee || 0,
-            conversionRateFromActive: userResponse.data.conversionRateFromActive || 0,
-            conversionRateFromTotal: userResponse.data.conversionRateFromTotal || 0
+            conversionRateFromActive:
+              userResponse.data.conversionRateFromActive || 0,
+            conversionRateFromTotal:
+              userResponse.data.conversionRateFromTotal || 0,
           });
         }
 
@@ -92,14 +100,15 @@ const AdminAnalytics = ({ collapsed }) => {
             totalLeads: leadsResponse.data.totalLeads || 0,
             qualifiedLeads: leadsResponse.data.qualifiedLeads || 0,
             pendingLeads: leadsResponse.data.pendingLeads || 0,
-            lossLeads: leadsResponse.data.lossLeads || 0
+            lossLeads: leadsResponse.data.lossLeads || 0,
           });
         }
-
       } catch (error) {
         console.error("Failed to fetch analytics data:", error);
         toast.error(
-          error.response?.data?.message || error.message || "Failed to load analytics data",
+          error.response?.data?.message ||
+            error.message ||
+            "Failed to load analytics data",
           {
             position: "top-right",
             autoClose: 5000,
@@ -131,7 +140,7 @@ const AdminAnalytics = ({ collapsed }) => {
           iconBg: "bg-gradient-to-br from-violet-100 to-purple-100",
           textColor: "text-violet-700",
           subtitle: "This month",
-          shadowColor: "shadow-violet-500/20"
+          shadowColor: "shadow-violet-500/20",
         },
         {
           id: 2,
@@ -145,7 +154,7 @@ const AdminAnalytics = ({ collapsed }) => {
           iconBg: "bg-gradient-to-br from-emerald-100 to-cyan-100",
           textColor: "text-emerald-700",
           subtitle: "Active pipeline",
-          shadowColor: "shadow-emerald-500/20"
+          shadowColor: "shadow-emerald-500/20",
         },
         {
           id: 3,
@@ -159,7 +168,7 @@ const AdminAnalytics = ({ collapsed }) => {
           iconBg: "bg-gradient-to-br from-amber-100 to-orange-100",
           textColor: "text-orange-700",
           subtitle: "Awaiting follow-up",
-          shadowColor: "shadow-amber-500/20"
+          shadowColor: "shadow-amber-500/20",
         },
         {
           id: 4,
@@ -173,7 +182,7 @@ const AdminAnalytics = ({ collapsed }) => {
           iconBg: "bg-gradient-to-br from-rose-100 to-pink-100",
           textColor: "text-rose-700",
           subtitle: "Lost opportunities",
-          shadowColor: "shadow-rose-500/20"
+          shadowColor: "shadow-rose-500/20",
         },
       ]);
     }
@@ -195,7 +204,7 @@ const AdminAnalytics = ({ collapsed }) => {
           iconBg: "bg-gradient-to-br from-indigo-100 to-blue-100",
           textColor: "text-indigo-700",
           subtitle: "This year",
-          shadowColor: "shadow-indigo-500/20"
+          shadowColor: "shadow-indigo-500/20",
         },
         {
           id: 6,
@@ -209,7 +218,7 @@ const AdminAnalytics = ({ collapsed }) => {
           iconBg: "bg-gradient-to-br from-green-100 to-emerald-100",
           textColor: "text-green-700",
           subtitle: "Last month",
-          shadowColor: "shadow-green-500/20"
+          shadowColor: "shadow-green-500/20",
         },
         {
           id: 7,
@@ -223,7 +232,7 @@ const AdminAnalytics = ({ collapsed }) => {
           iconBg: "bg-gradient-to-br from-pink-100 to-rose-100",
           textColor: "text-pink-700",
           subtitle: "Employee/Active ratio",
-          shadowColor: "shadow-pink-500/20"
+          shadowColor: "shadow-pink-500/20",
         },
         {
           id: 8,
@@ -237,35 +246,35 @@ const AdminAnalytics = ({ collapsed }) => {
           iconBg: "bg-gradient-to-br from-yellow-100 to-amber-100",
           textColor: "text-yellow-700",
           subtitle: "This quarter",
-          shadowColor: "shadow-yellow-500/20"
-        }
+          shadowColor: "shadow-yellow-500/20",
+        },
       ]);
     }
   }, [usersData]);
 
   // Enhanced Pie Chart Data for Lead Distribution
   const leadsPieData = {
-    labels: ['Total Leads', 'Qualified Leads', 'Pending Leads', 'Lost Leads'],
+    labels: ["Total Leads", "Qualified Leads", "Pending Leads", "Lost Leads"],
     datasets: [
       {
-        label: 'Lead Distribution',
+        label: "Lead Distribution",
         data: [
           leadsData.totalLeads,
           leadsData.qualifiedLeads,
           leadsData.pendingLeads,
-          leadsData.lossLeads
+          leadsData.lossLeads,
         ],
         backgroundColor: [
-          'rgba(139, 92, 246, 0.8)', // Purple
-          'rgba(16, 185, 129, 0.8)', // Emerald
-          'rgba(245, 158, 11, 0.8)', // Amber
-          'rgba(239, 68, 68, 0.8)', // Red
+          "rgba(139, 92, 246, 0.8)", // Purple
+          "rgba(16, 185, 129, 0.8)", // Emerald
+          "rgba(245, 158, 11, 0.8)", // Amber
+          "rgba(239, 68, 68, 0.8)", // Red
         ],
         borderColor: [
-          'rgb(139, 92, 246)',
-          'rgb(16, 185, 129)',
-          'rgb(245, 158, 11)',
-          'rgb(239, 68, 68)',
+          "rgb(139, 92, 246)",
+          "rgb(16, 185, 129)",
+          "rgb(245, 158, 11)",
+          "rgb(239, 68, 68)",
         ],
         borderWidth: 3,
         hoverOffset: 15,
@@ -276,30 +285,35 @@ const AdminAnalytics = ({ collapsed }) => {
 
   // Enhanced Doughnut Chart Data for User Analytics
   const userDoughnutData = {
-    labels: ['Total Users', 'Active Users', 'Conversion Rate', 'Total Employees'],
+    labels: [
+      "Total Users",
+      "Active Users",
+      "Conversion Rate",
+      "Total Employees",
+    ],
     datasets: [
       {
-        label: 'User Analytics',
+        label: "User Analytics",
         data: [
           usersData.totalUser,
           usersData.activeUser,
           usersData.conversionRateFromActive,
-          usersData.totalEmployee
+          usersData.totalEmployee,
         ],
         backgroundColor: [
-          'rgba(99, 102, 241, 0.8)', // Indigo
-          'rgba(34, 197, 94, 0.8)', // Green
-          'rgba(236, 72, 153, 0.8)', // Pink
-          'rgba(234, 179, 8, 0.8)', // Yellow
+          "rgba(99, 102, 241, 0.8)", // Indigo
+          "rgba(34, 197, 94, 0.8)", // Green
+          "rgba(236, 72, 153, 0.8)", // Pink
+          "rgba(234, 179, 8, 0.8)", // Yellow
         ],
         borderColor: [
-          'rgb(99, 102, 241)',
-          'rgb(34, 197, 94)',
-          'rgb(236, 72, 153)',
-          'rgb(234, 179, 8)',
+          "rgb(99, 102, 241)",
+          "rgb(34, 197, 94)",
+          "rgb(236, 72, 153)",
+          "rgb(234, 179, 8)",
         ],
         borderWidth: 3,
-        cutout: '65%',
+        cutout: "65%",
         hoverOffset: 15,
         hoverBorderWidth: 4,
       },
@@ -311,45 +325,45 @@ const AdminAnalytics = ({ collapsed }) => {
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'bottom',
+        position: "bottom",
         labels: {
           padding: 25,
           font: {
             size: 13,
-            weight: 'bold',
+            weight: "bold",
           },
           usePointStyle: true,
-          pointStyle: 'circle',
+          pointStyle: "circle",
         },
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.9)',
-        titleColor: 'white',
-        bodyColor: 'white',
-        borderColor: 'rgba(255, 255, 255, 0.1)',
+        backgroundColor: "rgba(0, 0, 0, 0.9)",
+        titleColor: "white",
+        bodyColor: "white",
+        borderColor: "rgba(255, 255, 255, 0.1)",
         borderWidth: 1,
         cornerRadius: 12,
         padding: 12,
         displayColors: true,
         callbacks: {
-          label: function(context) {
-            const label = context.label || '';
+          label: function (context) {
+            const label = context.label || "";
             const value = context.parsed;
-            
-            if (label.includes('Conversion Rate')) {
+
+            if (label.includes("Conversion Rate")) {
               return `${label}: ${value.toFixed(1)}%`;
             }
-            
+
             return `${label}: ${value}`;
-          }
-        }
+          },
+        },
       },
     },
     animation: {
       animateRotate: true,
       animateScale: true,
       duration: 1000,
-      easing: 'easeOutQuart',
+      easing: "easeOutQuart",
     },
   };
 
@@ -359,16 +373,30 @@ const AdminAnalytics = ({ collapsed }) => {
       <div className="flex justify-center items-center h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 dark:from-slate-900 dark:via-slate-800 dark:to-indigo-900">
         <div className="text-center space-y-4">
           <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-transparent bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-transparent bg-gradient-to-r from-purple-500 to-pink-500 rounded-full absolute top-0 left-0" style={{ animationDirection: 'reverse', animationDuration: '1s' }}></div>
-            <div className="absolute top-2 left-2 animate-spin rounded-full h-12 w-12 border-4 border-white rounded-full"></div>
+            <div className="animate-spin h-16 w-16 border-4 border-transparent bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
+
+            <div
+              className="h-16 w-16 border-4 border-transparent bg-gradient-to-r from-purple-500 to-pink-500 rounded-full absolute top-0 left-0"
+              style={{ animation: "spin 1s linear reverse infinite" }}
+            ></div>
+
+            <div className="absolute top-2 left-2 animate-spin h-12 w-12 border-4 border-white rounded-full"></div>
           </div>
+
           <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">Loading Analytics</h3>
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+              Loading Analytics
+            </h3>
             <div className="flex justify-center space-x-1">
               <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-pink-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+              <div
+                className="w-2 h-2 bg-pink-500 rounded-full animate-bounce"
+                style={{ animationDelay: "0.1s" }}
+              ></div>
+              <div
+                className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce"
+                style={{ animationDelay: "0.2s" }}
+              ></div>
             </div>
           </div>
         </div>
@@ -380,9 +408,7 @@ const AdminAnalytics = ({ collapsed }) => {
     <>
       <Header onToggleSidebar={toggleSidebar} />
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
-        <div className={cn(
-          ""
-        )}>
+        <div className={cn("")}>
           <div className="space-y-8 p-6">
             {/* Analytics Header */}
             <div className="text-center space-y-3 mb-8">
@@ -390,7 +416,8 @@ const AdminAnalytics = ({ collapsed }) => {
                 Analytics Dashboard
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
-                Comprehensive insights into your leads performance and user engagement metrics
+                Comprehensive insights into your leads performance and user
+                engagement metrics
               </p>
             </div>
 
@@ -400,31 +427,45 @@ const AdminAnalytics = ({ collapsed }) => {
                 <div
                   key={stat.id}
                   className={`group relative overflow-hidden bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-gray-700/50 hover:shadow-2xl ${stat.shadowColor} transition-all duration-500 hover:-translate-y-2 hover:scale-105`}
-                  style={{ 
+                  style={{
                     animationDelay: `${index * 0.1}s`,
-                    animation: 'slideInUp 0.6s ease-out forwards'
+                    animation: "slideInUp 0.6s ease-out forwards",
                   }}
                 >
                   {/* Gradient Background */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-50 group-hover:opacity-70 transition-opacity duration-500`}></div>
-                  
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-50 group-hover:opacity-70 transition-opacity duration-500`}
+                  ></div>
+
                   {/* Animated Border */}
-                  <div className={`absolute inset-0 bg-gradient-to-r ${stat.gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-2xl`}></div>
-                  
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-r ${stat.gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-2xl`}
+                  ></div>
+
                   <div className="relative p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <div className={`${stat.iconBg} p-3 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                        <div className={`${stat.textColor} group-hover:scale-110 transition-transform duration-300`}>
+                      <div
+                        className={`${stat.iconBg} p-3 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                      >
+                        <div
+                          className={`${stat.textColor} group-hover:scale-110 transition-transform duration-300`}
+                        >
                           {stat.icon}
                         </div>
                       </div>
-                      
-                      <div className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold shadow-sm ${
-                        stat.trend === "up"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300"
-                          : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
-                      }`}>
-                        <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""} group-hover:scale-110 transition-transform duration-300`} />
+
+                      <div
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold shadow-sm ${
+                          stat.trend === "up"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                        }`}
+                      >
+                        <TrendingUp
+                          className={`h-3 w-3 ${
+                            stat.trend === "down" ? "rotate-180" : ""
+                          } group-hover:scale-110 transition-transform duration-300`}
+                        />
                         {stat.change}
                       </div>
                     </div>
@@ -434,20 +475,28 @@ const AdminAnalytics = ({ collapsed }) => {
                         {stat.value}
                       </h3>
                       <div className="space-y-1">
-                        <p className="text-base font-bold text-gray-800 dark:text-gray-200">{stat.title}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{stat.subtitle}</p>
+                        <p className="text-base font-bold text-gray-800 dark:text-gray-200">
+                          {stat.title}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {stat.subtitle}
+                        </p>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200/50 dark:border-gray-600/50">
-                      <div className={`w-3 h-3 rounded-full ${
-                        stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
-                      } shadow-lg group-hover:scale-125 transition-transform duration-300`}></div>
-                      <div className={`text-sm font-bold ${
-                        stat.trend === "up"
-                          ? "text-emerald-700 dark:text-emerald-400"
-                          : "text-red-700 dark:text-red-400"
-                      }`}>
+                      <div
+                        className={`w-3 h-3 rounded-full ${
+                          stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
+                        } shadow-lg group-hover:scale-125 transition-transform duration-300`}
+                      ></div>
+                      <div
+                        className={`text-sm font-bold ${
+                          stat.trend === "up"
+                            ? "text-emerald-700 dark:text-emerald-400"
+                            : "text-red-700 dark:text-red-400"
+                        }`}
+                      >
                         {stat.change}
                       </div>
                     </div>
@@ -455,7 +504,9 @@ const AdminAnalytics = ({ collapsed }) => {
 
                   {/* Animated Progress Bar */}
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200/50 dark:bg-gray-700/50 rounded-b-2xl overflow-hidden">
-                    <div className={`h-full bg-gradient-to-r ${stat.gradient} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700 ease-out`}></div>
+                    <div
+                      className={`h-full bg-gradient-to-r ${stat.gradient} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700 ease-out`}
+                    ></div>
                   </div>
                 </div>
               ))}
@@ -472,10 +523,11 @@ const AdminAnalytics = ({ collapsed }) => {
                   <div className="w-3 h-3 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full animate-pulse"></div>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 text-lg">
-                  Comprehensive breakdown of all leads by status and performance metrics
+                  Comprehensive breakdown of all leads by status and performance
+                  metrics
                 </p>
               </div>
-              <div style={{ height: '450px' }} className="relative">
+              <div style={{ height: "450px" }} className="relative">
                 <Pie data={leadsPieData} options={chartOptions} />
               </div>
             </div>
@@ -486,31 +538,45 @@ const AdminAnalytics = ({ collapsed }) => {
                 <div
                   key={stat.id}
                   className={`group relative overflow-hidden bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-gray-700/50 hover:shadow-2xl ${stat.shadowColor} transition-all duration-500 hover:-translate-y-2 hover:scale-105`}
-                  style={{ 
+                  style={{
                     animationDelay: `${index * 0.1}s`,
-                    animation: 'slideInUp 0.6s ease-out forwards'
+                    animation: "slideInUp 0.6s ease-out forwards",
                   }}
                 >
                   {/* Gradient Background */}
-                  <div className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-50 group-hover:opacity-70 transition-opacity duration-500`}></div>
-                  
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-br ${stat.bgGradient} opacity-50 group-hover:opacity-70 transition-opacity duration-500`}
+                  ></div>
+
                   {/* Animated Border */}
-                  <div className={`absolute inset-0 bg-gradient-to-r ${stat.gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-2xl`}></div>
-                  
+                  <div
+                    className={`absolute inset-0 bg-gradient-to-r ${stat.gradient} opacity-0 group-hover:opacity-20 transition-opacity duration-500 rounded-2xl`}
+                  ></div>
+
                   <div className="relative p-6">
                     <div className="flex items-start justify-between mb-4">
-                      <div className={`${stat.iconBg} p-3 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                        <div className={`${stat.textColor} group-hover:scale-110 transition-transform duration-300`}>
+                      <div
+                        className={`${stat.iconBg} p-3 rounded-2xl shadow-lg group-hover:scale-110 transition-transform duration-300`}
+                      >
+                        <div
+                          className={`${stat.textColor} group-hover:scale-110 transition-transform duration-300`}
+                        >
                           {stat.icon}
                         </div>
                       </div>
-                      
-                      <div className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold shadow-sm ${
-                        stat.trend === "up"
-                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300"
-                          : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
-                      }`}>
-                        <TrendingUp className={`h-3 w-3 ${stat.trend === "down" ? "rotate-180" : ""} group-hover:scale-110 transition-transform duration-300`} />
+
+                      <div
+                        className={`flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold shadow-sm ${
+                          stat.trend === "up"
+                            ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300"
+                            : "bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300"
+                        }`}
+                      >
+                        <TrendingUp
+                          className={`h-3 w-3 ${
+                            stat.trend === "down" ? "rotate-180" : ""
+                          } group-hover:scale-110 transition-transform duration-300`}
+                        />
                         {stat.change}
                       </div>
                     </div>
@@ -520,20 +586,28 @@ const AdminAnalytics = ({ collapsed }) => {
                         {stat.value}
                       </h3>
                       <div className="space-y-1">
-                        <p className="text-base font-bold text-gray-800 dark:text-gray-200">{stat.title}</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{stat.subtitle}</p>
+                        <p className="text-base font-bold text-gray-800 dark:text-gray-200">
+                          {stat.title}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {stat.subtitle}
+                        </p>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200/50 dark:border-gray-600/50">
-                      <div className={`w-3 h-3 rounded-full ${
-                        stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
-                      } shadow-lg group-hover:scale-125 transition-transform duration-300`}></div>
-                      <div className={`text-sm font-bold ${
-                        stat.trend === "up"
-                          ? "text-emerald-700 dark:text-emerald-400"
-                          : "text-red-700 dark:text-red-400"
-                      }`}>
+                      <div
+                        className={`w-3 h-3 rounded-full ${
+                          stat.trend === "up" ? "bg-emerald-500" : "bg-red-500"
+                        } shadow-lg group-hover:scale-125 transition-transform duration-300`}
+                      ></div>
+                      <div
+                        className={`text-sm font-bold ${
+                          stat.trend === "up"
+                            ? "text-emerald-700 dark:text-emerald-400"
+                            : "text-red-700 dark:text-red-400"
+                        }`}
+                      >
                         {stat.change}
                       </div>
                     </div>
@@ -541,7 +615,9 @@ const AdminAnalytics = ({ collapsed }) => {
 
                   {/* Animated Progress Bar */}
                   <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-200/50 dark:bg-gray-700/50 rounded-b-2xl overflow-hidden">
-                    <div className={`h-full bg-gradient-to-r ${stat.gradient} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700 ease-out`}></div>
+                    <div
+                      className={`h-full bg-gradient-to-r ${stat.gradient} transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-700 ease-out`}
+                    ></div>
                   </div>
                 </div>
               ))}
@@ -558,7 +634,8 @@ const AdminAnalytics = ({ collapsed }) => {
                   <div className="w-3 h-3 bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full animate-pulse"></div>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 text-lg">
-                  Distribution of Total Users, Active Users, Conversion Rate & Total Employees
+                  Distribution of Total Users, Active Users, Conversion Rate &
+                  Total Employees
                 </p>
               </div>
               <div style={{ height: "450px" }} className="relative">
