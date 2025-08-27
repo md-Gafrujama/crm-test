@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect,useRef } from 'react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
 import { API_BASE_URL } from '../../../config/api';
@@ -7,43 +7,34 @@ import { useSidebarUser, UserSidebar } from '../common/UserSidebar';
 import { cn } from "../../../utils/cn";
 import { useTheme } from '../../../hooks/use-theme';
 import { UserFooter } from '../common/UserFooter';
-
 const ProfileofUser = ({ collapsed, onLogout }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editPanelOpen, setEditPanelOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [apiError, setApiError] = useState(null);
-  const [authError, setAuthError] = useState(false);
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarUser();
   const { theme, setTheme } = useTheme();
-
   const EditProfilePanel = ({ profile, onClose, onSave }) => {
-    const [editedProfile, setEditedProfile] = useState({
-      id: profile?.id || '',
-      email: profile?.email || '',
-      phoneNumber: profile?.phoneNumber || '',
-      about: profile?.bio || '',
-      skills: profile?.skills || []
-    });
+    const [editedProfile, setEditedProfile] = useState(profile);
     const panelRef = useRef(null);
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (panelRef.current && !panelRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
 
-    useEffect(() => {
-      const handleClickOutside = (event) => {
-        if (panelRef.current && !panelRef.current.contains(event.target)) {
-          onClose();
-        }
-      };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
 
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, [onClose]);
 
     const handleChangeEdit = (e) => {
       const { name, value } = e.target;
-      setEditedProfile(prev => ({ ...prev, [name]: value }));
+      setEditedProfile(prev => ({ ...prev, [name]: value, id: profile.id }));
     };
 
     const handleSkillChange = (index, value) => {
@@ -68,121 +59,122 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
 
     return (
       <div 
-        ref={panelRef}
-        className="fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-slate-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out"
-      >
-        <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 px-2">
-          <div className="bg-gray-50 dark:bg-slate-800 px-2 max-w-2xl w-full max-h-[90vh] overflow-y-auto rounded-lg">
-            <div className="flex justify-between items-center mb-2 p-4">
-              <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-400">Edit Profile</h2>
-              <button
-                onClick={onClose}
-                className="text-gray-500 dark:text-gray-100 hover:text-gray-700 transition-colors"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+      ref={panelRef}
+      className={`fixed inset-y-0 right-0 w-full max-w-md bg-white dark:bg-slate-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out`}
+    >
+      <div className="fixed inset-0 bg-opacity-50 flex items-center justify-center z-50 px-2">
+        <div className="bg-gray-50 dark:bg-slate-800 px-2 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-400">Edit Profile</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 dark:text-gray-100 hover:text-gray-700 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmitEdit}>
+            <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-4">
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={editedProfile.email || ''}
+                    onChange={handleChangeEdit}
+                    className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Phone Number</label>
+                  <input
+                    type="tel"
+                    name="phoneNumber"
+                    value={editedProfile.phoneNumber || ''}
+                    onChange={handleChangeEdit}
+                    className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg text-[#ff8633]">About</h3>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">About You</label>
+                  <textarea
+                    name="about"
+                    value={editedProfile.about || ''}
+                    onChange={handleChangeEdit}
+                    className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                    rows="2"
+                    placeholder="Tell us about yourself, your experience, and your professional background"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-lg text-[#ff8633]">Skills</h3>
+                <div className="space-y-3">
+                  {editedProfile.skills?.map((skill, index) => (
+                    <div key={index} className="flex items-center gap-2 dark:text-gray-400">
+                      <input
+                        type="text"
+                        value={skill}
+                        onChange={(e) => handleSkillChange(index, e.target.value)}
+                        className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
+                        placeholder="Skill"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeSkill(index)}
+                        className="p-2 text-red-500 hover:text-red-700 transition-colors"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={addSkill}
+                    className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 flex items-center text-sm font-medium text-[#ff8633] hover:text-[#e67328] transition-colors"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Add Skill
+                  </button>
+                </div>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmitEdit} className="p-4">
-              <div className="grid grid-cols-1 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Email</label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={editedProfile.email}
-                      onChange={handleChangeEdit}
-                      className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-700 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Phone Number</label>
-                    <input
-                      type="tel"
-                      name="phoneNumber"
-                      value={editedProfile.phoneNumber}
-                      onChange={handleChangeEdit}
-                      className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-700 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg text-[#ff8633]">About</h3>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">About You</label>
-                    <textarea
-                      name="about"
-                      value={editedProfile.about}
-                      onChange={handleChangeEdit}
-                      className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-700 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                      rows="3"
-                      placeholder="Tell us about yourself, your experience, and your professional background"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg text-[#ff8633]">Skills</h3>
-                  <div className="space-y-3">
-                    {editedProfile.skills?.map((skill, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={skill}
-                          onChange={(e) => handleSkillChange(index, e.target.value)}
-                          className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-700 flex-1 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
-                          placeholder="Enter skill"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => removeSkill(index)}
-                          className="p-2 text-red-500 hover:text-red-700 transition-colors"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={addSkill}
-                      className="flex items-center text-sm font-medium text-[#ff8633] hover:text-[#e67328] transition-colors"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                      </svg>
-                      Add Skill
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:border-slate-700 dark:bg-slate-700 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#ff8633] hover:bg-[#e67328] transition-colors"
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          </div>
+            <div className="mt-8 flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-6 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="px-6 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#ff8633] hover:bg-[#e67328] transition-colors"
+                disabled={isSaving}
+              >
+                {isSaving ? 'Saving...' : 'Save Changes'}
+              </button>
+            </div>
+          </form>
         </div>
+      </div>
       </div>
     );
   };
@@ -197,9 +189,6 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
       }
 
       const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Authentication token not found');
-      }
 
       const response = await axios.put(
         `${API_BASE_URL}/api/update-profile/${updatedUser.id}`,
@@ -217,17 +206,19 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
         }
       );
 
-      if (response.data) {
-        setEditPanelOpen(false);
-        toast.success("Profile updated successfully!", {
-          position: "top-right",
-          autoClose: 5000,
-          theme: theme === 'dark' ? 'dark' : 'light',
-        });
+     setEditPanelOpen(false);
 
-        // Refresh user data
-        await loadUserProfile();
-      }
+      toast.success("Profile updated successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+        theme: theme === 'dark' ? 'dark' : 'light',
+      });
+      const { data } = await axios.get(`${API_BASE_URL}/api/allUser`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const matchedUser = data.find(user => user.id === updatedUser.id);
+      setCurrentUser(matchedUser);
 
     } catch (err) {
       console.error("Profile update error:", err);
@@ -238,6 +229,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
         position: "top-right",
         autoClose: 5000,
         theme: theme === 'dark' ? 'dark' : 'light',
+        style: { fontSize: '1.2rem' },
       });
 
     } finally {
@@ -245,364 +237,153 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
     }
   };
 
-  const checkAuthAndRedirect = () => {
-    const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
-    
-    if (!token || !userId) {
-      setAuthError(true);
-      setApiError('Authentication required. Please login to continue.');
-      
-      // Auto redirect to login after 3 seconds
-      setTimeout(() => {
-        if (onLogout) {
-          onLogout();
-        } else {
-          // If onLogout is not available, redirect to login page
-          window.location.href = '/login';
-        }
-      }, 3000);
-      
-      return false;
-    }
-    
-    return true;
-  };
-
-  const loadUserProfile = async () => {
+  const handleSaveLead = async (updatedLead) => {
     try {
-      setLoading(true);
+      setIsSaving(true);
       setApiError(null);
-      setAuthError(false);
-      
-      // Check authentication first
-      if (!checkAuthAndRedirect()) {
-        return;
+
+      if (!updatedLead.id) {
+        throw new Error('Lead ID is missing. Cannot update lead.');
       }
 
       const token = localStorage.getItem('token');
-      const storedUserId = localStorage.getItem('userId');
-      const storedUsername = localStorage.getItem('username');
-      
-      console.log('Auth Debug:', { 
-        hasToken: !!token, 
-        userId: storedUserId, 
-        username: storedUsername 
+      const response = await axios.put(
+        `${API_BASE_URL}/api/leads/update-lead/${updatedLead.id}`,
+        updatedLead,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      setEditProfilePopupOpen(false);
+      toast.success("Profile updated successfully!", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: theme === 'dark' ? 'dark' : 'light',
       });
 
-      // Try different API endpoints based on your API structure
-      let response;
-      let userData = null;
+      // Refresh user data
+      const { data } = await axios.get(`${API_BASE_URL}/api/allUser`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const matchedUser = data.find(user => user.id === updatedLead.id);
+      setCurrentUser(matchedUser);
 
-      try {
-        // First try: Get all users and find current user
-        console.log('Trying to fetch from:', `${API_BASE_URL}/api/allUser`);
-        response = await axios.get(`${API_BASE_URL}/api/allUser`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        console.log('API Response:', response.data);
-
-        // Handle different response structures
-        let allUsers = [];
-        if (Array.isArray(response.data)) {
-          allUsers = response.data;
-        } else if (response.data && Array.isArray(response.data.users)) {
-          allUsers = response.data.users;
-        } else if (response.data && Array.isArray(response.data.data)) {
-          allUsers = response.data.data;
-        } else {
-          console.log('Unexpected response structure:', response.data);
-        }
-
-        if (allUsers.length > 0) {
-          // Try different matching strategies
-          userData = allUsers.find(user => 
-            user.id === storedUserId || 
-            user._id === storedUserId ||
-            user.id === parseInt(storedUserId) ||
-            user._id === parseInt(storedUserId)
-          );
-
-          if (!userData && storedUsername) {
-            userData = allUsers.find(user => 
-              user.username === storedUsername
-            );
-          }
-
-          console.log('Matched user:', userData);
-        }
-      } catch (allUsersError) {
-        console.log('AllUsers endpoint failed:', allUsersError.message);
-        
-        // Check if it's an auth error
-        if (allUsersError.response?.status === 401) {
-          throw new Error('Session expired. Please login again.');
-        }
-      }
-
-      // Second try: Get current user profile directly
-      if (!userData) {
-        try {
-          console.log('Trying profile endpoint:', `${API_BASE_URL}/api/profile`);
-          response = await axios.get(`${API_BASE_URL}/api/profile`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          userData = response.data;
-          console.log('Profile endpoint response:', userData);
-        } catch (profileError) {
-          console.log('Profile endpoint failed:', profileError.message);
-          
-          if (profileError.response?.status === 401) {
-            throw new Error('Session expired. Please login again.');
-          }
-        }
-      }
-
-      // Third try: Get user by ID
-      if (!userData && storedUserId) {
-        try {
-          console.log('Trying user by ID:', `${API_BASE_URL}/api/user/${storedUserId}`);
-          response = await axios.get(`${API_BASE_URL}/api/user/${storedUserId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          userData = response.data;
-          console.log('User by ID response:', userData);
-        } catch (userByIdError) {
-          console.log('User by ID endpoint failed:', userByIdError.message);
-          
-          if (userByIdError.response?.status === 401) {
-            throw new Error('Session expired. Please login again.');
-          }
-        }
-      }
-
-      // Fourth try: Get current user info
-      if (!userData) {
-        try {
-          console.log('Trying me endpoint:', `${API_BASE_URL}/api/me`);
-          response = await axios.get(`${API_BASE_URL}/api/me`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          userData = response.data;
-          console.log('Me endpoint response:', userData);
-        } catch (meError) {
-          console.log('Me endpoint failed:', meError.message);
-          
-          if (meError.response?.status === 401) {
-            throw new Error('Session expired. Please login again.');
-          }
-        }
-      }
-
-      if (!userData) {
-        throw new Error('Unable to fetch user data from any endpoint. Please check your API configuration or login again.');
-      }
-
-      // Handle nested user data
-      if (userData.user) {
-        userData = userData.user;
-      } else if (userData.data) {
-        userData = userData.data;
-      }
-
-      console.log('Final user data:', userData);
-      setCurrentUser(userData);
-
-    } catch (error) {
-      console.error('Profile loading error:', error);
-      
-      let errorMessage = "Failed to load profile data";
-      
-      if (error.response?.status === 401) {
-        errorMessage = "Session expired. Please login again.";
-        setAuthError(true);
-      } else if (error.response?.status === 403) {
-        errorMessage = "Access denied. Please check your permissions.";
-      } else if (error.response?.status === 404) {
-        errorMessage = "User profile not found.";
-      } else if (error.message.includes('Network Error')) {
-        errorMessage = "Network error. Please check your connection.";
-      } else {
-        errorMessage = error.response?.data?.message || error.message || errorMessage;
-      }
+    } catch (err) {
+      console.error("Profile update error:", err);
+      const errorMessage = err.response?.data?.message ||
+        err.message ||
+        "Failed to update profile";
 
       setApiError(errorMessage);
       toast.error(errorMessage, {
         position: "top-right",
-        autoClose: 7000,
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
         theme: theme === 'dark' ? 'dark' : 'light',
+        style: { fontSize: '1.2rem' },
       });
-
-      // Handle auth errors
-      if (error.response?.status === 401 || error.message.includes('Session expired') || error.message.includes('Authentication required')) {
-        setAuthError(true);
-        setTimeout(() => {
-          if (onLogout) {
-            onLogout();
-          } else {
-            window.location.href = '/login';
-          }
-        }, 2000);
-      }
     } finally {
-      setLoading(false);
+      setIsSaving(false);
     }
   };
 
   useEffect(() => {
-    // Check authentication immediately when component mounts
-    const token = localStorage.getItem('token');
-    const userId = localStorage.getItem('userId');
-    
-    if (!token || !userId) {
-      setAuthError(true);
-      setApiError('Please login to access your profile.');
-      setLoading(false);
-      
-      // Auto redirect after showing message
-      setTimeout(() => {
-        if (onLogout) {
-          onLogout();
-        } else {
-          window.location.href = '/login';
+    const loadUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const storedUserId = localStorage.getItem('userId');
+        const storedUsername = localStorage.getItem('username');
+
+        if (!token || !storedUserId) {
+          throw new Error('Missing authentication data');
         }
-      }, 3000);
-      
-      return;
-    }
-    
-    // If we have auth data, load the profile
-    loadUserProfile();
-  }, []);
 
-  // Transform user data from API to display format
-  const transformUserData = (userData) => {
-    if (!userData) return null;
+        const response = await axios.get(`${API_BASE_URL}/api/allUser`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
 
-    return {
-      id: userData.id,
-      name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.username || 'User',
-      email: userData.email || 'No email provided',
-      role: userData.role || 'user',
-      joinDate: userData.createdAt ? new Date(userData.createdAt).toLocaleDateString() : 'Unknown',
-      lastLogin: userData.lastLogin ? new Date(userData.lastLogin).toLocaleDateString() : 'Recently',
-      avatar: userData.photo || `https://ui-avatars.com/api/?name=${encodeURIComponent(userData.username || 'User')}&background=ff8633&color=fff`,
-      bio: userData.about || 'No information provided',
-      skills: Array.isArray(userData.skills) ? userData.skills : [],
-      phoneNumber: userData.phoneNumber || 'Not provided',
-      assignedWork: userData.assignedWork || 'No assigned work',
-      statusOfWork: userData.statusOfWork || 'Not specified'
+        const allUsers = response.data;
+        const matchedUser = allUsers.find(user =>
+          user.id === storedUserId &&
+          user.username === storedUsername
+        );
+
+        if (!matchedUser) {
+          throw new Error('User data mismatch');
+        }
+
+        setCurrentUser(matchedUser);
+        setLoading(false);
+
+      } catch (error) {
+        console.error('Profile loading error:', error);
+        const errorMessage = error.response?.data?.message ||
+          error.message ||
+          "Failed to load profile data";
+
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: theme === 'dark' ? 'dark' : 'light',
+          style: { fontSize: '1.2rem' },
+        });
+        setLoading(false);
+        onLogout();
+      }
     };
+
+    loadUserProfile();
+  }, [onLogout]);
+
+  const user = currentUser ? {
+    id: currentUser.id,
+    name: `${currentUser.firstName} ${currentUser.lastName}`,
+    email: currentUser.email,
+    role: currentUser.role,
+    joinDate: new Date(currentUser.createdAt).toLocaleDateString(),
+    lastLogin: 'Recently',
+    avatar: currentUser.photo || 'https://randomuser.me/api/portraits/men/32.jpg',
+    bio: currentUser.about || `User with username ${currentUser.username}`,
+    skills: currentUser.skills || ['User Management', 'Profile Editing'],
+    phoneNumber: currentUser.phoneNumber || 'Not provided',
+    assignedWork: currentUser.assignedWork || 'No assigned work',
+    statusOfWork: currentUser.statusOfWork || 'Unknown'
+  } : {
+    name: 'User',
+    email: 'No email',
+    role: 'user',
+    joinDate: 'Unknown',
+    lastLogin: 'Unknown',
+    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+    bio: 'User information not available',
+    skills: [],
+    phoneNumber: 'Not provided',
+    assignedWork: 'No data',
+    statusOfWork: 'Unknown'
   };
-
-  const user = transformUserData(currentUser);
-
-  // Show authentication error screen
-  if (authError || (!loading && !currentUser && apiError)) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="mb-6">
-            <svg className="mx-auto h-16 w-16 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200 mb-4">
-            Authentication Required
-          </h2>
-          
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            {apiError || "You need to login to access your profile."}
-          </p>
-          
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
-            <h3 className="font-medium text-red-800 dark:text-red-200 mb-2">Debug Info:</h3>
-            <div className="text-sm text-red-700 dark:text-red-300 space-y-1">
-              <p>Token: {localStorage.getItem('token') ? '✓ Present' : '✗ Missing'}</p>
-              <p>User ID: {localStorage.getItem('userId') || '✗ Missing'}</p>
-              <p>Username: {localStorage.getItem('username') || '✗ Missing'}</p>
-              <p>API URL: {API_BASE_URL}</p>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <button
-              onClick={() => {
-                if (onLogout) {
-                  onLogout();
-                } else {
-                  window.location.href = '/login';
-                }
-              }}
-              className="w-full px-6 py-3 bg-[#ff8633] text-white rounded-lg hover:bg-[#e67328] transition-colors font-medium"
-            >
-              Go to Login
-            </button>
-            
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Redirecting automatically in 3 seconds...
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-[#ff8633] mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading your profile...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="mb-6">
-            <svg className="mx-auto h-16 w-16 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 15c-2.34 0-4.47-.881-6.084-2.328.414-.651.886-1.259 1.414-1.828A4 4 0 0112 9c1.314 0 2.51.631 3.25 1.606M12 3v3m6.364-.636l-2.121 2.121M21 12h-3m-.636 6.364l-2.121-2.121M12 21v-3m-6.364.636l2.121-2.121M3 12h3m.636-6.364l2.121 2.121" />
-            </svg>
-          </div>
-          
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4">
-            Profile Data Not Found
-          </h2>
-          
-          <p className="text-gray-600 dark:text-gray-500 mb-6">
-            {apiError || "Unable to load your profile data from the server."}
-          </p>
-          
-          <div className="space-y-3">
-            <button
-              onClick={loadUserProfile}
-              disabled={loading}
-              className="px-6 py-2 bg-[#ff8633] text-white rounded-lg hover:bg-[#e67328] transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Retrying...' : 'Try Again'}
-            </button>
-            
-            <button
-              onClick={() => {
-                localStorage.clear();
-                if (onLogout) {
-                  onLogout();
-                } else {
-                  window.location.href = '/login';
-                }
-              }}
-              className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors ml-2"
-            >
-              Clear Data & Login Again
-            </button>
-          </div>
-        </div>
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-800 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-[#ff8633]"></div>
       </div>
     );
   }
@@ -610,70 +391,72 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
   return (
     <>
       <UserHeader onToggleSidebar={toggleSidebar} />
-      <UserSidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
+      <UserSidebar isOpen={isSidebarOpen} onClose={closeSidebar} >
+
         <div className={cn(
           "transition-all duration-300 ease-in-out min-h-screen dark:bg-slate-900",
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
         )}>
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 dark:bg-slate-900">
             <div className="flex flex-col items-center">
-              <div className="w-full max-w-4xl bg-white dark:bg-slate-800 rounded-xl shadow-lg overflow-hidden">
-                {/* Header Section */}
+              <div className="w-full max-w-4xl  dark:bg-slate-800 rounded-xl  overflow-hidden">
                 <div className="bg-gradient-to-r from-[#ff8633] to-[#ff9a5a] p-4 sm:p-6 text-center">
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8">
-                    <div className="flex justify-center">
-                      <img
-                        className="h-24 w-24 sm:h-32 sm:w-32 lg:h-40 lg:w-40 rounded-full border-4 border-white shadow-lg object-cover"
-                        src={user.avatar}
-                        alt="User avatar"
-                        onError={(e) => {
-                          e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=ff8633&color=fff`;
-                        }}
-                      />
-                    </div>
-                    <div className="text-center sm:text-left">
-                      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">{user.name}</h1>
-                      <p className="text-white/90 capitalize text-sm sm:text-base md:text-lg">{user.role}</p>
-                    </div>
-                  </div>
-                </div>
+  <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-10">
+    {/* Avatar with optimized sizing */}
+    <div className="flex justify-center">
+      <img
+        className="h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 lg:h-36 lg:w-36 xl:h-40 xl:w-40 2xl:h-44 2xl:w-44 rounded-full border-4 border-white shadow-md object-cover"
+        src={user.avatar}
+        alt="User avatar"
+        // These attributes help with image quality
+        loading="eager"
+        decoding="async"
+      />
+    </div>
 
+    {/* Name and Role */}
+    <div className="text-center sm:text-left">
+      <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">{user.name}</h1>
+      <p className="text-white/90 capitalize text-sm sm:text-base md:text-lg">{user.role}</p>
+    </div>
+  </div>
+</div>
                 {/* Profile Content */}
                 <div className="p-6 md:p-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {/* Personal Info Section */}
-                    <div className="space-y-6">
+                    <div className="space-y-6 text-center lg:text-left">
                       <div>
-                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200 dark:border-gray-600">
+                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200">
                           Personal Information
                         </h2>
                         <div className="space-y-4">
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-300">Email</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-100">Email</p>
                             <p className="mt-1 text-gray-800 dark:text-gray-400">{user.email}</p>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-300">Phone</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-100">Phone</p>
                             <p className="mt-1 text-gray-800 dark:text-gray-400">{user.phoneNumber}</p>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-300">Member Since</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-100">Member Since</p>
                             <p className="mt-1 text-gray-800 dark:text-gray-400">{user.joinDate}</p>
                           </div>
                         </div>
                       </div>
 
                       <div>
-                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200 dark:border-gray-600">
+                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200">
                           Work Information
                         </h2>
                         <div className="space-y-4">
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-300">Assigned Work</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-100">Assigned Work</p>
                             <p className="mt-1 text-gray-800 dark:text-gray-400">{user.assignedWork}</p>
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-300">Status</p>
+                            <p className="text-sm font-medium text-gray-500 dark:text-gray-100">Status</p>
                             <p className="mt-1 text-gray-800 dark:text-gray-400 capitalize">{user.statusOfWork}</p>
                           </div>
                         </div>
@@ -683,31 +466,25 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                     {/* About & Skills Section */}
                     <div className="space-y-6">
                       <div>
-                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200 dark:border-gray-600">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200 dark:text-gray-400">
                           About
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400">{user.bio}</p>
                       </div>
 
                       <div>
-                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200 dark:border-gray-600">
+                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200">
                           Skills
                         </h2>
                         <div className="flex flex-wrap gap-2">
-                          {user.skills.length > 0 ? (
-                            user.skills.map((skill, index) => (
-                              <span
-                                key={index}
-                                className="px-3 py-1 bg-[#ff8633]/10 text-[#ff8633] rounded-full text-sm font-medium"
-                              >
-                                {skill}
-                              </span>
-                            ))
-                          ) : (
-                            <span className="text-gray-500 dark:text-gray-400 text-sm italic">
-                              No skills added yet
+                          {user.skills.map((skill, index) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1 bg-[#ff8633]/10 text-[#ff8633] rounded-full text-sm font-medium"
+                            >
+                              {skill}
                             </span>
-                          )}
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -717,10 +494,9 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                   <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
                     <button
                       onClick={() => setEditPanelOpen(true)}
-                      className="px-6 py-3 bg-[#ff8633] hover:bg-[#e67328] text-white rounded-lg font-medium transition-colors shadow-md"
-                      disabled={isSaving}
+                      className="px-6 py-2 bg-[#ff8633] hover:bg-[#e67328] text-white rounded-lg font-medium transition-colors shadow-md"
                     >
-                      {isSaving ? 'Saving...' : 'Edit Profile'}
+                      Edit Profile
                     </button>
                   </div>
                 </div>
@@ -728,25 +504,24 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
             </div>
           </div>
 
-          {/* Edit Profile Modal */}
-          {editPanelOpen && (
-            <>
-              <div 
-                className="fixed inset-0 bg-black bg-opacity-50 z-40"
-                onClick={() => setEditPanelOpen(false)}
-              />
-              <EditProfilePanel
-                profile={user}
-                onClose={() => setEditPanelOpen(false)}
-                onSave={handleSaveUserProfile}
-              />
-            </>
-          )}
+          {/* Edit Profile Popup */}
+         {editPanelOpen && (
+  <>
+    <div 
+      className="fixed inset-0 bg-black bg-opacity-50 z-40"
+      onClick={() => setEditPanelOpen(false)}
+    />
+    <EditProfilePanel
+      profile={user}
+      onClose={() => setEditPanelOpen(false)}
+      onSave={handleSaveUserProfile}
+    />
+  </>
+)}
         </div>
       </UserSidebar>
-      <UserFooter />
+      <UserFooter/>
     </>
   );
 };
-
 export default ProfileofUser;
