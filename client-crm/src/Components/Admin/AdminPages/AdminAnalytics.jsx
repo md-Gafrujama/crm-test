@@ -656,7 +656,7 @@ const AdminAnalytics = ({ collapsed }) => {
                   Comprehensive breakdown of all leads by status and performance metrics
                 </p>
               </div>
-              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-gray-700/50 p-8 shadow-xl">
+              <div className="">
                 <div style={{ height: "450px" }} className="relative">
                   <Bar data={leadsBarData} options={barChartOptions} />
                 </div>
