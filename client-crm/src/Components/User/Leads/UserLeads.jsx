@@ -1,6 +1,7 @@
 import React, { useState, lazy, Suspense, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 import axios from "axios";
 import { API_BASE_URL } from "../../../config/api";
 import { UserHeader } from "../common/UserHeader";
@@ -68,7 +69,9 @@ const UserLeads = ({ collapsed, onLogout }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarUser();
   const { theme, setTheme } = useTheme();
-  // Add these state declarations near your other state declarations
+  const navigate = useNavigate();
+
+  // State declarations
   const [viewPopupOpen, setViewPopupOpen] = useState(false);
   const [editPopupOpen, setEditPopupOpen] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
@@ -78,8 +81,48 @@ const UserLeads = ({ collapsed, onLogout }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [apiError, setApiError] = useState(null);
   const [showAddLeadForm, setShowAddLeadForm] = useState(false);
+  const [leadsLoading, setLeadsLoading] = useState(false);
 
-  // Add these popup components right before your return statement
+  // Fixed: Proper state initialization
+  const [leadsData, setLeadsData] = useState({
+    allLeads: 0,
+    allNewLeads: [],
+    newLeadsCount: 0,
+    allContacted: [],
+    contactedCount: 0,
+    allEngaged: [],
+    engagedCount: 0,
+    allQualified: [],
+    qualifiedCount: 0,
+    allProposalSent: [],
+    proposalSentCount: 0,
+    allNegotiation: [],
+    negotiationCount: 0,
+    allClosedWon: [],
+    closedWonCount: 0,
+    allClosedLost: [],
+    closedLostCount: 0,
+    allOnHold: [],
+    onHoldCount: 0,
+    allDoNotContact: [],
+    doNotContactCount: 0,
+  });
+
+  // Fixed: Safe array combination with null checks
+  const allCombinedLeads = [
+    ...(leadsData?.allNewLeads || []),
+    ...(leadsData?.allContacted || []),
+    ...(leadsData?.allEngaged || []),
+    ...(leadsData?.allQualified || []),
+    ...(leadsData?.allProposalSent || []),
+    ...(leadsData?.allNegotiation || []),
+    ...(leadsData?.allClosedWon || []),
+    ...(leadsData?.allClosedLost || []),
+    ...(leadsData?.allOnHold || []),
+    ...(leadsData?.allDoNotContact || []),
+  ];
+
+  // Popup Components
   const ViewLeadPopup = ({
     lead,
     onClose,
@@ -118,17 +161,17 @@ const UserLeads = ({ collapsed, onLogout }) => {
           <div className="text-left dark:text-gray-400">
             <h3 className="font-semibold mb-2">Contact Information</h3>
             <p>
-              <strong>Name:</strong> {lead.customerFirstName}{" "}
-              {lead.customerLastName}
+              <strong>Name:</strong> {lead?.customerFirstName || ''}{" "}
+              {lead?.customerLastName || ''}
             </p>
             <p>
-              <strong>Email:</strong> {lead.emailAddress}
+              <strong>Email:</strong> {lead?.emailAddress || 'Not specified'}
             </p>
             <p>
-              <strong>Phone:</strong> {lead.phoneNumber}
+              <strong>Phone:</strong> {lead?.phoneNumber || 'Not specified'}
             </p>
             <p>
-              <strong>Job Title:</strong> {lead.jobTitle || "Not specified"}
+              <strong>Job Title:</strong> {lead?.jobTitle || "Not specified"}
             </p>
           </div>
 
@@ -136,24 +179,24 @@ const UserLeads = ({ collapsed, onLogout }) => {
             <h3 className="font-semibold mb-2">Company Information</h3>
             <p>
               <strong>Company Name:</strong>{" "}
-              {lead.companyName || "Not Specified"}
+              {lead?.companyName || "Not Specified"}
             </p>
             <p>
-              <strong>Industry:</strong> {lead.industry || "Not Specified"}
+              <strong>Industry:</strong> {lead?.industry || "Not Specified"}
             </p>
           </div>
 
           <div className="text-left dark:text-gray-400">
             <h3 className="font-semibold mb-2">Lead Details</h3>
             <p>
-              <strong>Title:</strong> {lead.title || "On Progress"}
+              <strong>Title:</strong> {lead?.title || "On Progress"}
             </p>
             <p>
-              <strong>Status:</strong> {lead.status || "On Progress"}
+              <strong>Status:</strong> {lead?.status || "On Progress"}
             </p>
             <p>
               <strong>Created At:</strong>{" "}
-              {lead.createdAt
+              {lead?.createdAt
                 ? new Date(lead.createdAt).toLocaleString("en-US", {
                     month: "long",
                     day: "numeric",
@@ -166,7 +209,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
             </p>
             <p>
               <strong>Deadline:</strong>{" "}
-              {lead.closingDate
+              {lead?.closingDate
                 ? new Date(lead.closingDate).toLocaleString("en-US", {
                     month: "long",
                     day: "numeric",
@@ -183,20 +226,19 @@ const UserLeads = ({ collapsed, onLogout }) => {
             <h3 className="font-semibold mb-2">Tracking</h3>
             <p>
               <strong>Service Interested:</strong>{" "}
-              {lead.serviceInterestedIn || "Not specified"}
+              {lead?.serviceInterestedIn || "Not specified"}
             </p>
             <p>
               <strong>Topic of Work:</strong>{" "}
-              {lead.topicOfWork || "Not specified"}
+              {lead?.topicOfWork || "Not specified"}
             </p>
             <p>
-              <strong>Notes:</strong> {lead.notes || "Not specified"}
+              <strong>Notes:</strong> {lead?.notes || "Not specified"}
             </p>
           </div>
         </div>
 
         <div className="flex mt-auto justify-end space-x-2">
-          {/* View Button */}
           <button
             onClick={() => onViewClick(lead)}
             className="p-1 text-blue-500 hover:text-blue-700 transition-colors"
@@ -216,7 +258,6 @@ const UserLeads = ({ collapsed, onLogout }) => {
             </svg>
           </button>
 
-          {/* Edit Button */}
           <button
             onClick={() => onEditClick(lead)}
             className="p-1 text-green-500 hover:text-green-700 transition-colors"
@@ -231,7 +272,6 @@ const UserLeads = ({ collapsed, onLogout }) => {
             </svg>
           </button>
 
-          {/* Delete Button */}
           <button
             onClick={() => onDeleteClick(lead)}
             className="p-1 text-red-500 hover:text-red-700 transition-colors"
@@ -255,11 +295,11 @@ const UserLeads = ({ collapsed, onLogout }) => {
   );
 
   const EditLeadPopup = ({ lead, onClose, onSave }) => {
-    const [editedLead, setEditedLead] = useState(lead);
+    const [editedLead, setEditedLead] = useState(lead || {});
 
     const handleChangeEdit = (e) => {
       const { name, value } = e.target;
-      setEditedLead((prev) => ({ ...prev, [name]: value, id: lead.id }));
+      setEditedLead((prev) => ({ ...prev, [name]: value, id: lead?.id }));
     };
 
     const handleSubmitEdit = (e) => {
@@ -309,7 +349,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                     <input
                       type="text"
                       name="customerFirstName"
-                      value={editedLead.customerFirstName || ""}
+                      value={editedLead?.customerFirstName || ""}
                       onChange={handleChangeEdit}
                       className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                     />
@@ -321,7 +361,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                     <input
                       type="text"
                       name="customerLastName"
-                      value={editedLead.customerLastName || ""}
+                      value={editedLead?.customerLastName || ""}
                       onChange={handleChangeEdit}
                       className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                     />
@@ -335,7 +375,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                   <input
                     type="email"
                     name="emailAddress"
-                    value={editedLead.emailAddress || ""}
+                    value={editedLead?.emailAddress || ""}
                     onChange={handleChangeEdit}
                     className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                   />
@@ -348,7 +388,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                   <input
                     type="tel"
                     name="phoneNumber"
-                    value={editedLead.phoneNumber || ""}
+                    value={editedLead?.phoneNumber || ""}
                     onChange={handleChangeEdit}
                     className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                   />
@@ -361,7 +401,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                   <input
                     type="text"
                     name="jobTitle"
-                    value={editedLead.jobTitle || ""}
+                    value={editedLead?.jobTitle || ""}
                     onChange={handleChangeEdit}
                     className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                   />
@@ -379,7 +419,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                   <input
                     type="text"
                     name="companyName"
-                    value={editedLead.companyName || ""}
+                    value={editedLead?.companyName || ""}
                     onChange={handleChangeEdit}
                     className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                   />
@@ -391,7 +431,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                   </label>
                   <select
                     name="industry"
-                    value={editedLead.industry || ""}
+                    value={editedLead?.industry || ""}
                     onChange={handleChangeEdit}
                     className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                   >
@@ -414,7 +454,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                   <input
                     type="text"
                     name="title"
-                    value={editedLead.title || ""}
+                    value={editedLead?.title || ""}
                     onChange={handleChangeEdit}
                     className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                   />
@@ -426,7 +466,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                   </label>
                   <select
                     name="status"
-                    value={editedLead.status || ""}
+                    value={editedLead?.status || ""}
                     onChange={handleChangeEdit}
                     className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                   >
@@ -449,7 +489,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                   </label>
                   <select
                     name="serviceInterestedIn"
-                    value={editedLead.serviceInterestedIn || ""}
+                    value={editedLead?.serviceInterestedIn || ""}
                     onChange={handleChangeEdit}
                     className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                   >
@@ -474,7 +514,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                   <input
                     type="text"
                     name="topicOfWork"
-                    value={editedLead.topicOfWork || ""}
+                    value={editedLead?.topicOfWork || ""}
                     onChange={handleChangeEdit}
                     className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                   />
@@ -488,7 +528,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                     type="date"
                     name="closingDate"
                     value={
-                      editedLead.closingDate
+                      editedLead?.closingDate
                         ? editedLead.closingDate.split("T")[0]
                         : ""
                     }
@@ -503,7 +543,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
                   </label>
                   <textarea
                     name="notes"
-                    value={editedLead.notes || ""}
+                    value={editedLead?.notes || ""}
                     onChange={handleChangeEdit}
                     className="dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#ff8633] focus:border-transparent transition-all"
                     rows="3"
@@ -564,9 +604,9 @@ const UserLeads = ({ collapsed, onLogout }) => {
         <p className="mb-6 dark:text-gray-400">
           Are you sure you want to delete the lead for{" "}
           <strong>
-            {lead.customerFirstName} {lead.customerLastName}
+            {lead?.customerFirstName || ''} {lead?.customerLastName || ''}
           </strong>{" "}
-          from <strong>{lead.companyName || "Unknown Company"}</strong>?
+          from <strong>{lead?.companyName || "Unknown Company"}</strong>?
         </p>
 
         <div className="flex justify-end space-x-3">
@@ -577,7 +617,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
             Cancel
           </button>
           <button
-            onClick={() => onConfirm(lead.id)}
+            onClick={() => onConfirm(lead?.id)}
             className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
           >
             Delete Lead
@@ -587,13 +627,13 @@ const UserLeads = ({ collapsed, onLogout }) => {
     </div>
   );
 
-
+  // Fixed: Enhanced error handling and null checks
   const handleSaveLead = async (updatedLead) => {
     try {
       setIsSaving(true);
       setApiError(null);
 
-      if (!updatedLead.id) {
+      if (!updatedLead?.id) {
         throw new Error("Lead ID is missing. Cannot update lead.");
       }
 
@@ -616,8 +656,10 @@ const UserLeads = ({ collapsed, onLogout }) => {
       };
 
       const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
 
-      // Update lead with Axios
       const response = await axios.put(
         `${API_BASE_URL}/api/leads/update-lead/${updatedLead.id}`,
         payload,
@@ -628,27 +670,37 @@ const UserLeads = ({ collapsed, onLogout }) => {
           },
         }
       );
-      setLeadsData(prevData => {
-      const newData = JSON.parse(JSON.stringify(prevData));
-      
-      // Helper function to update leads in any status array
-      const updateStatusArray = (arr) => 
-        arr.map(lead => lead.id === updatedLead.id ? response.data : lead);
-      
-      return {
-        ...newData,
-        allNewLeads: updateStatusArray(newData.allNewLeads || []),
-        allContacted: updateStatusArray(newData.allContacted || []),
-        allEngaged: updateStatusArray(newData.allEngaged || []),
-        allQualified: updateStatusArray(newData.allQualified || []),
-        allProposalSent: updateStatusArray(newData.allProposalSent || []),
-        allNegotiation: updateStatusArray(newData.allNegotiation || []),
-        allClosedWon: updateStatusArray(newData.allClosedWon || []),
-        allClosedLost: updateStatusArray(newData.allClosedLost || []),
-        allOnHold: updateStatusArray(newData.allOnHold || []),
-        allDoNotContact: updateStatusArray(newData.allDoNotContact || []),
-      };
-    });
+
+      // Safe state update with proper null checks
+      if (response?.data) {
+        setLeadsData(prevData => {
+          if (!prevData) return prevData;
+          
+          const newData = { ...prevData };
+          
+          // Helper function to update leads in any status array
+          const updateStatusArray = (arr) => {
+            if (!Array.isArray(arr)) return [];
+            return arr.map(lead => 
+              lead?.id === updatedLead.id ? { ...response.data } : lead
+            );
+          };
+          
+          return {
+            ...newData,
+            allNewLeads: updateStatusArray(newData.allNewLeads),
+            allContacted: updateStatusArray(newData.allContacted),
+            allEngaged: updateStatusArray(newData.allEngaged),
+            allQualified: updateStatusArray(newData.allQualified),
+            allProposalSent: updateStatusArray(newData.allProposalSent),
+            allNegotiation: updateStatusArray(newData.allNegotiation),
+            allClosedWon: updateStatusArray(newData.allClosedWon),
+            allClosedLost: updateStatusArray(newData.allClosedLost),
+            allOnHold: updateStatusArray(newData.allOnHold),
+            allDoNotContact: updateStatusArray(newData.allDoNotContact),
+          };
+        });
+      }
 
       setEditPopupOpen(false);
       toast.success("Lead updated successfully!", {
@@ -664,11 +716,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
       });
     } catch (err) {
       console.error("Lead update error:", err);
-
-      // Enhanced error handling with Axios
-      const errorMessage =
-        err.response?.data?.message || err.message || "Failed to update lead";
-
+      const errorMessage = err.response?.data?.message || err.message || "Failed to update lead";
       setApiError(errorMessage);
       toast.error(errorMessage, {
         position: "top-right",
@@ -686,12 +734,13 @@ const UserLeads = ({ collapsed, onLogout }) => {
     }
   };
 
-
   const handleDeleteLead = async (leadId) => {
     try {
       const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication token not found");
+      }
 
-      // Delete lead with Axios
       await axios.delete(`${API_BASE_URL}/api/leads/delete-lead/${leadId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -712,18 +761,17 @@ const UserLeads = ({ collapsed, onLogout }) => {
         style: { fontSize: "1.2rem" },
       });
 
-      // Refresh leads data with Axios
+      // Refresh leads data
       const { data } = await axios.get(`${API_BASE_URL}/api/usersData`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setLeadsData(data.data);
+      
+      if (data?.data) {
+        setLeadsData(data.data);
+      }
     } catch (err) {
       console.error("Lead deletion error:", err);
-
-      // Enhanced error handling with Axios
-      const errorMessage =
-        err.response?.data?.message || err.message || "Failed to delete lead";
-
+      const errorMessage = err.response?.data?.message || err.message || "Failed to delete lead";
       toast.error(errorMessage, {
         position: "top-right",
         autoClose: 5000,
@@ -738,66 +786,12 @@ const UserLeads = ({ collapsed, onLogout }) => {
     }
   };
 
-  const [leadsData, setLeadsData] = useState({
-    allLeads: 0,
-    allNewLeads: [],
-    newLeadsCount: 0,
-    allContacted: [],
-    contactedCount: 0,
-    allEngaged: [],
-    engagedCount: 0,
-    allQualified: [],
-    qualifiedCount: 0,
-    allProposalSent: [],
-    proposalSentCount: 0,
-    allNegotiation: [],
-    negotiationCount: 0,
-    allClosedWon: [],
-    closedWonCount: 0,
-    allClosedLost: [],
-    closedLostCount: 0,
-    allOnHold: [],
-    onHoldCount: 0,
-    allDoNotContact: [],
-    doNotContactCount: 0,
-  });
-
-  // Combine all leads from all status categories
-  // const allCombinedLeads = [
-  //   ...leadsData.allNewLeads,
-  //   ...leadsData.allContacted,
-  //   ...leadsData.allEngaged,
-  //   ...leadsData.allQualified,
-  //   ...leadsData.allProposalSent,
-  //   ...leadsData.allNegotiation,
-  //   ...leadsData.allClosedWon,
-  //   ...leadsData.allClosedLost,
-  //   ...leadsData.allOnHold,
-  //   ...leadsData.allDoNotContact,
-  // ];
-
-  const allCombinedLeads = [
-    ...(leadsData?.allNewLeads || []),
-    ...(leadsData?.allContacted || []),
-    ...(leadsData?.allEngaged || []),
-    ...(leadsData?.allQualified || []),
-    ...(leadsData?.allProposalSent || []),
-    ...(leadsData?.allNegotiation || []),
-    ...(leadsData?.allClosedWon || []),
-    ...(leadsData?.allClosedLost || []),
-    ...(leadsData?.allOnHold || []),
-    ...(leadsData?.allDoNotContact || []),
-  ];
-
-  const [leadsLoading, setLeadsLoading] = useState(false);
-
-  // UserProfile.jsx
+  // Load user profile effect
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
         console.group("[UserProfile] Loading User Data");
 
-        // 1. Get stored credentials
         const token = localStorage.getItem("token");
         const storedUserId = localStorage.getItem("userId");
         const storedUsername = localStorage.getItem("username");
@@ -820,7 +814,6 @@ const UserLeads = ({ collapsed, onLogout }) => {
         const allUsers = response.data;
         console.log("Received users:", allUsers);
 
-        // 3. Find matching user
         const matchedUser = allUsers.find(
           (user) => user.id === storedUserId && user.username === storedUsername
         );
@@ -836,16 +829,10 @@ const UserLeads = ({ collapsed, onLogout }) => {
         console.log("Matched user:", matchedUser);
         setCurrentUser(matchedUser);
         setLoading(false);
-
         console.groupEnd();
       } catch (error) {
         console.error("Profile loading error:", error);
-
-        const errorMessage =
-          error.response?.data?.message ||
-          error.message ||
-          "Failed to load profile data";
-
+        const errorMessage = error.response?.data?.message || error.message || "Failed to load profile data";
         toast.error(errorMessage, {
           position: "top-right",
           autoClose: 5000,
@@ -858,19 +845,14 @@ const UserLeads = ({ collapsed, onLogout }) => {
           style: { fontSize: "1.2rem" },
         });
         setLoading(false);
-        onLogout();
+        if (onLogout) onLogout();
       }
     };
 
     loadUserProfile();
-  }, [onLogout]);
+  }, [onLogout, theme]);
 
-
-
-  const navigate = useNavigate();
-
-
-  // the leads of the user
+  // Fetch leads data effect
   useEffect(() => {
     const fetchLeadsData = async () => {
       try {
@@ -899,14 +881,13 @@ const UserLeads = ({ collapsed, onLogout }) => {
           },
         });
 
-        console.log("Leads data:", response.data); // Debug log
-        setLeadsData(response.data.data);
+        console.log("Leads data:", response.data);
+        if (response.data?.data) {
+          setLeadsData(response.data.data);
+        }
       } catch (error) {
         console.error("Error fetching leads:", error);
-
-        const errorMessage =
-          error.response?.data?.message || "Failed to load leads";
-
+        const errorMessage = error.response?.data?.message || "Failed to load leads";
         toast.error(errorMessage, {
           position: "top-right",
           autoClose: 5000,
@@ -924,7 +905,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
     };
 
     fetchLeadsData();
-  }, [navigate]);
+  }, [navigate, theme]);
 
   if (loading) {
     return (
@@ -934,13 +915,11 @@ const UserLeads = ({ collapsed, onLogout }) => {
     );
   }
 
-
   return (
     <>
       <UserHeader onToggleSidebar={toggleSidebar} />
       <UserSidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
         <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
-          {/* Main Content */}
           <div
             className={cn(
               "transition-all duration-300 ease-in-out min-h-screen bg-slate-100 dark:bg-slate-900",
@@ -961,49 +940,50 @@ const UserLeads = ({ collapsed, onLogout }) => {
                         </p>
                       </div>
                       <div className="flex flex-row gap-4">
-                      <div>
-                      <button
-                        onClick={download}
-                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md"
-                      >
-                        Download Leads
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
+                        <div>
+                          <button
+                            onClick={download}
+                            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md"
+                          >
+                            Download Leads
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                        <div>
+                          <button 
+                            onClick={() => setShowAddLeadForm(true)} 
+                            className="flex items-center gap-2 px-4 py-2 bg-white p-5 justify-center hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md"
+                          >
+                            Add Leads
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
-
-                       <div>
-                <button onClick={() => setShowAddLeadForm(true)} className="flex items-center gap-2 px-4 py-2 bg-white p-5 justify-center hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md">
-                  Add Leads
-                  <svg
-  xmlns="http://www.w3.org/2000/svg"
-  className="h-5 w-5"
-  viewBox="0 0 20 20"
-  fill="currentColor"
->
-  <path
-    fillRule="evenodd"
-    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-    clipRule="evenodd"
-  />
-</svg>
-                </button>
-              </div>
-                    </div>
                     </div>
                   </div>
 
-                  {/* CARD CONTENT */}
                   <div className="p-6">
                     {leadsLoading ? (
                       <div className="flex justify-center py-8">
@@ -1043,61 +1023,61 @@ const UserLeads = ({ collapsed, onLogout }) => {
                             </thead>
                             <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200">
                               {allCombinedLeads.map((lead) => (
-                                <tr key={lead.id}>
+                                <tr key={lead?.id || Math.random()}>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="flex items-center">
                                       <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                                         <span className="text-gray-600 font-medium">
-                                          {lead.customerFirstName?.charAt(0)}
-                                          {lead.customerLastName?.charAt(0)}
+                                          {lead?.customerFirstName?.charAt(0) || '?'}
+                                          {lead?.customerLastName?.charAt(0) || ''}
                                         </span>
                                       </div>
                                       <div className="ml-4">
                                         <div className="text-sm font-medium text-gray-900 dark:text-gray-400">
-                                          {lead.customerFirstName}{" "}
-                                          {lead.customerLastName}
+                                          {lead?.customerFirstName || ''}{" "}
+                                          {lead?.customerLastName || ''}
                                         </div>
                                         <div className="text-sm text-gray-500">
-                                          {lead.emailAddress}
+                                          {lead?.emailAddress || 'No email'}
                                         </div>
                                       </div>
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <div className="text-sm text-gray-900 dark:text-gray-400">
-                                      {lead.companyName}
+                                      {lead?.companyName || 'No company'}
                                     </div>
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap">
                                     <button
                                       onClick={() => setSelectedLead(lead)}
                                       className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                        lead.status === "New"
+                                        lead?.status === "New"
                                           ? "bg-blue-100 text-blue-800"
-                                          : lead.status === "Contacted"
+                                          : lead?.status === "Contacted"
                                           ? "bg-yellow-100 text-yellow-800"
-                                          : lead.status === "Engaged"
+                                          : lead?.status === "Engaged"
                                           ? "bg-green-100 text-green-800"
-                                          : lead.status === "Qualified"
+                                          : lead?.status === "Qualified"
                                           ? "bg-purple-100 text-purple-800"
-                                          : lead.status === "Proposal Sent"
+                                          : lead?.status === "Proposal Sent"
                                           ? "bg-indigo-100 text-indigo-800"
-                                          : lead.status === "Negotiation"
+                                          : lead?.status === "Negotiation"
                                           ? "bg-pink-100 text-pink-800"
-                                          : lead.status === "Closed Won"
+                                          : lead?.status === "Closed Won"
                                           ? "bg-teal-100 text-teal-800"
-                                          : lead.status === "Closed Lost"
+                                          : lead?.status === "Closed Lost"
                                           ? "bg-red-100 text-red-800"
-                                          : lead.status === "On Hold"
+                                          : lead?.status === "On Hold"
                                           ? "bg-gray-100 text-gray-800"
                                           : "bg-orange-100 text-orange-800"
                                       }`}
                                     >
-                                      {lead.status}
+                                      {lead?.status || 'Unknown'}
                                     </button>
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {lead.serviceInterestedIn}
+                                    {lead?.serviceInterestedIn || 'Not specified'}
                                   </td>
                                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div className="flex space-x-2">
@@ -1172,8 +1152,9 @@ const UserLeads = ({ collapsed, onLogout }) => {
               </div>
             </div>
           </div>
-          {/* Add these right before the closing </div> of your main component */}
-          {viewPopupOpen && (
+
+          {/* Popups */}
+          {viewPopupOpen && currentLead && (
             <ViewLeadPopup
               lead={currentLead}
               onClose={() => setViewPopupOpen(false)}
@@ -1183,16 +1164,18 @@ const UserLeads = ({ collapsed, onLogout }) => {
               }}
               onEditClick={(lead) => {
                 setCurrentLead(lead);
+                setViewPopupOpen(false);
                 setEditPopupOpen(true);
               }}
               onDeleteClick={(lead) => {
                 setCurrentLead(lead);
+                setViewPopupOpen(false);
                 setDeletePopupOpen(true);
               }}
             />
           )}
 
-          {editPopupOpen && (
+          {editPopupOpen && currentLead && (
             <EditLeadPopup
               lead={currentLead}
               onClose={() => setEditPopupOpen(false)}
@@ -1200,7 +1183,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
             />
           )}
 
-          {deletePopupOpen && (
+          {deletePopupOpen && currentLead && (
             <DeleteConfirmationPopup
               lead={currentLead}
               onClose={() => setDeletePopupOpen(false)}
@@ -1215,13 +1198,14 @@ const UserLeads = ({ collapsed, onLogout }) => {
             />
           )}
 
-          <CombinedLeadForm 
-  isOpen={showAddLeadForm} 
-  onClose={() => setShowAddLeadForm(false)} 
-  collapsed={collapsed}
-/>
+          {showAddLeadForm && (
+            <CombinedLeadForm 
+              isOpen={showAddLeadForm} 
+              onClose={() => setShowAddLeadForm(false)} 
+              collapsed={collapsed}
+            />
+          )}
         </div>
-
       </UserSidebar>
       <UserFooter />
     </>
@@ -1229,4 +1213,3 @@ const UserLeads = ({ collapsed, onLogout }) => {
 };
 
 export default UserLeads;
-
