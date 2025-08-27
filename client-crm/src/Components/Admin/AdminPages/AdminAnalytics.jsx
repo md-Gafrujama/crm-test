@@ -353,6 +353,9 @@ const AdminAnalytics = ({ collapsed }) => {
       duration: 2000,
       easing: "easeOutQuart",
     },
+    // Make bars thinner
+    categoryPercentage: 0.4, // Controls the space bars take up in their category (0.4 = 40%)
+    barPercentage: 0.6, // Controls the thickness of individual bars (0.6 = 60% of available space)
   };
 
   // Wave Design Component for User Analytics
