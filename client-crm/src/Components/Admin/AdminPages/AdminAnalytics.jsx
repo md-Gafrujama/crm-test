@@ -9,7 +9,7 @@ import { API_BASE_URL } from "../../../config/api";
 import { Package, ShoppingCart, Activity, TrendingUp } from "lucide-react";
 import { User, Users, MessageSquare, Users2 } from "lucide-react";
 
-// Chart.js imports for Pie and Doughnut charts
+// Chart.js imports for Bar charts
 import {
   Chart as ChartJS,
   ArcElement,
@@ -20,7 +20,7 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import { Pie, Doughnut, Bar } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 
 // Register Chart.js components
 ChartJS.register(
@@ -252,8 +252,8 @@ const AdminAnalytics = ({ collapsed }) => {
     }
   }, [usersData]);
 
-  // Enhanced Pie Chart Data for Lead Distribution
-  const leadsPieData = {
+  // Enhanced Bar Chart Data for Lead Distribution
+  const leadsBarData = {
     labels: ["Total Leads", "Qualified Leads", "Pending Leads", "Lost Leads"],
     datasets: [
       {
@@ -277,59 +277,35 @@ const AdminAnalytics = ({ collapsed }) => {
           "rgb(239, 68, 68)",
         ],
         borderWidth: 3,
-        hoverOffset: 15,
+        borderRadius: 12,
+        borderSkipped: false,
+        hoverBackgroundColor: [
+          "rgba(139, 92, 246, 1)",
+          "rgba(16, 185, 129, 1)",
+          "rgba(245, 158, 11, 1)",
+          "rgba(239, 68, 68, 1)",
+        ],
+        hoverBorderColor: [
+          "rgb(139, 92, 246)",
+          "rgb(16, 185, 129)",
+          "rgb(245, 158, 11)",
+          "rgb(239, 68, 68)",
+        ],
         hoverBorderWidth: 4,
       },
     ],
   };
 
-  // Enhanced Doughnut Chart Data for User Analytics
-  const userDoughnutData = {
-    labels: [
-      "Total Users",
-      "Active Users",
-      "Conversion Rate",
-      "Total Employees",
-    ],
-    datasets: [
-      {
-        label: "User Analytics",
-        data: [
-          usersData.totalUser,
-          usersData.activeUser,
-          usersData.conversionRateFromActive,
-          usersData.totalEmployee,
-        ],
-        backgroundColor: [
-          "rgba(99, 102, 241, 0.8)", // Indigo
-          "rgba(34, 197, 94, 0.8)", // Green
-          "rgba(236, 72, 153, 0.8)", // Pink
-          "rgba(234, 179, 8, 0.8)", // Yellow
-        ],
-        borderColor: [
-          "rgb(99, 102, 241)",
-          "rgb(34, 197, 94)",
-          "rgb(236, 72, 153)",
-          "rgb(234, 179, 8)",
-        ],
-        borderWidth: 3,
-        cutout: "65%",
-        hoverOffset: 15,
-        hoverBorderWidth: 4,
-      },
-    ],
-  };
-
-  const chartOptions = {
+  const barChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: "bottom",
+        position: "top",
         labels: {
-          padding: 25,
+          padding: 20,
           font: {
-            size: 13,
+            size: 14,
             weight: "bold",
           },
           usePointStyle: true,
@@ -343,28 +319,179 @@ const AdminAnalytics = ({ collapsed }) => {
         borderColor: "rgba(255, 255, 255, 0.1)",
         borderWidth: 1,
         cornerRadius: 12,
-        padding: 12,
+        padding: 15,
         displayColors: true,
-        callbacks: {
-          label: function (context) {
-            const label = context.label || "";
-            const value = context.parsed;
-
-            if (label.includes("Conversion Rate")) {
-              return `${label}: ${value.toFixed(1)}%`;
-            }
-
-            return `${label}: ${value}`;
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: "rgba(0, 0, 0, 0.1)",
+          lineWidth: 1,
+        },
+        ticks: {
+          font: {
+            size: 12,
+            weight: "600",
+          },
+        },
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+        ticks: {
+          font: {
+            size: 12,
+            weight: "600",
           },
         },
       },
     },
     animation: {
-      animateRotate: true,
-      animateScale: true,
-      duration: 1000,
+      duration: 2000,
       easing: "easeOutQuart",
     },
+  };
+
+  // Wave Design Component for User Analytics
+  const WaveDesignChart = ({ data }) => {
+    const maxValue = Math.max(data.totalUser, data.activeUser, data.totalEmployee, data.conversionRateFromActive * 10);
+    
+    return (
+      <div className="relative w-full h-96 bg-gradient-to-br from-indigo-50 to-cyan-50 dark:from-indigo-900/20 dark:to-cyan-900/20 rounded-3xl overflow-hidden border border-indigo-200/50 dark:border-indigo-700/50">
+        {/* Animated Wave Background */}
+        <div className="absolute inset-0 opacity-20">
+          <svg className="w-full h-full" viewBox="0 0 1200 400" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="waveGradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#6366f1" stopOpacity="0.8" />
+                <stop offset="50%" stopColor="#8b5cf6" stopOpacity="0.6" />
+                <stop offset="100%" stopColor="#06b6d4" stopOpacity="0.8" />
+              </linearGradient>
+              <linearGradient id="waveGradient2" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stopColor="#ec4899" stopOpacity="0.6" />
+                <stop offset="50%" stopColor="#f59e0b" stopOpacity="0.4" />
+                <stop offset="100%" stopColor="#10b981" stopOpacity="0.6" />
+              </linearGradient>
+            </defs>
+            
+            {/* Animated Wave Paths */}
+            <path
+              d="M0,200 Q300,150 600,180 T1200,160 L1200,400 L0,400 Z"
+              fill="url(#waveGradient1)"
+              className="animate-pulse"
+            />
+            <path
+              d="M0,220 Q400,170 800,200 T1200,180 L1200,400 L0,400 Z"
+              fill="url(#waveGradient2)"
+              style={{
+                animation: "wave 4s ease-in-out infinite alternate",
+              }}
+            />
+          </svg>
+        </div>
+
+        {/* User Analytics Content */}
+        <div className="relative z-10 p-8 h-full flex flex-col justify-between">
+          <div className="grid grid-cols-2 gap-8 h-full">
+            {/* Total Users - Wave Bar */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full animate-pulse"></div>
+                <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200">Total Users</h4>
+              </div>
+              <div className="relative">
+                <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mb-2">
+                  {data.totalUser.toLocaleString()}
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-2000 ease-out animate-pulse"
+                    style={{ 
+                      width: `${(data.totalUser / maxValue) * 100}%`,
+                      animation: "expandWidth 2s ease-out"
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Active Users - Wave Bar */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full animate-pulse"></div>
+                <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200">Active Users</h4>
+              </div>
+              <div className="relative">
+                <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400 mb-2">
+                  {data.activeUser.toLocaleString()}
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-2000 ease-out animate-pulse"
+                    style={{ 
+                      width: `${(data.activeUser / maxValue) * 100}%`,
+                      animation: "expandWidth 2.5s ease-out"
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Employees - Wave Bar */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full animate-pulse"></div>
+                <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200">Employees</h4>
+              </div>
+              <div className="relative">
+                <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mb-2">
+                  {data.totalEmployee.toLocaleString()}
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-yellow-500 to-orange-500 rounded-full transition-all duration-2000 ease-out animate-pulse"
+                    style={{ 
+                      width: `${(data.totalEmployee / maxValue) * 100}%`,
+                      animation: "expandWidth 3s ease-out"
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+
+            {/* Conversion Rate - Wave Bar */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 bg-gradient-to-r from-pink-500 to-rose-500 rounded-full animate-pulse"></div>
+                <h4 className="text-lg font-bold text-gray-800 dark:text-gray-200">Conversion Rate</h4>
+              </div>
+              <div className="relative">
+                <div className="text-3xl font-bold text-pink-600 dark:text-pink-400 mb-2">
+                  {data.conversionRateFromActive.toFixed(1)}%
+                </div>
+                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-pink-500 to-rose-500 rounded-full transition-all duration-2000 ease-out animate-pulse"
+                    style={{ 
+                      width: `${(data.conversionRateFromActive / 100) * 100}%`,
+                      animation: "expandWidth 3.5s ease-out"
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Floating Elements */}
+        <div className="absolute top-4 right-4 w-3 h-3 bg-indigo-400 rounded-full animate-bounce opacity-60"></div>
+        <div className="absolute bottom-8 left-8 w-2 h-2 bg-pink-400 rounded-full animate-ping opacity-60"></div>
+        <div className="absolute top-1/2 right-8 w-4 h-4 bg-emerald-400 rounded-full animate-pulse opacity-60"></div>
+      </div>
+    );
   };
 
   // Enhanced Loading Component
@@ -512,8 +639,8 @@ const AdminAnalytics = ({ collapsed }) => {
               ))}
             </div>
 
-            {/* Enhanced Chart for Leads - Pie Chart */}
-            <div className="">
+            {/* Enhanced Bar Chart for Leads */}
+            <div className="mb-12">
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-3 mb-4">
                   <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse"></div>
@@ -523,12 +650,13 @@ const AdminAnalytics = ({ collapsed }) => {
                   <div className="w-3 h-3 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full animate-pulse"></div>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 text-lg">
-                  Comprehensive breakdown of all leads by status and performance
-                  metrics
+                  Comprehensive breakdown of all leads by status and performance metrics
                 </p>
               </div>
-              <div style={{ height: "450px" }} className="relative">
-                <Pie data={leadsPieData} options={chartOptions} />
+              <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl border border-white/20 dark:border-gray-700/50 p-8 shadow-xl">
+                <div style={{ height: "450px" }} className="relative">
+                  <Bar data={leadsBarData} options={barChartOptions} />
+                </div>
               </div>
             </div>
 
@@ -623,24 +751,21 @@ const AdminAnalytics = ({ collapsed }) => {
               ))}
             </div>
 
-            {/* Enhanced Doughnut Chart for User Analytics */}
-            <div className="">
+            {/* Enhanced Wave Design Chart for User Analytics */}
+            <div className="mb-8">
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-3 mb-4">
                   <div className="w-3 h-3 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full animate-pulse"></div>
                   <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent">
-                    User Analytics Overview
+                    User Analytics Wave Overview
                   </h3>
                   <div className="w-3 h-3 bg-gradient-to-r from-cyan-500 to-indigo-500 rounded-full animate-pulse"></div>
                 </div>
                 <p className="text-gray-600 dark:text-gray-400 text-lg">
-                  Distribution of Total Users, Active Users, Conversion Rate &
-                  Total Employees
+                  Interactive wave visualization of user engagement and conversion metrics
                 </p>
               </div>
-              <div style={{ height: "450px" }} className="relative">
-                <Doughnut data={userDoughnutData} options={chartOptions} />
-              </div>
+              <WaveDesignChart data={usersData} />
             </div>
           </div>
         </div>
@@ -658,6 +783,28 @@ const AdminAnalytics = ({ collapsed }) => {
             opacity: 1;
             transform: translateY(0);
           }
+        }
+
+        @keyframes wave {
+          0% {
+            transform: translateX(-10px) translateY(5px);
+          }
+          100% {
+            transform: translateX(10px) translateY(-5px);
+          }
+        }
+
+        @keyframes expandWidth {
+          from {
+            width: 0%;
+          }
+          to {
+            width: var(--target-width, 100%);
+          }
+        }
+
+        .animate-expandWidth {
+          animation: expandWidth 2s ease-out forwards;
         }
       `}</style>
     </>
