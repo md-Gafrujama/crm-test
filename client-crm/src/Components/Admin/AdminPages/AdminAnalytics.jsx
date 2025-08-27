@@ -646,7 +646,7 @@ const AdminAnalytics = ({ collapsed }) => {
             <div className="mb-12">
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-3 mb-4">
-                  <div className="w-3 h-3 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse"></div>
+                  <div className=""></div>
                   <h3 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                     Lead Distribution Analysis
                   </h3>
@@ -758,7 +758,7 @@ const AdminAnalytics = ({ collapsed }) => {
             <div className="mb-8">
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-3 mb-4">
-                  <div className="w-3 h-3 bg-gradient-to-r from-indigo-500 to-cyan-500 rounded-full animate-pulse"></div>
+                  <div className=""></div>
                   <h3 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-cyan-600 bg-clip-text text-transparent">
                     User Analytics Wave Overview
                   </h3>
