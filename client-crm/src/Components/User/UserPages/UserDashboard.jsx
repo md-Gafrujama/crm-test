@@ -431,22 +431,7 @@ const UserDashboard = ({ onLogout }) => {
                   </p>
                 </div>
                 <div>
-                  <button className="flex items-center gap-2 px-4 py-2 bg-white p-5 justify-center hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md">
-                    Upload Data
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                        clipRule="evenodd"
-                        transform="rotate(180 10 10)"
-                      />
-                    </svg>
-                  </button>
+               
                 </div>
               </div>
               {/* Enhanced Header */}
@@ -456,14 +441,14 @@ const UserDashboard = ({ onLogout }) => {
                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
                       <BarChart3 className="w-6 h-6 text-white" />
                     </div>
-                    <div>
+                    {/* <div>
                       <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                         Dashboard
                       </h1>
                       <p className="text-gray-600 dark:text-gray-400 font-medium">
                         Welcome back, {user?.name || 'User'}! Here's your lead overview.
                       </p>
-                    </div>
+                    </div> */}
                   </div>
                 </div>
                 <button
