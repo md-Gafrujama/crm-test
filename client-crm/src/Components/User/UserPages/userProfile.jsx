@@ -202,6 +202,14 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
 
       const token = localStorage.getItem('token');
 
+      console.log('Updating profile for user ID:', currentUser.id);
+      console.log('Update data:', {
+        email: updatedUser.email,
+        phoneNumber: updatedUser.phoneNumber,
+        about: updatedUser.about,
+        skills: updatedUser.skills,
+      });
+
       const response = await axios.put(
         `${API_BASE_URL}/api/userProfile/${currentUser.id}`,
         {
@@ -256,6 +264,8 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
         throw new Error('Missing authentication data');
       }
 
+      console.log('Loading profile for userId:', storedUserId);
+
       // Load main user data
       const userResponse = await axios.get(`${API_BASE_URL}/api/allUser`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -272,13 +282,15 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
       }
 
       setCurrentUser(matchedUser);
+      console.log('Current User loaded:', matchedUser);
 
       // Load additional user info from the new API
       try {
-        const infoResponse = await axios.get(`${API_BASE_URL}/api/allUser/info`, {
+        const infoResponse = await axios.get(`${API_BASE_URL}/api/allUser/info/`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         setUserInfo(infoResponse.data);
+        console.log('User Info loaded:', infoResponse.data);
       } catch (infoError) {
         console.warn('Could not load additional user info:', infoError);
         // Continue without the additional info
@@ -312,12 +324,12 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
     id: currentUser.id,
     name: userInfo 
       ? `${userInfo.firstName} ${userInfo.lastName}` 
-      : `${currentUser.firstName} ${currentUser.lastName}`,
+      : `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.username || 'User',
     email: currentUser.email,
     role: currentUser.role,
     joinDate: new Date(currentUser.createdAt).toLocaleDateString(),
     lastLogin: 'Recently',
-    avatar: userInfo?.photo || currentUser.photo || 'https://via.placeholder.com/150',
+    avatar: userInfo?.photo || currentUser.photo || 'https://via.placeholder.com/150?text=User',
     bio: currentUser.about || `User with username ${userInfo?.username || currentUser.username}`,
     skills: currentUser.skills || ['User Management', 'Profile Editing'],
     phoneNumber: currentUser.phoneNumber || 'Not provided',
@@ -330,13 +342,18 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
     role: 'user',
     joinDate: 'Unknown',
     lastLogin: 'Unknown',
-    avatar: 'https://via.placeholder.com/150',
+    avatar: 'https://via.placeholder.com/150?text=User',
     bio: 'User information not available',
     skills: [],
     phoneNumber: 'Not provided',
     assignedWork: 'No data',
     statusOfWork: 'Unknown'
   };
+
+  // Debug log to see what data we have
+  console.log('Final user object:', user);
+  console.log('Current User from state:', currentUser);
+  console.log('User Info from state:', userInfo);
 
   if (loading) {
     return (
@@ -354,9 +371,9 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
           "transition-all duration-300 ease-in-out min-h-screen dark:bg-slate-900",
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
         )}>
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 dark:bg-slate-900">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 dark:bg-slate-900 mt-16">
             <div className="flex flex-col items-center">
-              <div className="w-full max-w-4xl dark:bg-slate-800 rounded-xl overflow-hidden">
+              <div className="w-full max-w-4xl dark:bg-slate-800 rounded-xl overflow-hidden shadow-lg">
                 <div className="bg-gradient-to-r from-[#ff8633] to-[#ff9a5a] p-4 sm:p-6 text-center">
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-10">
                     {/* Avatar with optimized sizing */}
@@ -368,7 +385,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                         loading="eager"
                         decoding="async"
                         onError={(e) => {
-                          e.target.src = 'https://via.placeholder.com/150';
+                          e.target.src = 'https://via.placeholder.com/150?text=User';
                         }}
                       />
                     </div>
@@ -390,7 +407,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                     {/* Personal Info Section */}
                     <div className="space-y-6 text-center lg:text-left">
                       <div>
-                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200">
+                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200 dark:border-slate-600">
                           Personal Information
                         </h2>
                         <div className="space-y-4">
@@ -410,7 +427,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                       </div>
 
                       <div>
-                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200">
+                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200 dark:border-slate-600">
                           Work Information
                         </h2>
                         <div className="space-y-4">
@@ -429,14 +446,14 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                     {/* About & Skills Section */}
                     <div className="space-y-6">
                       <div>
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200 dark:text-gray-400">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200 dark:text-gray-400 dark:border-slate-600">
                           About
                         </h2>
                         <p className="text-gray-600 dark:text-gray-400">{user.bio}</p>
                       </div>
 
                       <div>
-                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200">
+                        <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200 dark:border-slate-600">
                           Skills
                         </h2>
                         <div className="flex flex-wrap gap-2">
