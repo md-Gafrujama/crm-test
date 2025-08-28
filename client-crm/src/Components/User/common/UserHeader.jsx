@@ -54,7 +54,7 @@ export const UserHeader = ({ onToggleSidebar }) => {
 
         try {
             setLoading(true);
-            const response = await fetch(`${API_BASE_URL}/api/user/profile`, {
+            const response = await fetch(`${API_BASE_URL}/api/allUser/info/`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`,
@@ -67,7 +67,7 @@ export const UserHeader = ({ onToggleSidebar }) => {
                 setUserInfo({
                     firstName: data.firstName || "",
                     lastName: data.lastName || "",
-                    photo: data.profileImage || data.avatar || null,
+                    photo: data.photo || null, // Using 'photo' as per your JSON structure
                     username: data.username || "",
                     email: data.email || ""
                 });
