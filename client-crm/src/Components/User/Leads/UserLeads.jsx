@@ -815,7 +815,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
         }
 
         console.log("Fetching user data...");
-        const response = await axios.get(`${API_BASE_URL}/api/recent`, {
+        const response = await axios.get(`${API_BASE_URL}/api/allUser`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
