@@ -68,7 +68,6 @@ const UserLeads = ({ collapsed, onLogout }) => {
   const [currentUser, setCurrentUser] = useState(null);
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarUser();
   const { theme, setTheme } = useTheme();
-  // Add these state declarations near your other state declarations
   const [viewPopupOpen, setViewPopupOpen] = useState(false);
   const [editPopupOpen, setEditPopupOpen] = useState(false);
   const [deletePopupOpen, setDeletePopupOpen] = useState(false);
@@ -78,6 +77,52 @@ const UserLeads = ({ collapsed, onLogout }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [apiError, setApiError] = useState(null);
   const [showAddLeadForm, setShowAddLeadForm] = useState(false);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+
+  // Initialize leadsData with proper default structure
+  const [leadsData, setLeadsData] = useState({
+    allLeads: 0,
+    allNewLeads: [],
+    newLeadsCount: 0,
+    allContacted: [],
+    contactedCount: 0,
+    allEngaged: [],
+    engagedCount: 0,
+    allQualified: [],
+    qualifiedCount: 0,
+    allProposalSent: [],
+    proposalSentCount: 0,
+    allNegotiation: [],
+    negotiationCount: 0,
+    allClosedWon: [],
+    closedWonCount: 0,
+    allClosedLost: [],
+    closedLostCount: 0,
+    allOnHold: [],
+    onHoldCount: 0,
+    allDoNotContact: [],
+    doNotContactCount: 0,
+  });
+
+  const navigate = useNavigate();
+
+  // Safe way to combine all leads with proper null checks
+  const allCombinedLeads = React.useMemo(() => {
+    if (!leadsData) return [];
+    
+    return [
+      ...(Array.isArray(leadsData.allNewLeads) ? leadsData.allNewLeads : []),
+      ...(Array.isArray(leadsData.allContacted) ? leadsData.allContacted : []),
+      ...(Array.isArray(leadsData.allEngaged) ? leadsData.allEngaged : []),
+      ...(Array.isArray(leadsData.allQualified) ? leadsData.allQualified : []),
+      ...(Array.isArray(leadsData.allProposalSent) ? leadsData.allProposalSent : []),
+      ...(Array.isArray(leadsData.allNegotiation) ? leadsData.allNegotiation : []),
+      ...(Array.isArray(leadsData.allClosedWon) ? leadsData.allClosedWon : []),
+      ...(Array.isArray(leadsData.allClosedLost) ? leadsData.allClosedLost : []),
+      ...(Array.isArray(leadsData.allOnHold) ? leadsData.allOnHold : []),
+      ...(Array.isArray(leadsData.allDoNotContact) ? leadsData.allDoNotContact : []),
+    ];
+  }, [leadsData]);
 
   // Add these popup components right before your return statement
   const ViewLeadPopup = ({
@@ -255,17 +300,19 @@ const UserLeads = ({ collapsed, onLogout }) => {
   );
 
   const EditLeadPopup = ({ lead, onClose, onSave }) => {
-    const [editedLead, setEditedLead] = useState(lead);
+    const [editedLead, setEditedLead] = useState(lead || {});
 
     const handleChangeEdit = (e) => {
       const { name, value } = e.target;
-      setEditedLead((prev) => ({ ...prev, [name]: value, id: lead.id }));
+      setEditedLead((prev) => ({ ...prev, [name]: value, id: lead?.id }));
     };
 
     const handleSubmitEdit = (e) => {
       e.preventDefault();
       onSave(editedLead);
     };
+
+    if (!lead) return null;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -522,9 +569,10 @@ const UserLeads = ({ collapsed, onLogout }) => {
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#ff8633] hover:bg-[#e67328]"
+                disabled={isSaving}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#ff8633] hover:bg-[#e67328] disabled:opacity-50"
               >
-                Save Changes
+                {isSaving ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </form>
@@ -533,60 +581,63 @@ const UserLeads = ({ collapsed, onLogout }) => {
     );
   };
 
-  const DeleteConfirmationPopup = ({ lead, onClose, onConfirm }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-md w-full">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-gray-800 dark:text-gray-400">
-            Confirm Deletion
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-500 dark:text-gray-400 hover:text-gray-700"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+  const DeleteConfirmationPopup = ({ lead, onClose, onConfirm }) => {
+    if (!lead) return null;
+    
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl p-6 max-w-md w-full">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-400">
+              Confirm Deletion
+            </h2>
+            <button
+              onClick={onClose}
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-700"
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-          </button>
-        </div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
 
-        <p className="mb-6 dark:text-gray-400">
-          Are you sure you want to delete the lead for{" "}
-          <strong>
-            {lead.customerFirstName} {lead.customerLastName}
-          </strong>{" "}
-          from <strong>{lead.companyName || "Unknown Company"}</strong>?
-        </p>
+          <p className="mb-6 dark:text-gray-400">
+            Are you sure you want to delete the lead for{" "}
+            <strong>
+              {lead.customerFirstName} {lead.customerLastName}
+            </strong>{" "}
+            from <strong>{lead.companyName || "Unknown Company"}</strong>?
+          </p>
 
-        <div className="flex justify-end space-x-3">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onConfirm(lead.id)}
-            className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
-          >
-            Delete Lead
-          </button>
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-400 dark:border-slate-700 dark:bg-slate-800 hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => onConfirm(lead.id)}
+              className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700"
+            >
+              Delete Lead
+            </button>
+          </div>
         </div>
       </div>
-    </div>
-  );
-
+    );
+  };
 
   const handleSaveLead = async (updatedLead) => {
     try {
@@ -628,27 +679,28 @@ const UserLeads = ({ collapsed, onLogout }) => {
           },
         }
       );
+      
       setLeadsData(prevData => {
-      const newData = JSON.parse(JSON.stringify(prevData));
-      
-      // Helper function to update leads in any status array
-      const updateStatusArray = (arr) => 
-        arr.map(lead => lead.id === updatedLead.id ? response.data : lead);
-      
-      return {
-        ...newData,
-        allNewLeads: updateStatusArray(newData.allNewLeads || []),
-        allContacted: updateStatusArray(newData.allContacted || []),
-        allEngaged: updateStatusArray(newData.allEngaged || []),
-        allQualified: updateStatusArray(newData.allQualified || []),
-        allProposalSent: updateStatusArray(newData.allProposalSent || []),
-        allNegotiation: updateStatusArray(newData.allNegotiation || []),
-        allClosedWon: updateStatusArray(newData.allClosedWon || []),
-        allClosedLost: updateStatusArray(newData.allClosedLost || []),
-        allOnHold: updateStatusArray(newData.allOnHold || []),
-        allDoNotContact: updateStatusArray(newData.allDoNotContact || []),
-      };
-    });
+        const newData = JSON.parse(JSON.stringify(prevData));
+        
+        // Helper function to update leads in any status array
+        const updateStatusArray = (arr) => 
+          Array.isArray(arr) ? arr.map(lead => lead.id === updatedLead.id ? response.data : lead) : [];
+        
+        return {
+          ...newData,
+          allNewLeads: updateStatusArray(newData.allNewLeads || []),
+          allContacted: updateStatusArray(newData.allContacted || []),
+          allEngaged: updateStatusArray(newData.allEngaged || []),
+          allQualified: updateStatusArray(newData.allQualified || []),
+          allProposalSent: updateStatusArray(newData.allProposalSent || []),
+          allNegotiation: updateStatusArray(newData.allNegotiation || []),
+          allClosedWon: updateStatusArray(newData.allClosedWon || []),
+          allClosedLost: updateStatusArray(newData.allClosedLost || []),
+          allOnHold: updateStatusArray(newData.allOnHold || []),
+          allDoNotContact: updateStatusArray(newData.allDoNotContact || []),
+        };
+      });
 
       setEditPopupOpen(false);
       toast.success("Lead updated successfully!", {
@@ -686,7 +738,6 @@ const UserLeads = ({ collapsed, onLogout }) => {
     }
   };
 
-
   const handleDeleteLead = async (leadId) => {
     try {
       const token = localStorage.getItem("token");
@@ -716,7 +767,11 @@ const UserLeads = ({ collapsed, onLogout }) => {
       const { data } = await axios.get(`${API_BASE_URL}/api/usersData`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setLeadsData(data.data);
+      
+      // Ensure we have valid data structure
+      if (data && data.data) {
+        setLeadsData(data.data);
+      }
     } catch (err) {
       console.error("Lead deletion error:", err);
 
@@ -737,59 +792,6 @@ const UserLeads = ({ collapsed, onLogout }) => {
       });
     }
   };
-
-  const [leadsData, setLeadsData] = useState({
-    allLeads: 0,
-    allNewLeads: [],
-    newLeadsCount: 0,
-    allContacted: [],
-    contactedCount: 0,
-    allEngaged: [],
-    engagedCount: 0,
-    allQualified: [],
-    qualifiedCount: 0,
-    allProposalSent: [],
-    proposalSentCount: 0,
-    allNegotiation: [],
-    negotiationCount: 0,
-    allClosedWon: [],
-    closedWonCount: 0,
-    allClosedLost: [],
-    closedLostCount: 0,
-    allOnHold: [],
-    onHoldCount: 0,
-    allDoNotContact: [],
-    doNotContactCount: 0,
-  });
-
-  // Combine all leads from all status categories
-  // const allCombinedLeads = [
-  //   ...leadsData.allNewLeads,
-  //   ...leadsData.allContacted,
-  //   ...leadsData.allEngaged,
-  //   ...leadsData.allQualified,
-  //   ...leadsData.allProposalSent,
-  //   ...leadsData.allNegotiation,
-  //   ...leadsData.allClosedWon,
-  //   ...leadsData.allClosedLost,
-  //   ...leadsData.allOnHold,
-  //   ...leadsData.allDoNotContact,
-  // ];
-
-  const allCombinedLeads = [
-    ...(leadsData?.allNewLeads || []),
-    ...(leadsData?.allContacted || []),
-    ...(leadsData?.allEngaged || []),
-    ...(leadsData?.allQualified || []),
-    ...(leadsData?.allProposalSent || []),
-    ...(leadsData?.allNegotiation || []),
-    ...(leadsData?.allClosedWon || []),
-    ...(leadsData?.allClosedLost || []),
-    ...(leadsData?.allOnHold || []),
-    ...(leadsData?.allDoNotContact || []),
-  ];
-
-  const [leadsLoading, setLeadsLoading] = useState(false);
 
   // UserProfile.jsx
   useEffect(() => {
@@ -820,15 +822,19 @@ const UserLeads = ({ collapsed, onLogout }) => {
         const allUsers = response.data;
         console.log("Received users:", allUsers);
 
-        // 3. Find matching user
+        // 3. Find matching user with proper validation
+        if (!Array.isArray(allUsers)) {
+          throw new Error("Invalid users data received");
+        }
+
         const matchedUser = allUsers.find(
-          (user) => user.id === storedUserId && user.username === storedUsername
+          (user) => user && user.id === storedUserId && user.username === storedUsername
         );
 
         if (!matchedUser) {
           console.error(
             "No matching user found. Available users:",
-            allUsers.map((u) => ({ id: u.id, username: u.username }))
+            allUsers.map((u) => ({ id: u?.id, username: u?.username }))
           );
           throw new Error("User data mismatch");
         }
@@ -863,12 +869,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
     };
 
     loadUserProfile();
-  }, [onLogout]);
-
-
-
-  const navigate = useNavigate();
-
+  }, [onLogout, theme]);
 
   // the leads of the user
   useEffect(() => {
@@ -900,7 +901,37 @@ const UserLeads = ({ collapsed, onLogout }) => {
         });
 
         console.log("Leads data:", response.data); // Debug log
-        setLeadsData(response.data.data);
+        
+        // Validate response structure
+        if (response.data && response.data.data) {
+          setLeadsData(response.data.data);
+        } else {
+          console.warn("Invalid leads data structure:", response.data);
+          // Set default structure if invalid
+          setLeadsData({
+            allLeads: 0,
+            allNewLeads: [],
+            newLeadsCount: 0,
+            allContacted: [],
+            contactedCount: 0,
+            allEngaged: [],
+            engagedCount: 0,
+            allQualified: [],
+            qualifiedCount: 0,
+            allProposalSent: [],
+            proposalSentCount: 0,
+            allNegotiation: [],
+            negotiationCount: 0,
+            allClosedWon: [],
+            closedWonCount: 0,
+            allClosedLost: [],
+            closedLostCount: 0,
+            allOnHold: [],
+            onHoldCount: 0,
+            allDoNotContact: [],
+            doNotContactCount: 0,
+          });
+        }
       } catch (error) {
         console.error("Error fetching leads:", error);
 
@@ -924,7 +955,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
     };
 
     fetchLeadsData();
-  }, [navigate]);
+  }, [navigate, theme]);
 
   if (loading) {
     return (
@@ -933,7 +964,6 @@ const UserLeads = ({ collapsed, onLogout }) => {
       </div>
     );
   }
-
 
   return (
     <>
@@ -961,45 +991,48 @@ const UserLeads = ({ collapsed, onLogout }) => {
                         </p>
                       </div>
                       <div className="flex flex-row gap-4">
-                      <div>
-                      <button
-                        onClick={download}
-                        className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md"
-                      >
-                        Download Leads
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-5 w-5"
-                          viewBox="0 0 20 20"
-                          fill="currentColor"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </button>
-                      </div>
+                        <div>
+                          <button
+                            onClick={download}
+                            className="flex items-center gap-2 px-4 py-2 bg-white hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md"
+                          >
+                            Download Leads
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+                        </div>
 
-                       <div>
-                <button onClick={() => setShowAddLeadForm(true)} className="flex items-center gap-2 px-4 py-2 bg-white p-5 justify-center hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md">
-                  Add Leads
-                  <svg
-  xmlns="http://www.w3.org/2000/svg"
-  className="h-5 w-5"
-  viewBox="0 0 20 20"
-  fill="currentColor"
->
-  <path
-    fillRule="evenodd"
-    d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
-    clipRule="evenodd"
-  />
-</svg>
-                </button>
-              </div>
-                    </div>
+                        <div>
+                          <button 
+                            onClick={() => setShowAddLeadForm(true)} 
+                            className="flex items-center gap-2 px-4 py-2 bg-white p-5 justify-center hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md"
+                          >
+                            Add Leads
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-5 w-5"
+                              viewBox="0 0 20 20"
+                              fill="currentColor"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
@@ -1042,126 +1075,134 @@ const UserLeads = ({ collapsed, onLogout }) => {
                               </tr>
                             </thead>
                             <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200">
-                              {allCombinedLeads.map((lead) => (
-                                <tr key={lead.id}>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="flex items-center">
-                                      <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                                        <span className="text-gray-600 font-medium">
-                                          {lead.customerFirstName?.charAt(0)}
-                                          {lead.customerLastName?.charAt(0)}
-                                        </span>
-                                      </div>
-                                      <div className="ml-4">
-                                        <div className="text-sm font-medium text-gray-900 dark:text-gray-400">
-                                          {lead.customerFirstName}{" "}
-                                          {lead.customerLastName}
+                              {allCombinedLeads.map((lead, index) => {
+                                // Add safety check for each lead
+                                if (!lead || !lead.id) {
+                                  console.warn(`Invalid lead at index ${index}:`, lead);
+                                  return null;
+                                }
+                                
+                                return (
+                                  <tr key={lead.id}>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <div className="flex items-center">
+                                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                                          <span className="text-gray-600 font-medium">
+                                            {(lead.customerFirstName || '').charAt(0)}
+                                            {(lead.customerLastName || '').charAt(0)}
+                                          </span>
                                         </div>
-                                        <div className="text-sm text-gray-500">
-                                          {lead.emailAddress}
+                                        <div className="ml-4">
+                                          <div className="text-sm font-medium text-gray-900 dark:text-gray-400">
+                                            {lead.customerFirstName || ''}{" "}
+                                            {lead.customerLastName || ''}
+                                          </div>
+                                          <div className="text-sm text-gray-500">
+                                            {lead.emailAddress || ''}
+                                          </div>
                                         </div>
                                       </div>
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <div className="text-sm text-gray-900 dark:text-gray-400">
-                                      {lead.companyName}
-                                    </div>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap">
-                                    <button
-                                      onClick={() => setSelectedLead(lead)}
-                                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                        lead.status === "New"
-                                          ? "bg-blue-100 text-blue-800"
-                                          : lead.status === "Contacted"
-                                          ? "bg-yellow-100 text-yellow-800"
-                                          : lead.status === "Engaged"
-                                          ? "bg-green-100 text-green-800"
-                                          : lead.status === "Qualified"
-                                          ? "bg-purple-100 text-purple-800"
-                                          : lead.status === "Proposal Sent"
-                                          ? "bg-indigo-100 text-indigo-800"
-                                          : lead.status === "Negotiation"
-                                          ? "bg-pink-100 text-pink-800"
-                                          : lead.status === "Closed Won"
-                                          ? "bg-teal-100 text-teal-800"
-                                          : lead.status === "Closed Lost"
-                                          ? "bg-red-100 text-red-800"
-                                          : lead.status === "On Hold"
-                                          ? "bg-gray-100 text-gray-800"
-                                          : "bg-orange-100 text-orange-800"
-                                      }`}
-                                    >
-                                      {lead.status}
-                                    </button>
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                    {lead.serviceInterestedIn}
-                                  </td>
-                                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <div className="flex space-x-2">
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                      <div className="text-sm text-gray-900 dark:text-gray-400">
+                                        {lead.companyName || 'N/A'}
+                                      </div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
                                       <button
-                                        onClick={() => {
-                                          setCurrentLead(lead);
-                                          setViewPopupOpen(true);
-                                        }}
-                                        className="text-blue-600 hover:text-blue-900"
+                                        onClick={() => setSelectedLead(lead)}
+                                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                          lead.status === "New"
+                                            ? "bg-blue-100 text-blue-800"
+                                            : lead.status === "Contacted"
+                                            ? "bg-yellow-100 text-yellow-800"
+                                            : lead.status === "Engaged"
+                                            ? "bg-green-100 text-green-800"
+                                            : lead.status === "Qualified"
+                                            ? "bg-purple-100 text-purple-800"
+                                            : lead.status === "Proposal Sent"
+                                            ? "bg-indigo-100 text-indigo-800"
+                                            : lead.status === "Negotiation"
+                                            ? "bg-pink-100 text-pink-800"
+                                            : lead.status === "Closed Won"
+                                            ? "bg-teal-100 text-teal-800"
+                                            : lead.status === "Closed Lost"
+                                            ? "bg-red-100 text-red-800"
+                                            : lead.status === "On Hold"
+                                            ? "bg-gray-100 text-gray-800"
+                                            : "bg-orange-100 text-orange-800"
+                                        }`}
                                       >
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          className="h-5 w-5"
-                                          viewBox="0 0 20 20"
-                                          fill="currentColor"
-                                        >
-                                          <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
-                                          <path
-                                            fillRule="evenodd"
-                                            d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
-                                            clipRule="evenodd"
-                                          />
-                                        </svg>
+                                        {lead.status || 'New'}
                                       </button>
-                                      <button
-                                        onClick={() => {
-                                          setCurrentLead(lead);
-                                          setEditPopupOpen(true);
-                                        }}
-                                        className="text-green-600 hover:text-green-900"
-                                      >
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          className="h-5 w-5"
-                                          viewBox="0 0 20 20"
-                                          fill="currentColor"
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                      {lead.serviceInterestedIn || 'N/A'}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                      <div className="flex space-x-2">
+                                        <button
+                                          onClick={() => {
+                                            setCurrentLead(lead);
+                                            setViewPopupOpen(true);
+                                          }}
+                                          className="text-blue-600 hover:text-blue-900"
                                         >
-                                          <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-                                        </svg>
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          setCurrentLead(lead);
-                                          setDeletePopupOpen(true);
-                                        }}
-                                        className="text-red-600 hover:text-red-900"
-                                      >
-                                        <svg
-                                          xmlns="http://www.w3.org/2000/svg"
-                                          className="h-5 w-5"
-                                          viewBox="0 0 20 20"
-                                          fill="currentColor"
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                          >
+                                            <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setCurrentLead(lead);
+                                            setEditPopupOpen(true);
+                                          }}
+                                          className="text-green-600 hover:text-green-900"
                                         >
-                                          <path
-                                            fillRule="evenodd"
-                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                                            clipRule="evenodd"
-                                          />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  </td>
-                                </tr>
-                              ))}
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                          >
+                                            <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                                          </svg>
+                                        </button>
+                                        <button
+                                          onClick={() => {
+                                            setCurrentLead(lead);
+                                            setDeletePopupOpen(true);
+                                          }}
+                                          className="text-red-600 hover:text-red-900"
+                                        >
+                                          <svg
+                                            xmlns="http://www.w3.org/2000/svg"
+                                            className="h-5 w-5"
+                                            viewBox="0 0 20 20"
+                                            fill="currentColor"
+                                          >
+                                            <path
+                                              fillRule="evenodd"
+                                              d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                              clipRule="evenodd"
+                                            />
+                                          </svg>
+                                        </button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                );
+                              }).filter(Boolean)}
                             </tbody>
                           </table>
                         )}
@@ -1172,8 +1213,9 @@ const UserLeads = ({ collapsed, onLogout }) => {
               </div>
             </div>
           </div>
-          {/* Add these right before the closing </div> of your main component */}
-          {viewPopupOpen && (
+          
+          {/* Popups */}
+          {viewPopupOpen && currentLead && (
             <ViewLeadPopup
               lead={currentLead}
               onClose={() => setViewPopupOpen(false)}
@@ -1183,16 +1225,18 @@ const UserLeads = ({ collapsed, onLogout }) => {
               }}
               onEditClick={(lead) => {
                 setCurrentLead(lead);
+                setViewPopupOpen(false);
                 setEditPopupOpen(true);
               }}
               onDeleteClick={(lead) => {
                 setCurrentLead(lead);
+                setViewPopupOpen(false);
                 setDeletePopupOpen(true);
               }}
             />
           )}
 
-          {editPopupOpen && (
+          {editPopupOpen && currentLead && (
             <EditLeadPopup
               lead={currentLead}
               onClose={() => setEditPopupOpen(false)}
@@ -1200,7 +1244,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
             />
           )}
 
-          {deletePopupOpen && (
+          {deletePopupOpen && currentLead && (
             <DeleteConfirmationPopup
               lead={currentLead}
               onClose={() => setDeletePopupOpen(false)}
@@ -1216,12 +1260,11 @@ const UserLeads = ({ collapsed, onLogout }) => {
           )}
 
           <CombinedLeadForm 
-  isOpen={showAddLeadForm} 
-  onClose={() => setShowAddLeadForm(false)} 
-  collapsed={collapsed}
-/>
+            isOpen={showAddLeadForm} 
+            onClose={() => setShowAddLeadForm(false)} 
+            collapsed={collapsed}
+          />
         </div>
-
       </UserSidebar>
       <UserFooter />
     </>
@@ -1229,4 +1272,3 @@ const UserLeads = ({ collapsed, onLogout }) => {
 };
 
 export default UserLeads;
-
