@@ -203,7 +203,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
       const token = localStorage.getItem('token');
 
       const response = await axios.put(
-        `${API_BASE_URL}/api/update-profile/${currentUser.id}`,
+        `${API_BASE_URL}/api/userProfile/${currentUser.id}`,
         {
           email: updatedUser.email,
           phoneNumber: updatedUser.phoneNumber,
