@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { UserHeader } from "../common/UserHeader";
 import { UserSidebar, useSidebarUser } from "../common/UserSidebar";
 import { UserFooter } from "../common/UserFooter";
-import { PersonalDetails } from "../common/PersonalDetails";
 import { Calendar, Clock, Bell, Plus, ArrowRight, TrendingUp, TrendingDown, BarChart3, Users, Target, AlertCircle } from "lucide-react";
 import { toast } from "react-toastify";
 import { useTheme } from "../../../hooks/use-theme";
@@ -15,10 +13,12 @@ import CombinedAlertReminder from "../../CombinedForUser&Admin/CombinedAlertRemi
 
 const UserDashboard = ({ onLogout }) => {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarUser();
-  
-  // Fix: Use PersonalDetails as a hook, not a function call
-  // const { user, loading: userLoading } = PersonalDetails(onLogout) || {};
-   const { user} = PersonalDetails(onLogout);
+
+
+  // State for enhanced user data from /api/usersData
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
+
   const [alerts, setAlerts] = useState([]);
   const [leadsData, setLeadsData] = useState({
     totalLeads: 0,
@@ -60,7 +60,95 @@ const UserDashboard = ({ onLogout }) => {
     }
   }, [navigate, onLogout, theme]);
 
-  // Fetch leads data from API
+  // Fetch current user data from /api/usersData (UPDATED)
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const userId = localStorage.getItem("userId");
+
+        if (!token || !userId) {
+          throw new Error("Please login to view user data");
+        }
+
+        const response = await axios.get(`${API_BASE_URL}/api/usersData`, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+        });
+
+        if (response.data && response.data.success && response.data.data.user) {
+          // Access user data directly from response.data.data.user
+          const user = response.data.data.user;
+
+          setCurrentUser({
+            id: user.id,
+            name: `${user.firstName} ${user.lastName}`.trim(),
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            username: user.username,
+            phoneNumber: user.phoneNumber,
+            role: user.role,
+            photo: user.photo,
+            assignedWork: user.assignedWork || "No work assigned",
+            statusOfWork: user.statusOfWork,
+            about: user.about,
+            skills: user.skills || []
+          });
+        } else {
+          throw new Error("User data not found in response");
+        }
+      } catch (err) {
+        console.error("Error fetching user data:", err);
+        
+        if (err.response?.status === 401) {
+          toast.error("Session expired. Please login again.", {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: theme === "dark" ? "dark" : "light",
+            style: { fontSize: "1.2rem" },
+          });
+          
+          localStorage.removeItem("token");
+          localStorage.removeItem("userId");
+          if (onLogout) {
+            onLogout();
+          }
+        } else {
+          toast.error(err.message || "Failed to load user data", {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+            theme: theme === "dark" ? "dark" : "light",
+            style: { fontSize: "1.2rem" },
+          });
+        }
+      } finally {
+        setUserLoading(false);
+      }
+    };
+
+    const token = localStorage.getItem("token");
+    const userId = localStorage.getItem("userId");
+    
+    if (token && userId) {
+      fetchCurrentUser();
+    } else {
+      setUserLoading(false);
+    }
+  }, [theme, onLogout]);
+
   useEffect(() => {
     const fetchLeadsData = async () => {
       try {
@@ -338,10 +426,11 @@ const UserDashboard = ({ onLogout }) => {
     }
   };
 
-  // Function to refresh both leads data and alerts
+  // Function to refresh all dashboard data including user info (UPDATED USER PART ONLY)
   const refreshDashboardData = async () => {
     setLeadsLoading(true);
     setLoading(true);
+    setUserLoading(true);
 
     try {
       const token = localStorage.getItem("token");
@@ -349,7 +438,34 @@ const UserDashboard = ({ onLogout }) => {
 
       if (!token || !userId) return;
 
-      // Fetch leads data
+      // Fetch user data from /api/usersData (UPDATED)
+      const userResponse = await axios.get(`${API_BASE_URL}/api/usersData`, {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+
+      if (userResponse.data && userResponse.data.success && userResponse.data.data.user) {
+        const user = userResponse.data.data.user;
+        setCurrentUser({
+          id: user.id,
+          name: `${user.firstName} ${user.lastName}`.trim(),
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          username: user.username,
+          phoneNumber: user.phoneNumber,
+          role: user.role,
+          photo: user.photo,
+          assignedWork: user.assignedWork || "No work assigned",
+          statusOfWork: user.statusOfWork,
+          about: user.about,
+          skills: user.skills || []
+        });
+      }
+
+      // Fetch leads data (UNCHANGED)
       const leadsResponse = await axios.get(`${API_BASE_URL}/api/leads/dashboardLeads`, {
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -366,7 +482,7 @@ const UserDashboard = ({ onLogout }) => {
         });
       }
 
-      // Fetch alerts data
+      // Fetch alerts data (UNCHANGED)
       const alertsResponse = await axios.get(`${API_BASE_URL}/api/alert`, {
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -410,8 +526,12 @@ const UserDashboard = ({ onLogout }) => {
     } finally {
       setLeadsLoading(false);
       setLoading(false);
+      setUserLoading(false);
     }
   };
+
+  // Get the display user (prioritize currentUser from /api/usersData, fallback to personalDetailsUser)
+  const displayUser = currentUser || {};
 
   return (
     <>
@@ -422,13 +542,30 @@ const UserDashboard = ({ onLogout }) => {
             <main className="p-6">
              <div className="flex flex-row justify-between rounded-lg py-4 p-5 mb-4 items-center bg-[#ff8633]">
                 <div className="bg-[#ff8633] rounded-lg p-6 mb-6 text-white">
-                  <h1 className="text-2xl font-bold mb-2">
-                    Welcome back, {user.name} !
-                  </h1>
-                  <p className="opacity-90">
-                    Your Assigned Work:{" "}
-                    {user.assignedWork || "Nothing is assigned to you."}.
-                  </p>
+                  {userLoading ? (
+                    <div className="animate-pulse">
+                      <div className="h-8 bg-white/20 rounded mb-2 w-64"></div>
+                      <div className="h-6 bg-white/20 rounded w-80"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <h1 className="text-2xl font-bold mb-2">
+                        Welcome back, {displayUser.name || displayUser.firstName || 'User'}!
+                      </h1>
+                      <p className="opacity-90">
+                        Your Assigned Work: {displayUser.assignedWork || "No work assigned"}.
+                        {displayUser.statusOfWork && (
+                          <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                            displayUser.statusOfWork === 'active' 
+                              ? 'bg-green-500/20 text-green-100' 
+                              : 'bg-red-500/20 text-red-100'
+                          }`}>
+                            {displayUser.statusOfWork}
+                          </span>
+                        )}
+                      </p>
+                    </>
+                  )}
                 </div>
                 <div>
                   <button className="flex items-center gap-2 px-4 py-2 bg-white p-5 justify-center hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md">
@@ -449,6 +586,7 @@ const UserDashboard = ({ onLogout }) => {
                   </button>
                 </div>
               </div>
+
               {/* Enhanced Header */}
               <div className="flex justify-between items-center mb-8">
                 <div className="space-y-2">
@@ -461,17 +599,17 @@ const UserDashboard = ({ onLogout }) => {
                         Dashboard
                       </h1>
                       <p className="text-gray-600 dark:text-gray-400 font-medium">
-                        Welcome back, {user?.name || 'User'}! Here's your lead overview.
+                        Welcome back, {displayUser?.name || displayUser?.firstName || 'User'}! Here's your lead overview.
                       </p>
                     </div>
                   </div>
                 </div>
                 <button
                   onClick={refreshDashboardData}
-                  disabled={leadsLoading || loading}
+                  disabled={leadsLoading || loading || userLoading}
                   className="group px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
                 >
-                  {(leadsLoading || loading) ? (
+                  {(leadsLoading || loading || userLoading) ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
                       <span className="font-medium">Refreshing...</span>
