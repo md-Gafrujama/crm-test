@@ -213,7 +213,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
         autoClose: 5000,
         theme: theme === 'dark' ? 'dark' : 'light',
       });
-      const { data } = await axios.get(`${API_BASE_URL}/api/allUser`, {
+      const { data } = await axios.get(`${API_BASE_URL}/api/usersData`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -271,7 +271,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
       });
 
       // Refresh user data
-      const { data } = await axios.get(`${API_BASE_URL}/api/allUser`, {
+      const { data } = await axios.get(`${API_BASE_URL}/api/usersData`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const matchedUser = data.find(user => user.id === updatedLead.id);
@@ -311,7 +311,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
           throw new Error('Missing authentication data');
         }
 
-        const response = await axios.get(`${API_BASE_URL}/api/allUser`, {
+        const response = await axios.get(`${API_BASE_URL}/api/usersData`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
 
