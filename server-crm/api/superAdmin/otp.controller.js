@@ -1,5 +1,6 @@
 import prisma from '../../prisma/prismaClient.js';
 import {sendVerificationMailforRegisteringCompany} from "../../middleware/authenication.middleware.js"
+import jwt from "jsonwebtoken";
 
 const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
@@ -88,7 +89,31 @@ export const verifyOtp = async (req, res) => {
       data: { statusOfAccount: 'verified' },
     });
 
-    return res.status(200).json({ message: 'OTP verified successfully.' });
+    const superAdmin = await prisma.superAdmin.findUnique({
+      where: { email },
+      select: { id: true, email: true, username: true },
+    });
+
+    if (!superAdmin) {
+      return res.status(404).json({ message: 'SuperAdmin user not found.' });
+    }
+
+    const token = jwt.sign(
+      { uid: superAdmin.id, role: "superAdmin" },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" } 
+    );
+
+    return res.status(200).json({
+      message: 'OTP verified successfully.',
+      token,
+      user: {
+        uid: superAdmin.id,
+        email: superAdmin.email,
+        username: superAdmin.username,
+        role: "superAdmin",
+      },
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Server error.' });
