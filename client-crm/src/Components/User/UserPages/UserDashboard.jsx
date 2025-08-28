@@ -1,4 +1,805 @@
 
+// import React, { useState, useEffect } from "react";
+// import { Link } from "react-router-dom";
+// import { UserHeader } from "../common/UserHeader";
+// import { UserSidebar, useSidebarUser } from "../common/UserSidebar";
+// import { UserFooter } from "../common/UserFooter";
+// import { PersonalDetails } from "../common/PersonalDetails";
+// import { Calendar, Clock, Bell, Plus, ArrowRight, TrendingUp, TrendingDown, BarChart3, Users, Target, AlertCircle } from "lucide-react";
+// import { toast } from "react-toastify";
+// import { useTheme } from "../../../hooks/use-theme";
+// import axios from "axios";
+// import { API_BASE_URL } from "../../../config/api";
+// import { useNavigate } from "react-router-dom";
+// import CombinedAlertReminder from "../../CombinedForUser&Admin/CombinedAlertReminder";
+
+// const UserDashboard = ({ onLogout }) => {
+//   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarUser();
+  
+//   // Fix: Use PersonalDetails as a hook, not a function call
+//   // const { user, loading: userLoading } = PersonalDetails(onLogout) || {};
+//    const { user} = PersonalDetails(onLogout);
+//   const [alerts, setAlerts] = useState([]);
+//   const [leadsData, setLeadsData] = useState({
+//     totalLeads: 0,
+//     qualifiedLeads: 0,
+//     pendingLeads: 0,
+//     lossLeads: 0
+//   });
+//   const [loading, setLoading] = useState(true);
+//   const [leadsLoading, setLeadsLoading] = useState(true);
+//   const [error, setError] = useState(null);
+//   const { theme } = useTheme();
+//   const navigate = useNavigate();
+//   const [showAddAlertReminderForm, setShowAddAlertReminderForm] = useState(false);
+
+//   // Check authentication on component mount
+//   useEffect(() => {
+//     const token = localStorage.getItem("token");
+//     const userId = localStorage.getItem("userId");
+    
+//     if (!token || !userId) {
+//       toast.error("Please login to view dashboard", {
+//         position: "top-right",
+//         autoClose: 3000,
+//         hideProgressBar: false,
+//         closeOnClick: true,
+//         pauseOnHover: true,
+//         draggable: true,
+//         progress: undefined,
+//         theme: theme === "dark" ? "dark" : "light",
+//         style: { fontSize: "1.2rem" },
+//       });
+      
+//       if (onLogout) {
+//         onLogout();
+//       } else {
+//         navigate('/login');
+//       }
+//       return;
+//     }
+//   }, [navigate, onLogout, theme]);
+
+//   // Fetch leads data from API
+//   useEffect(() => {
+//     const fetchLeadsData = async () => {
+//       try {
+//         const token = localStorage.getItem("token");
+//         const userId = localStorage.getItem("userId");
+
+//         if (!token || !userId) {
+//           throw new Error("Please login to view leads data");
+//         }
+
+//         const response = await axios.get(`${API_BASE_URL}/api/leads/dashboardLeads`, {
+//           headers: { 
+//             Authorization: `Bearer ${token}`,
+//             'Content-Type': 'application/json'
+//           },
+//         });
+
+//         if (response.data) {
+//           setLeadsData({
+//             totalLeads: response.data.totalLeads || 0,
+//             qualifiedLeads: response.data.qualifiedLeads || 0,
+//             pendingLeads: response.data.pendingLeads || 0,
+//             lossLeads: response.data.lossLeads || 0
+//           });
+//         }
+//       } catch (err) {
+//         console.error("Error fetching leads data:", err);
+        
+//         if (err.response?.status === 401) {
+//           toast.error("Session expired. Please login again.", {
+//             position: "top-right",
+//             autoClose: 5000,
+//             hideProgressBar: false,
+//             closeOnClick: true,
+//             pauseOnHover: true,
+//             draggable: true,
+//             progress: undefined,
+//             theme: theme === "dark" ? "dark" : "light",
+//             style: { fontSize: "1.2rem" },
+//           });
+          
+//           localStorage.removeItem("token");
+//           localStorage.removeItem("userId");
+//           if (onLogout) {
+//             onLogout();
+//           }
+//         } else {
+//           toast.error(err.message || "Failed to load leads data", {
+//             position: "top-right",
+//             autoClose: 5000,
+//             hideProgressBar: false,
+//             closeOnClick: true,
+//             pauseOnHover: true,
+//             draggable: true,
+//             progress: undefined,
+//             theme: theme === "dark" ? "dark" : "light",
+//             style: { fontSize: "1.2rem" },
+//           });
+//         }
+//       } finally {
+//         setLeadsLoading(false);
+//       }
+//     };
+
+//     const token = localStorage.getItem("token");
+//     const userId = localStorage.getItem("userId");
+    
+//     if (token && userId) {
+//       fetchLeadsData();
+//     } else {
+//       setLeadsLoading(false);
+//     }
+//   }, [theme, onLogout]);
+
+//   useEffect(() => {
+//     const fetchAlerts = async () => {
+//       try {
+//         const token = localStorage.getItem("token");
+//         const userId = localStorage.getItem("userId");
+
+//         if (!token || !userId) {
+//           throw new Error("Please login to view alerts");
+//         }
+
+//         const response = await axios.get(`${API_BASE_URL}/api/alert`, {
+//           headers: { 
+//             Authorization: `Bearer ${token}`,
+//             'Content-Type': 'application/json'
+//           },
+//         });
+
+//         if (response.data && response.data.data) {
+//           const userAlerts = response.data.data
+//             .filter((alert) => alert.uid === userId)
+//             .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+//           setAlerts(userAlerts);
+//         } else {
+//           setAlerts([]);
+//         }
+//       } catch (err) {
+//         console.error("Error fetching alerts:", err);
+        
+//         if (err.response?.status === 401) {
+//           setError("Authentication failed. Please login again.");
+//           toast.error("Session expired. Please login again.", {
+//             position: "top-right",
+//             autoClose: 5000,
+//             hideProgressBar: false,
+//             closeOnClick: true,
+//             pauseOnHover: true,
+//             draggable: true,
+//             progress: undefined,
+//             theme: theme === "dark" ? "dark" : "light",
+//             style: { fontSize: "1.2rem" },
+//           });
+          
+//           localStorage.removeItem("token");
+//           localStorage.removeItem("userId");
+//           if (onLogout) {
+//             onLogout();
+//           }
+//         } else {
+//           setError(err.message || "Failed to load alerts");
+//           toast.error(err.message || "Failed to load alerts", {
+//             position: "top-right",
+//             autoClose: 5000,
+//             hideProgressBar: false,
+//             closeOnClick: true,
+//             pauseOnHover: true,
+//             draggable: true,
+//             progress: undefined,
+//             theme: theme === "dark" ? "dark" : "light",
+//             style: { fontSize: "1.2rem" },
+//           });
+//         }
+//       } finally {
+//         setLoading(false);
+//       }
+//     };
+
+//     const token = localStorage.getItem("token");
+//     const userId = localStorage.getItem("userId");
+    
+//     if (token && userId) {
+//       fetchAlerts();
+//     } else {
+//       setLoading(false);
+//     }
+//   }, [theme, onLogout]);
+
+//   // Calculate percentage changes for stats
+//   const calculateChange = (current, previous = 0) => {
+//     if (previous === 0) return current > 0 ? "+100%" : "0%";
+//     const change = ((current - previous) / previous) * 100;
+//     return change > 0 ? `+${Math.round(change)}%` : `${Math.round(change)}%`;
+//   };
+
+//   // Dynamic stats based on API data with icons
+//   const stats = [
+//     { 
+//       title: "Total Leads", 
+//       value: leadsLoading ? "..." : leadsData.totalLeads.toString(), 
+//       change: leadsLoading ? "..." : calculateChange(leadsData.totalLeads), 
+//       trend: leadsData.totalLeads > 0 ? "up" : "down",
+//       icon: BarChart3,
+//       description: "All leads in your pipeline"
+//     },
+//     { 
+//       title: "Qualified Leads", 
+//       value: leadsLoading ? "..." : leadsData.qualifiedLeads.toString(), 
+//       change: leadsLoading ? "..." : calculateChange(leadsData.qualifiedLeads), 
+//       trend: leadsData.qualifiedLeads > 0 ? "up" : "down",
+//       icon: Target,
+//       description: "Leads ready for conversion"
+//     },
+//     { 
+//       title: "Pending Leads", 
+//       value: leadsLoading ? "..." : leadsData.pendingLeads.toString(), 
+//       change: leadsLoading ? "..." : calculateChange(leadsData.pendingLeads), 
+//       trend: leadsData.pendingLeads > 0 ? "up" : "down",
+//       icon: Clock,
+//       description: "Awaiting follow-up"
+//     },
+//     { 
+//       title: "Loss Leads", 
+//       value: leadsLoading ? "..." : leadsData.lossLeads.toString(), 
+//       change: leadsLoading ? "..." : calculateChange(leadsData.lossLeads), 
+//       trend: leadsData.lossLeads > 0 ? "up" : "down",
+//       icon: AlertCircle,
+//       description: "Leads that didn't convert"
+//     },
+//   ];
+
+//   const projects = [
+//     {
+//       id: 1,
+//       name: "Website Redesign",
+//       status: "Completed",
+//       progress: 100,
+//       dueDate: "May 15, 2024",
+//       priority: "High"
+//     },
+//     {
+//       id: 2,
+//       name: "Mobile App Development",
+//       status: "In Progress",
+//       progress: 75,
+//       dueDate: "Jun 20, 2024",
+//       priority: "Medium"
+//     },
+//     {
+//       id: 3,
+//       name: "Dashboard UI",
+//       status: "Not Started",
+//       progress: 0,
+//       dueDate: "Jul 10, 2024",
+//       priority: "Low"
+//     },
+//     {
+//       id: 4,
+//       name: "API Integration",
+//       status: "In Progress",
+//       progress: 45,
+//       dueDate: "Jun 5, 2024",
+//       priority: "High"
+//     },
+//   ];
+
+//   // Enhanced callback to refresh alerts when a new one is added
+//   const handleAlertAdded = async () => {
+//     setShowAddAlertReminderForm(false);
+    
+//     // Show success toast
+//     toast.success("Alert added successfully! 🎉", {
+//       position: "top-right",
+//       autoClose: 3000,
+//       hideProgressBar: false,
+//       closeOnClick: true,
+//       pauseOnHover: true,
+//       draggable: true,
+//       progress: undefined,
+//       theme: theme === "dark" ? "dark" : "light",
+//       style: { fontSize: "1.2rem" },
+//     });
+
+//     // Refresh alerts
+//     try {
+//       const token = localStorage.getItem("token");
+//       const userId = localStorage.getItem("userId");
+
+//       if (!token || !userId) return;
+
+//       const response = await axios.get(`${API_BASE_URL}/api/alert`, {
+//         headers: { 
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'application/json'
+//         },
+//       });
+
+//       if (response.data && response.data.data) {
+//         const userAlerts = response.data.data
+//           .filter((alert) => alert.uid === userId)
+//           .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+//         setAlerts(userAlerts);
+//       }
+//     } catch (err) {
+//       console.error("Error refreshing alerts:", err);
+//       toast.error("Failed to refresh alerts", {
+//         position: "top-right",
+//         autoClose: 3000,
+//         theme: theme === "dark" ? "dark" : "light",
+//       });
+//     }
+//   };
+
+//   // Function to refresh both leads data and alerts
+//   const refreshDashboardData = async () => {
+//     setLeadsLoading(true);
+//     setLoading(true);
+
+//     try {
+//       const token = localStorage.getItem("token");
+//       const userId = localStorage.getItem("userId");
+
+//       if (!token || !userId) return;
+
+//       // Fetch leads data
+//       const leadsResponse = await axios.get(`${API_BASE_URL}/api/leads/dashboardLeads`, {
+//         headers: { 
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'application/json'
+//         },
+//       });
+
+//       if (leadsResponse.data) {
+//         setLeadsData({
+//           totalLeads: leadsResponse.data.totalLeads || 0,
+//           qualifiedLeads: leadsResponse.data.qualifiedLeads || 0,
+//           pendingLeads: leadsResponse.data.pendingLeads || 0,
+//           lossLeads: leadsResponse.data.lossLeads || 0
+//         });
+//       }
+
+//       // Fetch alerts data
+//       const alertsResponse = await axios.get(`${API_BASE_URL}/api/alert`, {
+//         headers: { 
+//           Authorization: `Bearer ${token}`,
+//           'Content-Type': 'application/json'
+//         },
+//       });
+
+//       if (alertsResponse.data && alertsResponse.data.data) {
+//         const userAlerts = alertsResponse.data.data
+//           .filter((alert) => alert.uid === userId)
+//           .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+//         setAlerts(userAlerts);
+//       }
+
+//       toast.success("Dashboard refreshed successfully! ✨", {
+//         position: "top-right",
+//         autoClose: 3000,
+//         hideProgressBar: false,
+//         closeOnClick: true,
+//         pauseOnHover: true,
+//         draggable: true,
+//         progress: undefined,
+//         theme: theme === "dark" ? "dark" : "light",
+//         style: { fontSize: "1.2rem" },
+//       });
+
+//     } catch (err) {
+//       console.error("Error refreshing dashboard data:", err);
+//       toast.error("Failed to refresh dashboard data", {
+//         position: "top-right",
+//         autoClose: 5000,
+//         hideProgressBar: false,
+//         closeOnClick: true,
+//         pauseOnHover: true,
+//         draggable: true,
+//         progress: undefined,
+//         theme: theme === "dark" ? "dark" : "light",
+//         style: { fontSize: "1.2rem" },
+//       });
+//     } finally {
+//       setLeadsLoading(false);
+//       setLoading(false);
+//     }
+//   };
+
+//   return (
+//     <>
+//       <UserHeader onToggleSidebar={toggleSidebar} />
+//       <UserSidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
+//         <div className="">
+//           <div className="flex-1 overflow-auto">
+//             <main className="p-6">
+//              <div className="flex flex-row justify-between rounded-lg py-4 p-5 mb-4 items-center bg-[#ff8633]">
+//                 <div className="bg-[#ff8633] rounded-lg p-6 mb-6 text-white">
+//                   <h1 className="text-2xl font-bold mb-2">
+//                     Welcome back, {user.name} !
+//                   </h1>
+//                   <p className="opacity-90">
+//                     Your Assigned Work:{" "}
+//                     {user.assignedWork || "Nothing is assigned to you."}.
+//                   </p>
+//                 </div>
+//                 <div>
+//                   <button className="flex items-center gap-2 px-4 py-2 bg-white p-5 justify-center hover:bg-gray-100 text-[#ff8633] rounded-md transition-colors shadow-md">
+//                     Upload Data
+//                     <svg
+//                       xmlns="http://www.w3.org/2000/svg"
+//                       className="h-5 w-5"
+//                       viewBox="0 0 20 20"
+//                       fill="currentColor"
+//                     >
+//                       <path
+//                         fillRule="evenodd"
+//                         d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+//                         clipRule="evenodd"
+//                         transform="rotate(180 10 10)"
+//                       />
+//                     </svg>
+//                   </button>
+//                 </div>
+//               </div>
+//               {/* Enhanced Header */}
+//               <div className="flex justify-between items-center mb-8">
+//                 <div className="space-y-2">
+//                   <div className="flex items-center gap-3">
+//                     <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl flex items-center justify-center">
+//                       <BarChart3 className="w-6 h-6 text-white" />
+//                     </div>
+//                     <div>
+//                       <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
+//                         Dashboard
+//                       </h1>
+//                       <p className="text-gray-600 dark:text-gray-400 font-medium">
+//                         Welcome back, {user?.name || 'User'}! Here's your lead overview.
+//                       </p>
+//                     </div>
+//                   </div>
+//                 </div>
+//                 <button
+//                   onClick={refreshDashboardData}
+//                   disabled={leadsLoading || loading}
+//                   className="group px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-500 text-white rounded-xl transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:transform-none"
+//                 >
+//                   {(leadsLoading || loading) ? (
+//                     <>
+//                       <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+//                       <span className="font-medium">Refreshing...</span>
+//                     </>
+//                   ) : (
+//                     <>
+//                       <svg className="w-5 h-5 group-hover:rotate-180 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+//                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+//                       </svg>
+//                       <span className="font-medium">Refresh</span>
+//                     </>
+//                   )}
+//                 </button>
+//               </div>
+
+//               {/* Enhanced Stats Cards */}
+//               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+//                 {stats.map((stat, index) => {
+//                   const colorSchemes = [
+//                     { 
+//                       gradient: 'from-blue-500 via-blue-600 to-blue-700',
+//                       bg: 'bg-gradient-to-br from-blue-50 via-white to-blue-50 dark:from-blue-900/20 dark:via-slate-800 dark:to-blue-800/30',
+//                       border: 'border-blue-200 dark:border-blue-700/50',
+//                       shadow: 'shadow-blue-500/20',
+//                       iconBg: 'bg-blue-100 dark:bg-blue-800/30'
+//                     },
+//                     { 
+//                       gradient: 'from-emerald-500 via-emerald-600 to-emerald-700',
+//                       bg: 'bg-gradient-to-br from-emerald-50 via-white to-emerald-50 dark:from-emerald-900/20 dark:via-slate-800 dark:to-emerald-800/30',
+//                       border: 'border-emerald-200 dark:border-emerald-700/50',
+//                       shadow: 'shadow-emerald-500/20',
+//                       iconBg: 'bg-emerald-100 dark:bg-emerald-800/30'
+//                     },
+//                     { 
+//                       gradient: 'from-purple-500 via-purple-600 to-purple-700',
+//                       bg: 'bg-gradient-to-br from-purple-50 via-white to-purple-50 dark:from-purple-900/20 dark:via-slate-800 dark:to-purple-800/30',
+//                       border: 'border-purple-200 dark:border-purple-700/50',
+//                       shadow: 'shadow-purple-500/20',
+//                       iconBg: 'bg-purple-100 dark:bg-purple-800/30'
+//                     },
+//                     { 
+//                       gradient: 'from-orange-500 via-orange-600 to-orange-700',
+//                       bg: 'bg-gradient-to-br from-orange-50 via-white to-orange-50 dark:from-orange-900/20 dark:via-slate-800 dark:to-orange-800/30',
+//                       border: 'border-orange-200 dark:border-orange-700/50',
+//                       shadow: 'shadow-orange-500/20',
+//                       iconBg: 'bg-orange-100 dark:bg-orange-800/30'
+//                     }
+//                   ];
+                  
+//                   const scheme = colorSchemes[index % 4];
+//                   const IconComponent = stat.icon;
+                  
+//                   return (
+//                     <div
+//                       key={index}
+//                       className={`${scheme.bg} ${scheme.border} rounded-2xl p-6 shadow-lg ${scheme.shadow} hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 relative overflow-hidden border backdrop-blur-sm ${leadsLoading ? 'opacity-75' : ''}`}
+//                     >
+//                       {/* Background decorative elements */}
+//                       <div className="absolute -top-4 -right-4 w-24 h-24 rounded-full bg-white/10 blur-2xl"></div>
+//                       <div className="absolute -bottom-2 -left-2 w-16 h-16 rounded-full bg-white/5"></div>
+                      
+//                       <div className="relative">
+//                         <div className="flex items-center justify-between mb-4">
+//                           <div className={`w-12 h-12 ${scheme.iconBg} rounded-xl flex items-center justify-center`}>
+//                             <IconComponent className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+//                           </div>
+//                           <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold ${
+//                             stat.trend === "up" 
+//                               ? 'text-emerald-700 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400' 
+//                               : 'text-red-700 bg-red-100 dark:bg-red-900/30 dark:text-red-400'
+//                           }`}>
+//                             {stat.trend === "up" ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+//                             {stat.change}
+//                           </div>
+//                         </div>
+                        
+//                         <div className="space-y-2">
+//                           <h3 className="text-gray-600 dark:text-gray-400 text-sm font-semibold uppercase tracking-wider">
+//                             {stat.title}
+//                           </h3>
+//                           <div className="mb-2">
+//                             {leadsLoading ? (
+//                               <div className="animate-pulse bg-gray-300 dark:bg-gray-600 rounded-lg h-10 w-20"></div>
+//                             ) : (
+//                               <span className="text-4xl font-bold text-gray-900 dark:text-white tracking-tight">
+//                                 {stat.value}
+//                               </span>
+//                             )}
+//                           </div>
+//                           <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+//                             {stat.description}
+//                           </p>
+//                         </div>
+                        
+//                         {/* Progress bar */}
+//                         <div className="mt-4 w-full bg-gray-200/50 dark:bg-gray-700/50 rounded-full h-1.5">
+//                           <div 
+//                             className={`h-1.5 rounded-full bg-gradient-to-r ${scheme.gradient} transition-all duration-1000 ease-out`}
+//                             style={{ 
+//                               width: stat.trend === "up" ? '75%' : '45%'
+//                             }}
+//                           />
+//                         </div>
+//                       </div>
+                      
+//                       {/* Loading overlay */}
+//                       {leadsLoading && (
+//                         <div className="absolute inset-0 bg-white/20 dark:bg-black/20 rounded-2xl flex items-center justify-center backdrop-blur-sm">
+//                           <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-600 border-t-transparent"></div>
+//                         </div>
+//                       )}
+//                     </div>
+//                   );
+//                 })}
+//               </div>
+
+//               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
+//                 {/* Enhanced Alerts & Reminders */}
+//                 <div className="">
+//                   <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+//                     <div className="flex items-center justify-between">
+//                       <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+//                         <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center">
+//                           <Calendar className="h-5 w-5 text-white" />
+//                         </div>
+//                         Alerts & Reminders
+//                       </h2>
+//                       <button
+//                         onClick={() => setShowAddAlertReminderForm(true)}
+//                         className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl transition-all duration-300 text-sm font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+//                       >
+//                         <Plus className="h-4 w-4" />
+//                         Add New
+//                       </button>
+//                     </div>
+//                   </div>
+//                   <div className="p-6">
+//                     {loading ? (
+//                       <div className="text-center py-12">
+//                         <div className="animate-spin rounded-full h-10 w-10 border-2 border-purple-600 border-t-transparent mx-auto mb-4"></div>
+//                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Loading alerts...</p>
+//                       </div>
+//                     ) : alerts.length > 0 ? (
+//                       <div className="space-y-4">
+//                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+//                           {alerts.slice(0, 4).map((alert, index) => {
+//                             const colors = [
+//                               { bg: 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/30', 
+//                                 border: 'border-blue-200 dark:border-blue-700/50',
+//                                 iconBg: 'bg-blue-500', iconColor: 'text-white' },
+//                               { bg: 'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/30',
+//                                 border: 'border-emerald-200 dark:border-emerald-700/50',
+//                                 iconBg: 'bg-emerald-500', iconColor: 'text-white' },
+//                               { bg: 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/30',
+//                                 border: 'border-purple-200 dark:border-purple-700/50',
+//                                 iconBg: 'bg-purple-500', iconColor: 'text-white' },
+//                               { bg: 'bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/30',
+//                                 border: 'border-orange-200 dark:border-orange-700/50',
+//                                 iconBg: 'bg-orange-500', iconColor: 'text-white' }
+//                             ];
+//                             const colorScheme = colors[index % 4];
+                            
+//                             return (
+//                               <div
+//                                 key={alert.id}
+//                                 className={`p-4 ${colorScheme.bg} ${colorScheme.border} rounded-xl transition-all duration-300 group cursor-pointer border hover:shadow-lg transform hover:-translate-y-1`}
+//                               >
+//                                 <div className={`w-10 h-10 ${colorScheme.iconBg} rounded-lg flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110`}>
+//                                   <Bell className={`h-5 w-5 ${colorScheme.iconColor}`} />
+//                                 </div>
+//                                 <p className="text-sm font-bold text-gray-900 dark:text-white mb-2 line-clamp-1">
+//                                   {alert.topic}
+//                                 </p>
+//                                 <div className="space-y-1 mb-2">
+//                                   <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+//                                     <Calendar className="h-3 w-3" />
+//                                     {new Date(alert.date).toLocaleDateString()}
+//                                   </div>
+//                                   <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+//                                     <Clock className="h-3 w-3" />
+//                                     {alert.time}
+//                                   </div>
+//                                 </div>
+//                                 <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
+//                                   {alert.remainder}
+//                                 </p>
+//                               </div>
+//                             );
+//                           })}
+//                         </div>
+                        
+//                         {alerts.length > 4 && (
+//                           <div className="text-center">
+//                             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400">
+//                               +{alerts.length - 4} more alerts
+//                             </span>
+//                           </div>
+//                         )}
+//                       </div>
+//                     ) : (
+//                       <div className="text-center py-12">
+//                         <div className="w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+//                           <Calendar className="h-10 w-10 text-gray-400" />
+//                         </div>
+//                         <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">No alerts yet</p>
+//                         <p className="text-sm text-gray-500 dark:text-gray-400">Create your first alert or reminder to get started</p>
+//                       </div>
+//                     )}
+//                   </div>
+//                   <div className="px-6 py-4 bg-gray-50/50 dark:bg-gray-700/50 rounded-b-2xl border-t border-gray-200/50 dark:border-gray-600/50">
+//                     <button
+//                       onClick={() => navigate("/all-alerts-reminders")}
+//                       className="text-lg font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 flex items-center gap-2 transition-all duration-300 group"
+//                     >
+//                       View All Alerts
+//                       <ArrowRight className="h-8 w-8 group-hover:translate-x-1 transition-transform" />
+//                     </button>
+//                   </div>
+//                 </div>
+
+//                 {/* Enhanced Projects */}
+//                 <div className="">
+//                   <div className="p-6 border-b border-gray-200/50 dark:border-gray-700/50">
+//                     <div className="flex justify-between items-center">
+//                       <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
+//                         <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl flex items-center justify-center">
+//                           <Users className="h-5 w-5 text-white" />
+//                         </div>
+//                         Your Projects
+//                       </h2>
+//                       <Link
+//                         to="#"
+//                         className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white rounded-xl text-sm font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+//                       >
+//                         + New Project
+//                       </Link>
+//                     </div>
+//                   </div>
+//                   <div className="p-6">
+//                     <div className="overflow-hidden">
+//                       <div className="space-y-4">
+//                         {projects.map((project) => (
+//                           <div key={project.id} className="group p-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-700/50 dark:to-gray-800/50 rounded-xl border border-gray-200/50 dark:border-gray-600/50 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+//                             <div className="flex items-center justify-between mb-3">
+//                               <Link
+//                                 to={`/projects/${project.id}`}
+//                                 className="text-lg font-bold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center gap-2 group"
+//                               >
+//                                 {project.name}
+//                                 <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
+//                               </Link>
+//                               <div className="flex items-center gap-2">
+//                                 <span
+//                                   className={`px-3 py-1 text-xs font-bold rounded-full ${
+//                                     project.priority === "High"
+//                                       ? "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+//                                       : project.priority === "Medium"
+//                                       ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400"
+//                                       : "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+//                                   }`}
+//                                 >
+//                                   {project.priority}
+//                                 </span>
+//                               </div>
+//                             </div>
+                            
+//                             <div className="flex items-center justify-between mb-3">
+//                               <span
+//                                 className={`px-3 py-1.5 text-xs font-bold rounded-lg ${
+//                                   project.status === "Completed"
+//                                     ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+//                                     : project.status === "In Progress"
+//                                     ? "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+//                                     : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+//                                 }`}
+//                               >
+//                                 {project.status}
+//                               </span>
+//                               <div className="text-right">
+//                                 <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">Due Date</p>
+//                                 <p className="text-sm font-bold text-gray-900 dark:text-white">{project.dueDate}</p>
+//                               </div>
+//                             </div>
+                            
+//                             <div className="space-y-2">
+//                               <div className="flex justify-between items-center">
+//                                 <span className="text-xs font-bold text-gray-600 dark:text-gray-400">Progress</span>
+//                                 <span className="text-xs font-bold text-gray-900 dark:text-white">{project.progress}%</span>
+//                               </div>
+//                               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+//                                 <div
+//                                   className={`h-2.5 rounded-full transition-all duration-500 ${
+//                                     project.progress === 100
+//                                       ? "bg-gradient-to-r from-green-500 to-emerald-600"
+//                                       : project.progress > 50
+//                                       ? "bg-gradient-to-r from-blue-500 to-purple-600"
+//                                       : "bg-gradient-to-r from-orange-500 to-red-500"
+//                                   }`}
+//                                   style={{ width: `${project.progress}%` }}
+//                                 ></div>
+//                               </div>
+//                             </div>
+//                           </div>
+//                         ))}
+//                       </div>
+//                     </div>
+//                   </div>
+//                 </div>
+//               </div>
+//             </main>
+//           </div>
+//         </div>
+        
+//         {/* Enhanced Alert/Reminder Form Modal */}
+//         {showAddAlertReminderForm && (
+//           <CombinedAlertReminder 
+//             isOpen={showAddAlertReminderForm} 
+//             onClose={() => setShowAddAlertReminderForm(false)}
+//             onSuccess={handleAlertAdded}
+//           />
+//         )}
+//       </UserSidebar>
+//       <UserFooter />
+//     </>
+//   );
+// };
+
+// export default UserDashboard;
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { UserHeader } from "../common/UserHeader";
@@ -16,9 +817,10 @@ import CombinedAlertReminder from "../../CombinedForUser&Admin/CombinedAlertRemi
 const UserDashboard = ({ onLogout }) => {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarUser();
   
-  // Fix: Use PersonalDetails as a hook, not a function call
-  // const { user, loading: userLoading } = PersonalDetails(onLogout) || {};
-   const { user} = PersonalDetails(onLogout);
+  // Fix: Properly handle PersonalDetails hook
+  const personalDetailsData = PersonalDetails(onLogout);
+  const user = personalDetailsData?.user || { name: 'User', assignedWork: 'No work assigned' };
+  
   const [alerts, setAlerts] = useState([]);
   const [leadsData, setLeadsData] = useState({
     totalLeads: 0,
@@ -33,71 +835,107 @@ const UserDashboard = ({ onLogout }) => {
   const navigate = useNavigate();
   const [showAddAlertReminderForm, setShowAddAlertReminderForm] = useState(false);
 
-  // Check authentication on component mount
+  // Enhanced authentication check
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
-    
-    if (!token || !userId) {
-      toast.error("Please login to view dashboard", {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: theme === "dark" ? "dark" : "light",
-        style: { fontSize: "1.2rem" },
-      });
+    const checkAuth = () => {
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
       
-      if (onLogout) {
-        onLogout();
-      } else {
-        navigate('/login');
+      console.log("Auth check:", { token: !!token, userId: !!userId }); // Debug log
+      
+      if (!token || !userId) {
+        toast.error("Please login to view dashboard", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: theme === "dark" ? "dark" : "light",
+          style: { fontSize: "1.2rem" },
+        });
+        
+        // Clear any invalid tokens
+        localStorage.removeItem("token");
+        localStorage.removeItem("userId");
+        
+        if (onLogout) {
+          onLogout();
+        } else {
+          navigate('/login');
+        }
+        return false;
       }
+      return true;
+    };
+
+    if (!checkAuth()) {
       return;
     }
   }, [navigate, onLogout, theme]);
 
-  // Fetch leads data from API
+  // Enhanced leads data fetching with better error handling
   useEffect(() => {
     const fetchLeadsData = async () => {
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
+
+      if (!token || !userId) {
+        setLeadsLoading(false);
+        return;
+      }
+
       try {
-        const token = localStorage.getItem("token");
-        const userId = localStorage.getItem("userId");
-
-        if (!token || !userId) {
-          throw new Error("Please login to view leads data");
-        }
-
+        setLeadsLoading(true);
+        console.log("Fetching leads data..."); // Debug log
+        
         const response = await axios.get(`${API_BASE_URL}/api/leads/dashboardLeads`, {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
+          timeout: 10000 // 10 second timeout
         });
 
-        if (response.data) {
-          setLeadsData({
-            totalLeads: response.data.totalLeads || 0,
-            qualifiedLeads: response.data.qualifiedLeads || 0,
-            pendingLeads: response.data.pendingLeads || 0,
-            lossLeads: response.data.lossLeads || 0
+        console.log("Leads API response:", response.data); // Debug log
+
+        if (response.data && response.status === 200) {
+          const newLeadsData = {
+            totalLeads: parseInt(response.data.totalLeads) || 0,
+            qualifiedLeads: parseInt(response.data.qualifiedLeads) || 0,
+            pendingLeads: parseInt(response.data.pendingLeads) || 0,
+            lossLeads: parseInt(response.data.lossLeads) || 0
+          };
+          
+          console.log("Processed leads data:", newLeadsData); // Debug log
+          setLeadsData(newLeadsData);
+        } else {
+          console.warn("Invalid leads data structure:", response.data);
+          toast.warning("Received invalid data format from server", {
+            position: "top-right",
+            autoClose: 3000,
+            theme: theme === "dark" ? "dark" : "light",
           });
         }
       } catch (err) {
-        console.error("Error fetching leads data:", err);
+        console.error("Error fetching leads data:", {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status
+        });
         
-        if (err.response?.status === 401) {
+        if (err.code === 'ECONNABORTED') {
+          toast.error("Request timeout. Please check your internet connection.", {
+            position: "top-right",
+            autoClose: 5000,
+            theme: theme === "dark" ? "dark" : "light",
+            style: { fontSize: "1.2rem" },
+          });
+        } else if (err.response?.status === 401) {
           toast.error("Session expired. Please login again.", {
             position: "top-right",
             autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
             theme: theme === "dark" ? "dark" : "light",
             style: { fontSize: "1.2rem" },
           });
@@ -107,15 +945,22 @@ const UserDashboard = ({ onLogout }) => {
           if (onLogout) {
             onLogout();
           }
-        } else {
-          toast.error(err.message || "Failed to load leads data", {
+        } else if (err.response?.status === 403) {
+          toast.error("Access denied. Please check your permissions.", {
             position: "top-right",
             autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
+            theme: theme === "dark" ? "dark" : "light",
+          });
+        } else if (err.response?.status === 404) {
+          toast.error("Leads data endpoint not found. Please contact support.", {
+            position: "top-right",
+            autoClose: 5000,
+            theme: theme === "dark" ? "dark" : "light",
+          });
+        } else {
+          toast.error(err.response?.data?.message || err.message || "Failed to load leads data", {
+            position: "top-right",
+            autoClose: 5000,
             theme: theme === "dark" ? "dark" : "light",
             style: { fontSize: "1.2rem" },
           });
@@ -125,55 +970,63 @@ const UserDashboard = ({ onLogout }) => {
       }
     };
 
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
-    
-    if (token && userId) {
-      fetchLeadsData();
-    } else {
-      setLeadsLoading(false);
-    }
+    fetchLeadsData();
   }, [theme, onLogout]);
 
+  // Enhanced alerts fetching
   useEffect(() => {
     const fetchAlerts = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const userId = localStorage.getItem("userId");
+      const token = localStorage.getItem("token");
+      const userId = localStorage.getItem("userId");
 
-        if (!token || !userId) {
-          throw new Error("Please login to view alerts");
-        }
+      if (!token || !userId) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        console.log("Fetching alerts data..."); // Debug log
 
         const response = await axios.get(`${API_BASE_URL}/api/alert`, {
           headers: { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json'
           },
+          timeout: 10000 // 10 second timeout
         });
 
-        if (response.data && response.data.data) {
+        console.log("Alerts API response:", response.data); // Debug log
+
+        if (response.data && response.data.data && Array.isArray(response.data.data)) {
           const userAlerts = response.data.data
             .filter((alert) => alert.uid === userId)
             .sort((a, b) => new Date(b.date) - new Date(a.date));
 
+          console.log("Filtered user alerts:", userAlerts); // Debug log
           setAlerts(userAlerts);
         } else {
+          console.warn("Invalid alerts data structure:", response.data);
           setAlerts([]);
         }
       } catch (err) {
-        console.error("Error fetching alerts:", err);
+        console.error("Error fetching alerts:", {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status
+        });
         
-        if (err.response?.status === 401) {
+        if (err.code === 'ECONNABORTED') {
+          toast.error("Request timeout while loading alerts.", {
+            position: "top-right",
+            autoClose: 3000,
+            theme: theme === "dark" ? "dark" : "light",
+          });
+        } else if (err.response?.status === 401) {
           setError("Authentication failed. Please login again.");
           toast.error("Session expired. Please login again.", {
             position: "top-right",
             autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
             theme: theme === "dark" ? "dark" : "light",
             style: { fontSize: "1.2rem" },
           });
@@ -184,15 +1037,11 @@ const UserDashboard = ({ onLogout }) => {
             onLogout();
           }
         } else {
-          setError(err.message || "Failed to load alerts");
-          toast.error(err.message || "Failed to load alerts", {
+          const errorMessage = err.response?.data?.message || err.message || "Failed to load alerts";
+          setError(errorMessage);
+          toast.error(errorMessage, {
             position: "top-right",
             autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-            progress: undefined,
             theme: theme === "dark" ? "dark" : "light",
             style: { fontSize: "1.2rem" },
           });
@@ -202,54 +1051,48 @@ const UserDashboard = ({ onLogout }) => {
       }
     };
 
-    const token = localStorage.getItem("token");
-    const userId = localStorage.getItem("userId");
-    
-    if (token && userId) {
-      fetchAlerts();
-    } else {
-      setLoading(false);
-    }
+    fetchAlerts();
   }, [theme, onLogout]);
 
-  // Calculate percentage changes for stats
+  // Enhanced percentage calculation
   const calculateChange = (current, previous = 0) => {
+    if (isNaN(current)) return "0%";
     if (previous === 0) return current > 0 ? "+100%" : "0%";
     const change = ((current - previous) / previous) * 100;
     return change > 0 ? `+${Math.round(change)}%` : `${Math.round(change)}%`;
   };
 
-  // Dynamic stats based on API data with icons
+  // Enhanced stats with better error handling
   const stats = [
     { 
       title: "Total Leads", 
-      value: leadsLoading ? "..." : leadsData.totalLeads.toString(), 
+      value: leadsLoading ? "..." : (leadsData.totalLeads || 0).toString(), 
       change: leadsLoading ? "..." : calculateChange(leadsData.totalLeads), 
-      trend: leadsData.totalLeads > 0 ? "up" : "down",
+      trend: (leadsData.totalLeads || 0) > 0 ? "up" : "down",
       icon: BarChart3,
       description: "All leads in your pipeline"
     },
     { 
       title: "Qualified Leads", 
-      value: leadsLoading ? "..." : leadsData.qualifiedLeads.toString(), 
+      value: leadsLoading ? "..." : (leadsData.qualifiedLeads || 0).toString(), 
       change: leadsLoading ? "..." : calculateChange(leadsData.qualifiedLeads), 
-      trend: leadsData.qualifiedLeads > 0 ? "up" : "down",
+      trend: (leadsData.qualifiedLeads || 0) > 0 ? "up" : "down",
       icon: Target,
       description: "Leads ready for conversion"
     },
     { 
       title: "Pending Leads", 
-      value: leadsLoading ? "..." : leadsData.pendingLeads.toString(), 
+      value: leadsLoading ? "..." : (leadsData.pendingLeads || 0).toString(), 
       change: leadsLoading ? "..." : calculateChange(leadsData.pendingLeads), 
-      trend: leadsData.pendingLeads > 0 ? "up" : "down",
+      trend: (leadsData.pendingLeads || 0) > 0 ? "up" : "down",
       icon: Clock,
       description: "Awaiting follow-up"
     },
     { 
       title: "Loss Leads", 
-      value: leadsLoading ? "..." : leadsData.lossLeads.toString(), 
+      value: leadsLoading ? "..." : (leadsData.lossLeads || 0).toString(), 
       change: leadsLoading ? "..." : calculateChange(leadsData.lossLeads), 
-      trend: leadsData.lossLeads > 0 ? "up" : "down",
+      trend: (leadsData.lossLeads || 0) > 0 ? "up" : "down",
       icon: AlertCircle,
       description: "Leads that didn't convert"
     },
@@ -319,9 +1162,10 @@ const UserDashboard = ({ onLogout }) => {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
+        timeout: 10000
       });
 
-      if (response.data && response.data.data) {
+      if (response.data && response.data.data && Array.isArray(response.data.data)) {
         const userAlerts = response.data.data
           .filter((alert) => alert.uid === userId)
           .sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -338,7 +1182,7 @@ const UserDashboard = ({ onLogout }) => {
     }
   };
 
-  // Function to refresh both leads data and alerts
+  // Enhanced refresh function with better error handling
   const refreshDashboardData = async () => {
     setLeadsLoading(true);
     setLoading(true);
@@ -347,39 +1191,53 @@ const UserDashboard = ({ onLogout }) => {
       const token = localStorage.getItem("token");
       const userId = localStorage.getItem("userId");
 
-      if (!token || !userId) return;
-
-      // Fetch leads data
-      const leadsResponse = await axios.get(`${API_BASE_URL}/api/leads/dashboardLeads`, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      });
-
-      if (leadsResponse.data) {
-        setLeadsData({
-          totalLeads: leadsResponse.data.totalLeads || 0,
-          qualifiedLeads: leadsResponse.data.qualifiedLeads || 0,
-          pendingLeads: leadsResponse.data.pendingLeads || 0,
-          lossLeads: leadsResponse.data.lossLeads || 0
+      if (!token || !userId) {
+        toast.error("Please login to refresh data", {
+          position: "top-right",
+          autoClose: 3000,
+          theme: theme === "dark" ? "dark" : "light",
         });
+        return;
       }
 
-      // Fetch alerts data
-      const alertsResponse = await axios.get(`${API_BASE_URL}/api/alert`, {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-      });
+      // Fetch leads data and alerts concurrently
+      const [leadsResponse, alertsResponse] = await Promise.allSettled([
+        axios.get(`${API_BASE_URL}/api/leads/dashboardLeads`, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        }),
+        axios.get(`${API_BASE_URL}/api/alert`, {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          timeout: 10000
+        })
+      ]);
 
-      if (alertsResponse.data && alertsResponse.data.data) {
-        const userAlerts = alertsResponse.data.data
+      // Handle leads response
+      if (leadsResponse.status === 'fulfilled' && leadsResponse.value.data) {
+        setLeadsData({
+          totalLeads: parseInt(leadsResponse.value.data.totalLeads) || 0,
+          qualifiedLeads: parseInt(leadsResponse.value.data.qualifiedLeads) || 0,
+          pendingLeads: parseInt(leadsResponse.value.data.pendingLeads) || 0,
+          lossLeads: parseInt(leadsResponse.value.data.lossLeads) || 0
+        });
+      } else {
+        console.error("Failed to fetch leads:", leadsResponse.reason);
+      }
+
+      // Handle alerts response
+      if (alertsResponse.status === 'fulfilled' && alertsResponse.value.data?.data) {
+        const userAlerts = alertsResponse.value.data.data
           .filter((alert) => alert.uid === userId)
           .sort((a, b) => new Date(b.date) - new Date(a.date));
-
         setAlerts(userAlerts);
+      } else {
+        console.error("Failed to fetch alerts:", alertsResponse.reason);
       }
 
       toast.success("Dashboard refreshed successfully! ✨", {
@@ -423,11 +1281,11 @@ const UserDashboard = ({ onLogout }) => {
              <div className="flex flex-row justify-between rounded-lg py-4 p-5 mb-4 items-center bg-[#ff8633]">
                 <div className="bg-[#ff8633] rounded-lg p-6 mb-6 text-white">
                   <h1 className="text-2xl font-bold mb-2">
-                    Welcome back, {user.name} !
+                    Welcome back, {user?.name || 'User'} !
                   </h1>
                   <p className="opacity-90">
                     Your Assigned Work:{" "}
-                    {user.assignedWork || "Nothing is assigned to you."}.
+                    {user?.assignedWork || "Nothing is assigned to you."}.
                   </p>
                 </div>
                 <div>
@@ -486,6 +1344,20 @@ const UserDashboard = ({ onLogout }) => {
                   )}
                 </button>
               </div>
+
+              {/* Debug Information (remove in production) */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mb-4 p-4 bg-gray-100 dark:bg-gray-800 rounded-lg text-sm">
+                  <p><strong>Debug Info:</strong></p>
+                  <p>Leads Loading: {leadsLoading ? 'true' : 'false'}</p>
+                  <p>Alerts Loading: {loading ? 'true' : 'false'}</p>
+                  <p>Leads Data: {JSON.stringify(leadsData)}</p>
+                  <p>Alerts Count: {alerts.length}</p>
+                  <p>API Base URL: {API_BASE_URL}</p>
+                  <p>Token: {localStorage.getItem("token") ? 'Present' : 'Missing'}</p>
+                  <p>User ID: {localStorage.getItem("userId") || 'Missing'}</p>
+                </div>
+              )}
 
               {/* Enhanced Stats Cards */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -614,6 +1486,20 @@ const UserDashboard = ({ onLogout }) => {
                         <div className="animate-spin rounded-full h-10 w-10 border-2 border-purple-600 border-t-transparent mx-auto mb-4"></div>
                         <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Loading alerts...</p>
                       </div>
+                    ) : error ? (
+                      <div className="text-center py-12">
+                        <div className="w-20 h-20 bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/20 dark:to-red-800/30 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                          <AlertCircle className="h-10 w-10 text-red-500" />
+                        </div>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">Error loading alerts</p>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{error}</p>
+                        <button
+                          onClick={() => window.location.reload()}
+                          className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                        >
+                          Try Again
+                        </button>
+                      </div>
                     ) : alerts.length > 0 ? (
                       <div className="space-y-4">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -636,27 +1522,31 @@ const UserDashboard = ({ onLogout }) => {
                             
                             return (
                               <div
-                                key={alert.id}
+                                key={alert.id || `alert-${index}`}
                                 className={`p-4 ${colorScheme.bg} ${colorScheme.border} rounded-xl transition-all duration-300 group cursor-pointer border hover:shadow-lg transform hover:-translate-y-1`}
                               >
                                 <div className={`w-10 h-10 ${colorScheme.iconBg} rounded-lg flex items-center justify-center mb-3 transition-all duration-300 group-hover:scale-110`}>
                                   <Bell className={`h-5 w-5 ${colorScheme.iconColor}`} />
                                 </div>
                                 <p className="text-sm font-bold text-gray-900 dark:text-white mb-2 line-clamp-1">
-                                  {alert.topic}
+                                  {alert.topic || 'No topic'}
                                 </p>
                                 <div className="space-y-1 mb-2">
                                   <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                                     <Calendar className="h-3 w-3" />
-                                    {new Date(alert.date).toLocaleDateString()}
+                                    {alert.date ? new Date(alert.date).toLocaleDateString('en-US', {
+                                      year: 'numeric',
+                                      month: 'short',
+                                      day: 'numeric'
+                                    }) : 'No date'}
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
                                     <Clock className="h-3 w-3" />
-                                    {alert.time}
+                                    {alert.time || 'No time'}
                                   </div>
                                 </div>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">
-                                  {alert.remainder}
+                                  {alert.remainder || alert.description || 'No description'}
                                 </p>
                               </div>
                             );
