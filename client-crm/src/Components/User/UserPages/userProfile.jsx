@@ -10,8 +10,6 @@ import { UserFooter } from '../common/UserFooter';
 
 const ProfileofUser = ({ collapsed, onLogout }) => {
   const [currentUser, setCurrentUser] = useState(null);
-  const [userInfo, setUserInfo] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [editPanelOpen, setEditPanelOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [apiError, setApiError] = useState(null);
@@ -41,20 +39,17 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
     };
 
     const handleSkillChange = (index, value) => {
-      const newSkills = [...(editedProfile.skills || [])];
+      const newSkills = [...editedProfile.skills];
       newSkills[index] = value;
       setEditedProfile(prev => ({ ...prev, skills: newSkills }));
     };
 
     const addSkill = () => {
-      setEditedProfile(prev => ({ 
-        ...prev, 
-        skills: [...(prev.skills || []), ''] 
-      }));
+      setEditedProfile(prev => ({ ...prev, skills: [...prev.skills, ''] }));
     };
 
     const removeSkill = (index) => {
-      const newSkills = (editedProfile.skills || []).filter((_, i) => i !== index);
+      const newSkills = editedProfile.skills.filter((_, i) => i !== index);
       setEditedProfile(prev => ({ ...prev, skills: newSkills }));
     };
 
@@ -127,7 +122,7 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                 <div className="space-y-4">
                   <h3 className="font-semibold text-lg text-[#ff8633]">Skills</h3>
                   <div className="space-y-3">
-                    {(editedProfile.skills || []).map((skill, index) => (
+                    {editedProfile.skills?.map((skill, index) => (
                       <div key={index} className="flex items-center gap-2 dark:text-gray-400">
                         <input
                           type="text"
@@ -219,8 +214,12 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
         theme: theme === 'dark' ? 'dark' : 'light',
       });
 
-      // Refresh user data after update
-      await loadUserProfile();
+      const { data } = await axios.get(`${API_BASE_URL}/api/usersData`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      const matchedUser = data.find(user => user.id === updatedUser.id);
+      setCurrentUser(matchedUser);
 
     } catch (err) {
       console.error("Profile update error:", err);
@@ -239,109 +238,83 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
     }
   };
 
-  const loadUserProfile = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      const storedUserId = localStorage.getItem('userId');
-      const storedUsername = localStorage.getItem('username');
-
-      if (!token || !storedUserId) {
-        throw new Error('Missing authentication data');
-      }
-
-      // Fetch user info from the new API
-      const userInfoResponse = await axios.get(`${API_BASE_URL}/api/allUser/info/`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      // Fetch detailed user data
-      const userDataResponse = await axios.get(`${API_BASE_URL}/api/usersData`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-
-      const allUsers = userDataResponse.data;
-      const matchedUser = allUsers.find(user =>
-        user.id === storedUserId &&
-        user.username === storedUsername
-      );
-
-      if (!matchedUser) {
-        throw new Error('User data mismatch');
-      }
-
-      setUserInfo(userInfoResponse.data);
-      setCurrentUser(matchedUser);
-
-    } catch (error) {
-      console.error('Profile loading error:', error);
-      const errorMessage = error.response?.data?.message ||
-        error.message ||
-        "Failed to load profile data";
-
-      toast.error(errorMessage, {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-        theme: theme === 'dark' ? 'dark' : 'light',
-        style: { fontSize: '1.2rem' },
-      });
-      onLogout();
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const storedUserId = localStorage.getItem('userId');
+        const storedUsername = localStorage.getItem('username');
+
+        if (!token || !storedUserId) {
+          throw new Error('Missing authentication data');
+        }
+
+        const response = await axios.get(`${API_BASE_URL}/api/usersData`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const allUsers = response.data;
+        const matchedUser = allUsers.find(user =>
+          user.id === storedUserId &&
+          user.username === storedUsername
+        );
+
+        if (!matchedUser) {
+          throw new Error('User data mismatch');
+        }
+
+        setCurrentUser(matchedUser);
+
+      } catch (error) {
+        console.error('Profile loading error:', error);
+        const errorMessage = error.response?.data?.message ||
+          error.message ||
+          "Failed to load profile data";
+
+        toast.error(errorMessage, {
+          position: "top-right",
+          autoClose: 5000,
+          theme: theme === 'dark' ? 'dark' : 'light',
+          style: { fontSize: '1.2rem' },
+        });
+        onLogout();
+      }
+    };
+
     loadUserProfile();
   }, [onLogout]);
 
-  // Combine user info and current user data
-  const user = currentUser && userInfo ? {
+  const user = currentUser ? {
     id: currentUser.id,
-    name: `${userInfo.firstName} ${userInfo.lastName}`,
+    name: `${currentUser.firstName} ${currentUser.lastName}`,
     email: currentUser.email,
     role: currentUser.role,
     joinDate: new Date(currentUser.createdAt).toLocaleDateString(),
     lastLogin: 'Recently',
-    avatar: userInfo.photo || '/default-avatar.png',
-    bio: currentUser.about || `User with username ${userInfo.username}`,
-    skills: currentUser.skills || [],
+    avatar: currentUser.photo || 'https://randomuser.me/api/portraits/men/32.jpg',
+    bio: currentUser.about || `User with username ${currentUser.username}`,
+    skills: currentUser.skills || ['User Management', 'Profile Editing'],
     phoneNumber: currentUser.phoneNumber || 'Not provided',
     assignedWork: currentUser.assignedWork || 'No assigned work',
-    statusOfWork: currentUser.statusOfWork || 'Unknown',
-    username: userInfo.username
+    statusOfWork: currentUser.statusOfWork || 'Unknown'
   } : {
-    name: 'Loading...',
-    email: 'Loading...',
+    name: 'User',
+    email: 'No email',
     role: 'user',
-    joinDate: 'Loading...',
-    lastLogin: 'Loading...',
-    avatar: '/default-avatar.png',
-    bio: 'Loading user information...',
+    joinDate: 'Unknown',
+    lastLogin: 'Unknown',
+    avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
+    bio: 'User information not available',
     skills: [],
-    phoneNumber: 'Loading...',
-    assignedWork: 'Loading...',
-    statusOfWork: 'Loading...',
-    username: 'Loading...'
+    phoneNumber: 'Not provided',
+    assignedWork: 'No data',
+    statusOfWork: 'Unknown'
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-slate-800 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-[#ff8633]"></div>
-      </div>
-    );
-  }
 
   return (
     <>
       <UserHeader onToggleSidebar={toggleSidebar} />
-      <UserSidebar isOpen={isSidebarOpen} onClose={closeSidebar} >
+      <UserSidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
         <div className={cn(
           "transition-all duration-300 ease-in-out min-h-screen dark:bg-slate-900",
           collapsed ? "md:ml-[70px]" : "md:ml-[0px]"
@@ -351,7 +324,6 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
               <div className="w-full max-w-4xl dark:bg-slate-800 rounded-xl overflow-hidden">
                 <div className="bg-gradient-to-r from-[#ff8633] to-[#ff9a5a] p-4 sm:p-6 text-center">
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-10">
-                    {/* Avatar with optimized sizing */}
                     <div className="flex justify-center">
                       <img
                         className="h-24 w-24 sm:h-28 sm:w-28 md:h-32 md:w-32 lg:h-36 lg:w-36 xl:h-40 xl:w-40 2xl:h-44 2xl:w-44 rounded-full border-4 border-white shadow-md object-cover"
@@ -359,25 +331,18 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                         alt="User avatar"
                         loading="eager"
                         decoding="async"
-                        onError={(e) => {
-                          e.target.src = '/default-avatar.png';
-                        }}
                       />
                     </div>
 
-                    {/* Name and Role */}
                     <div className="text-center sm:text-left">
                       <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-white">{user.name}</h1>
                       <p className="text-white/90 capitalize text-sm sm:text-base md:text-lg">{user.role}</p>
-                      <p className="text-white/80 text-sm">@{user.username}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* Profile Content */}
                 <div className="p-6 md:p-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Personal Info Section */}
                     <div className="space-y-6 text-center lg:text-left">
                       <div>
                         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200">
@@ -391,10 +356,6 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                           <div>
                             <p className="text-sm font-medium text-gray-500 dark:text-gray-100">Phone</p>
                             <p className="mt-1 text-gray-800 dark:text-gray-400">{user.phoneNumber}</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium text-gray-500 dark:text-gray-100">Username</p>
-                            <p className="mt-1 text-gray-800 dark:text-gray-400">@{user.username}</p>
                           </div>
                           <div>
                             <p className="text-sm font-medium text-gray-500 dark:text-gray-100">Member Since</p>
@@ -420,7 +381,6 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                       </div>
                     </div>
 
-                    {/* About & Skills Section */}
                     <div className="space-y-6">
                       <div>
                         <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200 dark:text-gray-400">
@@ -434,24 +394,19 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
                           Skills
                         </h2>
                         <div className="flex flex-wrap gap-2">
-                          {user.skills.length > 0 ? (
-                            user.skills.map((skill, index) => (
-                              <span
-                                key={index}
-                                className="px-3 py-1 bg-[#ff8633]/10 text-[#ff8633] rounded-full text-sm font-medium"
-                              >
-                                {skill}
-                              </span>
-                            ))
-                          ) : (
-                            <p className="text-gray-500 dark:text-gray-400 italic">No skills added yet</p>
-                          )}
+                          {user.skills.map((skill, index) => (
+                            <span
+                              key={index}
+                              className="px-3 py-1 bg-[#ff8633]/10 text-[#ff8633] rounded-full text-sm font-medium"
+                            >
+                              {skill}
+                            </span>
+                          ))}
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
                   <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
                     <button
                       onClick={() => setEditPanelOpen(true)}
@@ -465,7 +420,6 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
             </div>
           </div>
 
-          {/* Edit Profile Popup */}
           {editPanelOpen && (
             <>
               <div 
