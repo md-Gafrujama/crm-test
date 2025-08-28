@@ -234,13 +234,19 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
       setApiError(null);
 
       const token = localStorage.getItem('token');
+      const userId = localStorage.getItem('userId');
+      
       if (!token) {
         throw new Error('Authentication token not found');
       }
 
-      // Update user profile API call
+      if (!userId) {
+        throw new Error('User ID not found');
+      }
+
+      // Update user profile using your update-profile API
       const response = await axios.put(
-        `${API_BASE_URL}/api/user/profile`,
+        `${API_BASE_URL}/api/update-profile/${userId}`,
         {
           firstName: updatedUser.firstName,
           lastName: updatedUser.lastName,
@@ -259,11 +265,23 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
       );
 
       if (response.data) {
-        // Update the current user state with the updated data
-        setCurrentUser(prev => ({
-          ...prev,
-          ...updatedUser
-        }));
+        // Fetch updated user data from usersData API to ensure consistency
+        const { data: allUsers } = await axios.get(`${API_BASE_URL}/api/usersData`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+
+        // Find the updated user in the response
+        const updatedUserData = allUsers.find(user => user.id === userId);
+        
+        if (updatedUserData) {
+          setCurrentUser(updatedUserData);
+        } else {
+          // Fallback: update current state with the form data
+          setCurrentUser(prev => ({
+            ...prev,
+            ...updatedUser
+          }));
+        }
 
         setEditPanelOpen(false);
 
