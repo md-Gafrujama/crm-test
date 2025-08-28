@@ -79,39 +79,40 @@ const UserLeads = ({ collapsed, onLogout }) => {
   const [showAddLeadForm, setShowAddLeadForm] = useState(false);
   const [leadsLoading, setLeadsLoading] = useState(false);
 
-  // Initialize leadsData with proper default structure
+  // Initialize leadsData with proper default structure matching the new API response
   const [leadsData, setLeadsData] = useState({
     allLeads: 0,
-    allNewLeads: [],
-    newLeadsCount: 0,
+    totalLeads: 0,
+    allNew: [],
+    allnewCount: 0,
     allContacted: [],
-    contactedCount: 0,
+    allcontactedCount: 0,
     allEngaged: [],
-    engagedCount: 0,
+    allengagedCount: 0,
     allQualified: [],
-    qualifiedCount: 0,
+    allqualifiedCount: 0,
     allProposalSent: [],
-    proposalSentCount: 0,
+    allproposalsentCount: 0,
     allNegotiation: [],
-    negotiationCount: 0,
+    allnegotiationCount: 0,
     allClosedWon: [],
-    closedWonCount: 0,
+    allclosedwonCount: 0,
     allClosedLost: [],
-    closedLostCount: 0,
+    allclosedlostCount: 0,
     allOnHold: [],
-    onHoldCount: 0,
-    allDoNotContact: [],
-    doNotContactCount: 0,
+    allonholdCount: 0,
+    "allDoNot Contact": [],
+    "alldonot contactCount": 0,
   });
 
   const navigate = useNavigate();
 
-  // Safe way to combine all leads with proper null checks
+  // Safe way to combine all leads with proper null checks - updated for new API response structure
   const allCombinedLeads = React.useMemo(() => {
     if (!leadsData) return [];
     
     return [
-      ...(Array.isArray(leadsData.allNewLeads) ? leadsData.allNewLeads : []),
+      ...(Array.isArray(leadsData.allNew) ? leadsData.allNew : []),
       ...(Array.isArray(leadsData.allContacted) ? leadsData.allContacted : []),
       ...(Array.isArray(leadsData.allEngaged) ? leadsData.allEngaged : []),
       ...(Array.isArray(leadsData.allQualified) ? leadsData.allQualified : []),
@@ -120,7 +121,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
       ...(Array.isArray(leadsData.allClosedWon) ? leadsData.allClosedWon : []),
       ...(Array.isArray(leadsData.allClosedLost) ? leadsData.allClosedLost : []),
       ...(Array.isArray(leadsData.allOnHold) ? leadsData.allOnHold : []),
-      ...(Array.isArray(leadsData.allDoNotContact) ? leadsData.allDoNotContact : []),
+      ...(Array.isArray(leadsData["allDoNot Contact"]) ? leadsData["allDoNot Contact"] : []),
     ];
   }, [leadsData]);
 
@@ -683,13 +684,13 @@ const UserLeads = ({ collapsed, onLogout }) => {
       setLeadsData(prevData => {
         const newData = JSON.parse(JSON.stringify(prevData));
         
-        // Helper function to update leads in any status array
+        // Helper function to update leads in any status array - updated for new API structure
         const updateStatusArray = (arr) => 
           Array.isArray(arr) ? arr.map(lead => lead.id === updatedLead.id ? response.data : lead) : [];
         
         return {
           ...newData,
-          allNewLeads: updateStatusArray(newData.allNewLeads || []),
+          allNew: updateStatusArray(newData.allNew || []),
           allContacted: updateStatusArray(newData.allContacted || []),
           allEngaged: updateStatusArray(newData.allEngaged || []),
           allQualified: updateStatusArray(newData.allQualified || []),
@@ -698,7 +699,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
           allClosedWon: updateStatusArray(newData.allClosedWon || []),
           allClosedLost: updateStatusArray(newData.allClosedLost || []),
           allOnHold: updateStatusArray(newData.allOnHold || []),
-          allDoNotContact: updateStatusArray(newData.allDoNotContact || []),
+          "allDoNot Contact": updateStatusArray(newData["allDoNot Contact"] || []),
         };
       });
 
@@ -768,8 +769,8 @@ const UserLeads = ({ collapsed, onLogout }) => {
         headers: { Authorization: `Bearer ${token}` },
       });
       
-      // Ensure we have valid data structure
-      if (data && data.data) {
+      // Ensure we have valid data structure - updated for new API response
+      if (data && data.success && data.data) {
         setLeadsData(data.data);
       }
     } catch (err) {
@@ -793,7 +794,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
     }
   };
 
-  // UserProfile.jsx
+  // Updated useEffect to use /api/usersData endpoint and handle new response structure
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
@@ -814,33 +815,35 @@ const UserLeads = ({ collapsed, onLogout }) => {
           throw new Error("Missing authentication data");
         }
 
-        console.log("Fetching user data...");
-        const response = await axios.get(`${API_BASE_URL}/api/allUser`, {
+        console.log("Fetching user data from /api/usersData...");
+        const response = await axios.get(`${API_BASE_URL}/api/usersData`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        const allUsers = response.data;
-        console.log("Received users:", allUsers);
+        console.log("API Response:", response.data);
 
-        // 3. Find matching user with proper validation
-        if (!Array.isArray(allUsers)) {
-          throw new Error("Invalid users data received");
+        // 3. Handle new API response structure
+        if (!response.data || !response.data.success || !response.data.data) {
+          throw new Error("Invalid API response structure");
         }
 
-        const matchedUser = allUsers.find(
-          (user) => user && user.id === storedUserId && user.username === storedUsername
-        );
+        const userData = response.data.data.user;
 
-        if (!matchedUser) {
-          console.error(
-            "No matching user found. Available users:",
-            allUsers.map((u) => ({ id: u?.id, username: u?.username }))
-          );
+        if (!userData) {
+          throw new Error("No user data in API response");
+        }
+
+        // 4. Validate user data matches stored credentials
+        if (userData.id !== storedUserId || userData.username !== storedUsername) {
+          console.error("User data mismatch:", {
+            received: { id: userData.id, username: userData.username },
+            stored: { id: storedUserId, username: storedUsername }
+          });
           throw new Error("User data mismatch");
         }
 
-        console.log("Matched user:", matchedUser);
-        setCurrentUser(matchedUser);
+        console.log("Matched user:", userData);
+        setCurrentUser(userData);
         setLoading(false);
 
         console.groupEnd();
@@ -871,7 +874,7 @@ const UserLeads = ({ collapsed, onLogout }) => {
     loadUserProfile();
   }, [onLogout, theme]);
 
-  // the leads of the user
+  // Updated leads fetching useEffect to handle new API response structure
   useEffect(() => {
     const fetchLeadsData = async () => {
       try {
@@ -900,36 +903,39 @@ const UserLeads = ({ collapsed, onLogout }) => {
           },
         });
 
-        console.log("Leads data:", response.data); // Debug log
+        console.log("Leads data response:", response.data);
         
-        // Validate response structure
-        if (response.data && response.data.data) {
-          setLeadsData(response.data.data);
+        // Validate new API response structure
+        if (response.data && response.data.success && response.data.data) {
+          // Extract leads data from the new structure
+          const leadsDataFromAPI = response.data.data;
+          setLeadsData(leadsDataFromAPI);
         } else {
           console.warn("Invalid leads data structure:", response.data);
           // Set default structure if invalid
           setLeadsData({
             allLeads: 0,
-            allNewLeads: [],
-            newLeadsCount: 0,
+            totalLeads: 0,
+            allNew: [],
+            allnewCount: 0,
             allContacted: [],
-            contactedCount: 0,
+            allcontactedCount: 0,
             allEngaged: [],
-            engagedCount: 0,
+            allengagedCount: 0,
             allQualified: [],
-            qualifiedCount: 0,
+            allqualifiedCount: 0,
             allProposalSent: [],
-            proposalSentCount: 0,
+            allproposalsentCount: 0,
             allNegotiation: [],
-            negotiationCount: 0,
+            allnegotiationCount: 0,
             allClosedWon: [],
-            closedWonCount: 0,
+            allclosedwonCount: 0,
             allClosedLost: [],
-            closedLostCount: 0,
+            allclosedlostCount: 0,
             allOnHold: [],
-            onHoldCount: 0,
-            allDoNotContact: [],
-            doNotContactCount: 0,
+            allonholdCount: 0,
+            "allDoNot Contact": [],
+            "alldonot contactCount": 0,
           });
         }
       } catch (error) {
