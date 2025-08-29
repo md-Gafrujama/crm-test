@@ -13,9 +13,6 @@ import CombinedAlertReminder from "../../CombinedForUser&Admin/CombinedAlertRemi
 
 const UserDashboard = ({ onLogout }) => {
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebarUser();
-
-
-  // State for enhanced user data from /api/usersData
   const [currentUser, setCurrentUser] = useState(null);
   const [userLoading, setUserLoading] = useState(true);
 
@@ -60,7 +57,6 @@ const UserDashboard = ({ onLogout }) => {
     }
   }, [navigate, onLogout, theme]);
 
-  // Fetch current user data from /api/usersData (UPDATED)
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
@@ -378,7 +374,6 @@ const UserDashboard = ({ onLogout }) => {
     },
   ];
 
-  // Enhanced callback to refresh alerts when a new one is added
   const handleAlertAdded = async () => {
     setShowAddAlertReminderForm(false);
     
@@ -426,7 +421,6 @@ const UserDashboard = ({ onLogout }) => {
     }
   };
 
-  // Function to refresh all dashboard data including user info (UPDATED USER PART ONLY)
   const refreshDashboardData = async () => {
     setLeadsLoading(true);
     setLoading(true);
@@ -438,7 +432,6 @@ const UserDashboard = ({ onLogout }) => {
 
       if (!token || !userId) return;
 
-      // Fetch user data from /api/usersData (UPDATED)
       const userResponse = await axios.get(`${API_BASE_URL}/api/usersData`, {
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -465,7 +458,6 @@ const UserDashboard = ({ onLogout }) => {
         });
       }
 
-      // Fetch leads data (UNCHANGED)
       const leadsResponse = await axios.get(`${API_BASE_URL}/api/leads/dashboardLeads`, {
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -482,7 +474,6 @@ const UserDashboard = ({ onLogout }) => {
         });
       }
 
-      // Fetch alerts data (UNCHANGED)
       const alertsResponse = await axios.get(`${API_BASE_URL}/api/alert`, {
         headers: { 
           Authorization: `Bearer ${token}`,
@@ -530,7 +521,6 @@ const UserDashboard = ({ onLogout }) => {
     }
   };
 
-  // Get the display user (prioritize currentUser from /api/usersData, fallback to personalDetailsUser)
   const displayUser = currentUser || {};
 
   return (

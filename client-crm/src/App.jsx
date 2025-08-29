@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './Pages/login.jsx';
+import SuperAdminRegister from './Pages/superadmin.jsx';
 // import Sign from './Components/Admin/Forms/sign.jsx'
 import Dashboard from './Components/Admin/AdminPages/dashboard.jsx';
+import SuperAdminDashboard from './Components/SuperAdmin/SuperAdminPages/dashboard.jsx';
 import UserProfile from './Components/User/UserPages/userProfile.jsx';
 import Register from './Components/Admin/Forms/register.jsx';
 import './App.css';
@@ -59,7 +61,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem("loggedIn");
     localStorage.removeItem("userType");
-    localStorage.removeItem("token"); 
+    localStorage.removeItem("token");
     setIsLoggedIn(false);
     setUserType(null);
     
@@ -131,9 +133,10 @@ function App() {
           <Route path="/all-alerts-reminders" element={<CombinedAlertReminderDisplay/>} />
           <Route path="/all-activities" element={<AllActivities/>} />
           <Route path="/employee-page" element={<EmployeePage/>} />
-      
           <Route path="/all-employees" element={<AllEmployees />} />
           <Route path="/all-locked-users" element={<AllLockedUsers />} />
+          <Route path="/super-admin-login" element={<SuperAdminRegister/>} />
+          <Route path="/superadmin" element={<SuperAdminDashboard/>} />
         </Route>
 
         {/* Fallback */}
