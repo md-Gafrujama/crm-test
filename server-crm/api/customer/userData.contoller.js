@@ -24,6 +24,8 @@ const data = {
           statusOfWork: true,
           statusOfAccount: true,
           companyId: true,
+          skills:true,
+          about:true
         },
       });
 
