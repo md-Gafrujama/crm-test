@@ -15,11 +15,11 @@ export const navbarLinks = [
                 icon: UserCircle,
                 path: "/userProfile",
             },
-            // {
-            //     label: "Analytics",
-            //     icon: ChartColumn,
-            //     path: "/user-analytics",
-            // },
+            {
+                label: "Analytics",
+                icon: ChartColumn,
+                path: "/user-analytics",
+            },
         ],
     },
     {
