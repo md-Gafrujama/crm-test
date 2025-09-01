@@ -1,4 +1,4 @@
-import { Share2,Radar,FileText,BellPlus,LayoutDashboard,UserCircle,List,FilePlus,Settings,} from "lucide-react";
+import { Share2,Radar,FileText,ChartColumn, BellPlus,LayoutDashboard,UserCircle,List,FilePlus,Settings,} from "lucide-react";
 
 
 export const navbarLinks = [
@@ -14,6 +14,11 @@ export const navbarLinks = [
                 label: "My Profile",
                 icon: UserCircle,
                 path: "/userProfile",
+            },
+            {
+                label: "Analytics",
+                icon: ChartColumn,
+                path: "/user-analytics",
             },
         ],
     },

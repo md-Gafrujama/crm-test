@@ -1,5 +1,5 @@
 import { Share2,Radar,FileText,BellPlus,LayoutDashboard,UserCircle,List,FilePlus,Settings,} from "lucide-react";
-
+import { ChartColumn, Building2,NotepadText, Package, PackagePlus, ShoppingBag, UserCheck, UserPlus, Users } from "lucide-react";
 
 export const navbarLinks = [
     {
@@ -50,6 +50,21 @@ export const navbarLinks = [
     //             icon: FileText,
     //             path: "/user-report",
     //         },
+    //     ],
+    // },
+    // {
+    //     title: "External Data",
+    //     links: [
+    //         {
+    //             label: "Quoreb2b",
+    //             icon: Building2,
+    //             path: "/quore-comments",
+    //         },
+    //         {
+    //             label: "CompareBazar",
+    //             icon: Building2,
+    //             path: "/compare-comments",
+    //         }
     //     ],
     // },
     // {

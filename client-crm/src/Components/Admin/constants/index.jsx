@@ -42,21 +42,21 @@ export const navbarLinks = [
             }
         ],
     },
-    {
-        title: "External Data",
-        links: [
-            {
-                label: "Quoreb2b",
-                icon: Building2,
-                path: "/quore-comments",
-            },
-            {
-                label: "CompareBazar",
-                icon: Building2,
-                path: "/compare-comments",
-            }
-        ],
-    },
+    // {
+    //     title: "External Data",
+    //     links: [
+    //         {
+    //             label: "Quoreb2b",
+    //             icon: Building2,
+    //             path: "/quore-comments",
+    //         },
+    //         {
+    //             label: "CompareBazar",
+    //             icon: Building2,
+    //             path: "/compare-comments",
+    //         }
+    //     ],
+    // },
     {
         title: "Products",
         links: [

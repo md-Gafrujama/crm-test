@@ -38,6 +38,7 @@ import AllEmployees from './Components/CombinedForUser&Admin/AllEmployees.jsx';
 import EmployeePage from './Components/Admin/AdminPages/EmployeePage.jsx';
 import AllLockedUsers from './Components/CombinedForUser&Admin/AllLockedUsers.jsx';
 import { SearchProvider } from './contexts/SearchContext.jsx';
+import UserAnalytics from '/src/Components/User/UserPages/UserAnalytics.jsx';
 
 function App() {
   
@@ -137,6 +138,7 @@ function App() {
           <Route path="/all-locked-users" element={<AllLockedUsers />} />
           <Route path="/super-admin-login" element={<SuperAdminRegister/>} />
           <Route path="/superadmin" element={<SuperAdminDashboard/>} />
+          <Route path="/user-analytics" element={<UserAnalytics/>} />
         </Route>
 
         {/* Fallback */}
@@ -147,5 +149,4 @@ function App() {
     </SearchProvider>
   );
 }
-
 export default App;

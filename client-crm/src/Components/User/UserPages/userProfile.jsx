@@ -539,14 +539,6 @@
 // export default ProfileofUser;
 
 
-
-
-
-
-
-
-
-
 import React, { useState, useEffect,useRef } from 'react';
 import { toast } from 'react-toastify';
 import axios from 'axios';
@@ -1089,12 +1081,16 @@ const ProfileofUser = ({ collapsed, onLogout }) => {
 
                     {/* About & Skills Section */}
                     <div className="space-y-6">
-                      <div>
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200 dark:text-gray-400">
-                          About
-                        </h2>
-                        <p className="text-gray-600 dark:text-gray-400">{user.bio}</p>
-                      </div>
+<div>
+  <h2 className="text-xl font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200 dark:text-gray-400">
+    About
+  </h2>
+  <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-left">
+    {user.bio}
+  </p>
+</div>
+
+
 
                       <div>
                         <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-400 mb-4 pb-2 border-b border-gray-200">
