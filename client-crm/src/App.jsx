@@ -105,7 +105,7 @@ function App() {
             <Route path="/comparebazarcomment" element={<Comparebazar />} />
             <Route path="/contactquore" element={<ContactQuore />} />
             <Route path="/quoreleads" element={<QuoreLeads />} />
-
+            <Route path="/super-admin-login" element={<SuperAdminRegister/>} />
 
             {/* OTP Component tabhi navigate hoga , when otp  is sent */}
 
@@ -136,7 +136,6 @@ function App() {
           <Route path="/employee-page" element={<EmployeePage/>} />
           <Route path="/all-employees" element={<AllEmployees />} />
           <Route path="/all-locked-users" element={<AllLockedUsers />} />
-          <Route path="/super-admin-login" element={<SuperAdminRegister/>} />
           <Route path="/superadmin" element={<SuperAdminDashboard/>} />
           <Route path="/user-analytics" element={<UserAnalytics/>} />
         </Route>
