@@ -136,7 +136,6 @@ function App() {
               <Route path="/all-locked-users" element={<AllLockedUsers />} />
               <Route path="/user-analytics" element={<UserAnalytics />} />
             </Route>
-
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
