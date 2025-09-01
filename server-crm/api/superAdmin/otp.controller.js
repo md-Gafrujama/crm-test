@@ -4,6 +4,9 @@ import jwt from "jsonwebtoken";
 
 const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
+const otpAttempts = new Map();
+
+
 export const sendOtp = async (req, res) => {
   const { email, username, password } = req.body;
 
@@ -18,34 +21,32 @@ export const sendOtp = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials.' });
     }
 
-    if(user.password !== password){
-      return res.status(200).json({
-        msg : " sorry wrong password",
-      })
+    if (user.password !== password) {
+      return res.status(200).json({ msg: 'Sorry, wrong password.' });
     }
+
+    otpAttempts.delete(email);
 
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000); 
 
-    await prisma.OTP.upsert({
-      where: { email },
-      update: {
-        genOTP: otp,
-        attempts: 0,
-        statusOfAccount: 'pending',
-        expiresAt,
-      },
-      create: {
+    await prisma.OTP.create({
+      data: {
         email,
         genOTP: otp,
-        givenOTP: [],
-        attempts: 0,
-        statusOfAccount: 'pending',
         expiresAt,
+        attempts: 0,
       },
     });
 
-    sendVerificationMailforRegisteringCompany(email,otp);
+    otpAttempts.set(email, {
+      attempts: 0,
+      currentOTP: otp,
+      resendCount: 0,
+      expiresAt,
+    });
+
+    await sendVerificationMailforRegisteringCompany(email, otp);
     console.log(`OTP for ${email}: ${otp}`);
 
     return res.status(200).json({ message: 'OTP sent to your email.' });
@@ -55,6 +56,7 @@ export const sendOtp = async (req, res) => {
   }
 };
 
+
 export const verifyOtp = async (req, res) => {
   const { email, otp } = req.body;
 
@@ -63,55 +65,87 @@ export const verifyOtp = async (req, res) => {
   }
 
   try {
-    const otpEntry = await prisma.OTP.findUnique({ where: { email } });
+    const user = await prisma.superAdmin.findUnique({ where: { email } });
 
-    if (!otpEntry) {
-      return res.status(404).json({ message: 'No OTP request found for this email.' });
-    }
-
-    if (otpEntry.expiresAt < new Date()) {
-      return res.status(410).json({ message: 'OTP expired.' });
-    }
-
-    if (otpEntry.genOTP !== otp) {
-      await prisma.OTP.update({
-        where: { email },
-        data: {
-          attempts: otpEntry.attempts + 1,
-          givenOTP: [...otpEntry.givenOTP, otp],
-        },
-      });
-      return res.status(400).json({ message: 'Invalid OTP.' });
-    }
-
-    await prisma.OTP.update({
-      where: { email },
-      data: { statusOfAccount: 'verified' },
-    });
-
-    const superAdmin = await prisma.superAdmin.findUnique({
-      where: { email },
-      select: { id: true, email: true, username: true },
-    });
-
-    if (!superAdmin) {
+    if (!user) {
       return res.status(404).json({ message: 'SuperAdmin user not found.' });
     }
 
+    const attemptData = otpAttempts.get(email);
+
+    if (!attemptData || !attemptData.currentOTP) {
+      return res.status(404).json({ message: 'No OTP request found for this email.' });
+    }
+
+    if (attemptData.expiresAt < new Date()) {
+      otpAttempts.delete(email);
+      return res.status(410).json({ message: 'OTP expired.' });
+    }
+
+    if (attemptData.currentOTP !== otp) {
+      attemptData.attempts += 1;
+      const remainingAttempts = 5 - attemptData.attempts;
+
+      if (attemptData.attempts % 2 === 0 && attemptData.resendCount < 2) {
+        const newOtp = generateOtp();
+        const newExpiry = new Date(Date.now() + 5 * 60 * 1000);
+
+        await prisma.OTP.create({
+          data: {
+            email,
+            genOTP: newOtp,
+            expiresAt: newExpiry,
+            attempts: attemptData.attempts,
+          },
+        });
+
+        attemptData.currentOTP = newOtp;
+        attemptData.resendCount += 1;
+        attemptData.expiresAt = newExpiry;
+
+        await sendVerificationMailforRegisteringCompany(email, newOtp);
+      }
+
+      if (attemptData.attempts >= 5) {
+        await prisma.superAdmin.update({
+          where: { email },
+          data: {
+            statusOfAccount: 'locked',
+            lockedAt: new Date(),
+          },
+        });
+
+        otpAttempts.delete(email);
+        await prisma.OTP.deleteMany({ where: { email } });
+
+        return res.status(403).json({ message: 'Account locked after 5 failed attempts.' });
+      }
+
+      otpAttempts.set(email, attemptData);
+
+      return res.status(401).json({
+        message: `Invalid OTP. ${remainingAttempts} attempts remaining.`,
+        newOTPSent: attemptData.attempts % 2 === 0 && attemptData.resendCount < 2,
+      });
+    }
+
+    otpAttempts.delete(email);
+    await prisma.OTP.deleteMany({ where: { email } });
+
     const token = jwt.sign(
-      { uid: superAdmin.id, role: "superAdmin" },
+      { uid: user.id, role: 'superAdmin',username:user.username,email:user.email },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" } 
+      { expiresIn: '1h' }
     );
 
     return res.status(200).json({
       message: 'OTP verified successfully.',
       token,
       user: {
-        uid: superAdmin.id,
-        email: superAdmin.email,
-        username: superAdmin.username,
-        role: "superAdmin",
+        uid: user.id,
+        email: user.email,
+        username: user.username,
+        role: 'superAdmin',
       },
     });
   } catch (err) {

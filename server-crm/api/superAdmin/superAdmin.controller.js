@@ -62,7 +62,6 @@ const superAdmin = {
         companies.map(async (company) => {
           const [adminCount, employeeCount, leadCount, alertCount] =
             await Promise.all([
-
               prisma.user.count({
                 where: {
                   userType: "admin",
@@ -214,6 +213,149 @@ const superAdmin = {
       });
     }
   },
-};
 
+  async count(req, res) {
+    try {
+      const userType = req.user.userType;
+      if (userType !== "superAdmin") {
+        return res.status(200).json({
+          msg: "You are unauthoried to get the requested data",
+        });
+      }
+      const approvedCount = await prisma.company.count({
+        where: {
+          status: "Approved",
+        },
+      });
+      const pendingCount = await prisma.company.count({
+        where: {
+          status: "Pending",
+        },
+      });
+      const rejectedCount = await prisma.company.count({
+        where: {
+          status: "Rejected",
+        },
+      });
+      const total = approvedCount + rejectedCount + pendingCount;
+      return res.status(200).json({
+        total,
+        approvedCount,
+        pendingCount,
+        rejectedCount,
+      })
+    } catch (error) {
+      res.status(500).json({
+        msg: "Something is not working well in backend, We will fix it soon.",
+        error: error.msg || error,
+      });
+    }
+  },
+
+  async approved(req, res) {
+    try{
+
+      const userType = req.user.userType;
+      if(userType!== "superAdmin"){
+        return res.status(200).json({
+          msg:"Sorry you are not Super Admin to get the data",
+        })
+      }
+
+      const approve = await prisma.company.findMany({
+        where: {
+          status: "Approved",
+        }})
+      
+        const approvedCount = await prisma.company.count({
+        where: {
+          status: "Approved",
+        },
+      });
+
+      return res.status(200).json({
+        data :approve,
+        count:approvedCount,
+      });
+    }
+    catch(error){
+      res.status(500).json({
+        msg:"Something went wrong in server. We will fix it soon",
+        error:error.msg||error,
+      })
+    }
+  },
+
+  async pending(req, res) {
+    try{
+
+      const userType = req.user.userType;
+      if(userType!== "superAdmin"){
+        return res.status(200).json({
+          msg:"Sorry you are not Super Admin to get the data",
+        })
+      }
+
+      const pending = await prisma.company.findMany({
+        where: {
+          status: "Pending",
+        },
+      });
+
+      const pendingCount = await prisma.company.count({
+        where: {
+          status: "Pending",
+        },
+      });
+
+      return res.status(200).json({
+        pending :pending,
+        count : pendingCount
+      })
+
+    }
+    catch(error){
+      res.status(500).json({
+        msg:"Something went wrong in server. We will fix it soon",
+        error:error.msg||error,
+      })
+    }
+  },
+
+  async rejected(req, res) {
+    try{
+
+      const userType = req.user.userType;
+      if(userType!== "superAdmin"){
+        return res.status(200).json({
+          msg:"Sorry you are not Super Admin to get the data",
+        })
+      }
+
+      const rejected = await prisma.company.findMany({
+        where: {
+          status: "Rejected",
+        },
+      });
+
+      const rejectedCount = await prisma.company.count({
+        where: {
+          status: "Rejected",
+        },
+      });
+      
+      return res.status(200).json({
+        rejected:rejected,
+        count:rejectedCount
+      })
+
+    }
+    catch(error){
+      res.status(500).json({
+        msg:"Something went wrong in server. We will fix it soon",
+        error:error.msg||error,
+      })
+    }
+  },
+};
 export default superAdmin;
