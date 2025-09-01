@@ -55,7 +55,7 @@ model superAdmin{
 
 model OTP {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
-  email           String   @unique
+  email           String   
   genOTP          String   
   givenOTP        String[] 
   attempts        Int      
@@ -101,6 +101,11 @@ model company {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   profileImage          String
+
+  //new fields to be updated in frontend
+  companyType String?
+  subscription Boolean @default(false)
+  status       String @default("Pending")
 
   users          User[]               @relation("CompanyUsers")
   employees      Employee[]           @relation("CompanyEmployees")
