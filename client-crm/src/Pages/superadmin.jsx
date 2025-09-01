@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config/api'; 
+
 const OTPVerificationForm = () => {
+  const navigate = useNavigate();
   const [username, setUsername] = useState(''); 
   const [password, setPassword] = useState(''); 
   const [email, setEmail] = useState('');       
@@ -14,7 +17,7 @@ const OTPVerificationForm = () => {
     setStatusMessage('Sending OTP...');
     
     try {
-      const response = await fetch(`${ API_BASE_URL }/api/superAdmin/send-otp`, {
+      const response = await fetch(`${API_BASE_URL}/api/superAdmin/send-otp`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json' 
@@ -43,7 +46,7 @@ const OTPVerificationForm = () => {
     setStatusMessage('Verifying OTP...');
     
     try {
-      const response = await fetch(`${ API_BASE_URL }/api/superAdmin/verify-otp`, {
+      const response = await fetch(`${API_BASE_URL}/api/superAdmin/verify-otp`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json' 
@@ -56,13 +59,18 @@ const OTPVerificationForm = () => {
       if (data.message === 'OTP verified successfully.') {
         setStatusMessage(data.message);
         
-        // Store authentication data
-        sessionStorage.setItem('token', data.token);
-        sessionStorage.setItem('user', JSON.stringify(data.user));
+        // **KEY FIX**: Set the required localStorage values for authentication
+        localStorage.setItem('loggedIn', 'true');
+        localStorage.setItem('userType', 'superadmin');
+        localStorage.setItem('token', data.token || 'superadmin-token');
+        localStorage.setItem('user', JSON.stringify(data.user || { type: 'superadmin' }));
         
-        // Redirect to superadmin page
+        // Trigger a storage event to notify App.js immediately
+        window.dispatchEvent(new Event('storage'));
+        
+        // Navigate directly to superadmin dashboard
         setTimeout(() => {
-          window.location.href = '/superadmin';
+          navigate('/superadmin');
         }, 1000);
       } else {
         setStatusMessage('Invalid OTP. Please try again.');
@@ -85,7 +93,7 @@ const OTPVerificationForm = () => {
     <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px' }}>
       {step === 1 && (
         <div>
-          <h2>Super Admin Login</h2>
+          <h2>Super Admin Registration</h2>
           <div style={{ marginBottom: '15px' }}>
             <label style={{ display: 'block', marginBottom: '5px' }}>Username:</label>
             <input 
@@ -202,7 +210,7 @@ const OTPVerificationForm = () => {
               cursor: loading ? 'not-allowed' : 'pointer'
             }}
           >
-            Back to Login
+            Back to Registration
           </button>
           
           {statusMessage && (
