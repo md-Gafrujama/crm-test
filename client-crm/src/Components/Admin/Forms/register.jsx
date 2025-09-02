@@ -630,10 +630,7 @@
 // export default RecruiterRegister;
 
 
-
-
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { 
   Building, 
   User, 
@@ -651,7 +648,7 @@ import {
 } from 'lucide-react';
 
 const CompanyRegistrationForm = () => {
-  const [step, setStep] = useState(1); // 1 = form, 2 = image upload, 3 = success
+  const [step, setStep] = useState(1);
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -675,7 +672,8 @@ const CompanyRegistrationForm = () => {
 
   const [errors, setErrors] = useState({});
 
-  const companyTypes = [
+  // Memoize arrays to prevent recreation on every render
+  const companyTypes = useMemo(() => [
     { value: "", label: "Select Company Type" },
     { value: "technology", label: "Technology" },
     { value: "marketing", label: "Marketing" },
@@ -692,9 +690,9 @@ const CompanyRegistrationForm = () => {
     { value: "government", label: "Government" },
     { value: "startup", label: "Startup" },
     { value: "other", label: "Other" },
-  ];
+  ], []);
 
-  const countryCodes = [
+  const countryCodes = useMemo(() => [
     { value: "+1", label: "+1 (USA/Canada)" },
     { value: "+44", label: "+44 (UK)" },
     { value: "+91", label: "+91 (India)" },
@@ -703,9 +701,9 @@ const CompanyRegistrationForm = () => {
     { value: "+49", label: "+49 (Germany)" },
     { value: "+33", label: "+33 (France)" },
     { value: "+86", label: "+86 (China)" },
-  ];
+  ], []);
 
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     const newErrors = {};
     
     if (!formData.firstName.trim()) newErrors.firstName = "First name is required";
@@ -735,38 +733,37 @@ const CompanyRegistrationForm = () => {
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [formData]);
 
-  const handleChange = (e) => {
+  // Use useCallback to prevent function recreation
+  const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
     
-    // Smooth data update with debouncing effect
     setFormData(prev => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
     }));
 
-    // Clear specific error when user starts typing with smooth transition
-    if (errors[name]) {
-      setTimeout(() => {
-        setErrors(prev => ({
-          ...prev,
-          [name]: "",
-        }));
-      }, 300);
-    }
-  };
+    // Clear error if it exists
+    setErrors(prev => {
+      if (prev[name]) {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      }
+      return prev;
+    });
+  }, []);
 
-  const handleImageChange = (e) => {
+  const handleImageChange = useCallback((e) => {
     const file = e.target.files[0];
+    
     if (file) {
-      // Validate file type
       if (!file.type.startsWith('image/')) {
         alert("Please select a valid image file");
         return;
       }
       
-      // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
         alert("Image size should be less than 5MB");
         return;
@@ -774,51 +771,84 @@ const CompanyRegistrationForm = () => {
 
       setSelectedImage(file);
       
-      // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
         setImagePreview(e.target.result);
       };
       reader.readAsDataURL(file);
     }
-  };
+  }, []);
 
-  const removeImage = () => {
+  const removeImage = useCallback(() => {
     setSelectedImage(null);
     setImagePreview(null);
-  };
+  }, []);
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = useCallback((e) => {
     e.preventDefault();
-    if (!validateForm()) return;
-    setStep(2); // Move to image upload step
-  };
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    setStep(2);
+  }, [validateForm]);
 
-  const handleImageSubmit = async (e) => {
+  const handleImageSubmit = useCallback(async (e) => {
     e.preventDefault();
     
     setIsSubmitting(true);
     
     try {
-      // Simulate API call - replace with actual API endpoint
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      // Generate a mock registration ID
       const mockRegId = 'REQ' + String(Date.now()).slice(-6);
       setRegistrationId(mockRegId);
       
-      // Simulate successful submission
+      // ONLY LOG THE FINAL COMPLETE DATA HERE
+      const finalRegistrationData = {
+        personalInfo: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          username: formData.username
+        },
+        companyInfo: {
+          companyName: formData.companyName,
+          companyType: formData.companyType
+        },
+        contactInfo: {
+          email: formData.email,
+          phone: {
+            countryCode: formData.countryCode,
+            phoneNumber: formData.phoneNumber
+          }
+        },
+        accountInfo: {
+          password: formData.password,
+          agreeToTerms: formData.agreeToTerms
+        },
+        registrationMeta: {
+          registrationId: mockRegId,
+          submittedAt: new Date().toISOString(),
+          hasProfileImage: selectedImage !== null,
+          imageFileName: selectedImage?.name || null,
+          imageFileSize: selectedImage?.size || null
+        }
+      };
+
+      console.log(finalRegistrationData);
+      
       setStep(3);
       
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('Registration failed');
       alert('Registration failed. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [formData, selectedImage]);
 
-  const ProgressIndicator = () => (
+  const ProgressIndicator = useMemo(() => (
     <div className="mb-8">
       <div className="flex items-center justify-between mb-4">
         <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
@@ -835,123 +865,111 @@ const CompanyRegistrationForm = () => {
         />
       </div>
     </div>
-  );
+  ), [step]);
+
+  // Create stable input component to prevent re-creation
+  const InputField = useCallback(({ 
+    label, 
+    name, 
+    type = "text", 
+    placeholder, 
+    value, 
+    error,
+    required = false,
+    ...props 
+  }) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        {label} {required && '*'}
+      </label>
+      <input
+        key={`input-${name}`}
+        type={type}
+        name={name}
+        value={value}
+        onChange={handleChange}
+        placeholder={placeholder}
+        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors duration-200 ${
+          error 
+            ? "border-red-500 focus:ring-red-500" 
+            : "border-gray-300 dark:border-gray-600 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
+        }`}
+        {...props}
+      />
+      {error && (
+        <p className="mt-1 text-sm text-red-600">{error}</p>
+      )}
+    </div>
+  ), [handleChange]);
 
   // Step 1: Registration Form
-  const RegistrationFormStep = () => (
+  const RegistrationFormStep = useMemo(() => (
     <form onSubmit={handleFormSubmit} className="space-y-6">
       {/* Personal Information */}
-      <div className="space-y-4 animate-fadeIn">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center transform transition-all duration-300 hover:scale-105">
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
           <User className="w-5 h-5 mr-2 text-orange-500" />
           Personal Information
         </h3>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="transform transition-all duration-300 hover:scale-105">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200">
-              First Name *
-            </label>
-            <input
-              type="text"
-              name="firstName"
-              value={formData.firstName}
-              onChange={handleChange}
-              placeholder="Enter your first name"
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 transform hover:scale-[1.02] focus:scale-[1.02] ${
-                errors.firstName 
-                  ? "border-red-500 focus:ring-red-500 animate-shake" 
-                  : "border-gray-300 dark:border-gray-600 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
-              }`}
-            />
-            {errors.firstName && (
-              <p className="mt-1 text-sm text-red-600 animate-slideDown">{errors.firstName}</p>
-            )}
-          </div>
-
-          <div className="transform transition-all duration-300 hover:scale-105">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200">
-              Last Name *
-            </label>
-            <input
-              type="text"
-              name="lastName"
-              value={formData.lastName}
-              onChange={handleChange}
-              placeholder="Enter your last name"
-              className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 transform hover:scale-[1.02] focus:scale-[1.02] ${
-                errors.lastName 
-                  ? "border-red-500 focus:ring-red-500 animate-shake" 
-                  : "border-gray-300 dark:border-gray-600 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
-              }`}
-            />
-            {errors.lastName && (
-              <p className="mt-1 text-sm text-red-600 animate-slideDown">{errors.lastName}</p>
-            )}
-          </div>
-        </div>
-
-        <div className="transform transition-all duration-300 hover:scale-105">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200">
-            Username *
-          </label>
-          <input
-            type="text"
-            name="username"
-            value={formData.username}
-            onChange={handleChange}
-            placeholder="Choose a unique username"
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 transform hover:scale-[1.02] focus:scale-[1.02] ${
-              errors.username 
-                ? "border-red-500 focus:ring-red-500 animate-shake" 
-                : "border-gray-300 dark:border-gray-600 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
-            }`}
+          <InputField
+            label="First Name"
+            name="firstName"
+            placeholder="Enter your first name"
+            value={formData.firstName}
+            error={errors.firstName}
+            required
           />
-          {errors.username && (
-            <p className="mt-1 text-sm text-red-600 animate-slideDown">{errors.username}</p>
-          )}
+
+          <InputField
+            label="Last Name"
+            name="lastName"
+            placeholder="Enter your last name"
+            value={formData.lastName}
+            error={errors.lastName}
+            required
+          />
         </div>
+
+        <InputField
+          label="Username"
+          name="username"
+          placeholder="Choose a unique username"
+          value={formData.username}
+          error={errors.username}
+          required
+        />
       </div>
 
       {/* Company Information */}
-      <div className="space-y-4 animate-fadeIn" style={{ animationDelay: '100ms' }}>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center transform transition-all duration-300 hover:scale-105">
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
           <Building className="w-5 h-5 mr-2 text-orange-500" />
           Company Information
         </h3>
         
-        <div className="transform transition-all duration-300 hover:scale-105">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200">
-            Company Name *
-          </label>
-          <input
-            type="text"
-            name="companyName"
-            value={formData.companyName}
-            onChange={handleChange}
-            placeholder="Enter your company name"
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 transform hover:scale-[1.02] focus:scale-[1.02] ${
-              errors.companyName 
-                ? "border-red-500 focus:ring-red-500 animate-shake" 
-                : "border-gray-300 dark:border-gray-600 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
-            }`}
-          />
-          {errors.companyName && (
-            <p className="mt-1 text-sm text-red-600 animate-slideDown">{errors.companyName}</p>
-          )}
-        </div>
+        <InputField
+          label="Company Name"
+          name="companyName"
+          placeholder="Enter your company name"
+          value={formData.companyName}
+          error={errors.companyName}
+          required
+        />
 
-        <div className="transform transition-all duration-300 hover:scale-105">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Company Type *
           </label>
           <select
+            key="companyType-select"
             name="companyType"
             value={formData.companyType}
             onChange={handleChange}
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 transform hover:scale-[1.02] focus:scale-[1.02] ${
+            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors duration-200 ${
               errors.companyType 
-                ? "border-red-500 focus:ring-red-500 animate-shake" 
+                ? "border-red-500 focus:ring-red-500" 
                 : "border-gray-300 dark:border-gray-600 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
             }`}
           >
@@ -962,49 +980,39 @@ const CompanyRegistrationForm = () => {
             ))}
           </select>
           {errors.companyType && (
-            <p className="mt-1 text-sm text-red-600 animate-slideDown">{errors.companyType}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.companyType}</p>
           )}
         </div>
       </div>
 
       {/* Contact Information */}
-      <div className="space-y-4 animate-fadeIn" style={{ animationDelay: '200ms' }}>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center transform transition-all duration-300 hover:scale-105">
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
           <Mail className="w-5 h-5 mr-2 text-orange-500" />
           Contact Information
         </h3>
         
-        <div className="transform transition-all duration-300 hover:scale-105">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200">
-            Email Address *
-          </label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            placeholder="Enter your business email"
-            className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 transform hover:scale-[1.02] focus:scale-[1.02] ${
-              errors.email 
-                ? "border-red-500 focus:ring-red-500 animate-shake" 
-                : "border-gray-300 dark:border-gray-600 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
-            }`}
-          />
-          {errors.email && (
-            <p className="mt-1 text-sm text-red-600 animate-slideDown">{errors.email}</p>
-          )}
-        </div>
+        <InputField
+          label="Email Address"
+          name="email"
+          type="email"
+          placeholder="Enter your business email"
+          value={formData.email}
+          error={errors.email}
+          required
+        />
 
-        <div className="transform transition-all duration-300 hover:scale-105">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Phone Number *
           </label>
           <div className="flex space-x-2">
             <select
+              key="countryCode-select"
               name="countryCode"
               value={formData.countryCode}
               onChange={handleChange}
-              className="px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-all duration-300 transform hover:scale-[1.02] focus:scale-[1.02]"
+              className="px-3 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white transition-colors duration-200"
             >
               {countryCodes.map((country) => (
                 <option key={country.value} value={country.value}>
@@ -1013,126 +1021,129 @@ const CompanyRegistrationForm = () => {
               ))}
             </select>
             <input
+              key="phoneNumber-input"
               type="tel"
               name="phoneNumber"
               value={formData.phoneNumber}
               onChange={handleChange}
               placeholder="Enter phone number"
-              className={`flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 transform hover:scale-[1.02] focus:scale-[1.02] ${
+              className={`flex-1 px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 transition-colors duration-200 ${
                 errors.phoneNumber 
-                  ? "border-red-500 focus:ring-red-500 animate-shake" 
+                  ? "border-red-500 focus:ring-red-500" 
                   : "border-gray-300 dark:border-gray-600 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
               }`}
             />
           </div>
           {errors.phoneNumber && (
-            <p className="mt-1 text-sm text-red-600 animate-slideDown">{errors.phoneNumber}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.phoneNumber}</p>
           )}
         </div>
       </div>
 
       {/* Password Information */}
-      <div className="space-y-4 animate-fadeIn" style={{ animationDelay: '300ms' }}>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center transform transition-all duration-300 hover:scale-105">
+      <div className="space-y-4">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center">
           <Lock className="w-5 h-5 mr-2 text-orange-500" />
           Account Security
         </h3>
         
-        <div className="relative transform transition-all duration-300 hover:scale-105">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200">
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Password *
           </label>
           <input
+            key="password-input"
             type={showPassword ? "text" : "password"}
             name="password"
             value={formData.password}
             onChange={handleChange}
             placeholder="Create a strong password"
-            className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 transform hover:scale-[1.02] focus:scale-[1.02] ${
+            className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition-colors duration-200 ${
               errors.password 
-                ? "border-red-500 focus:ring-red-500 animate-shake" 
+                ? "border-red-500 focus:ring-red-500" 
                 : "border-gray-300 dark:border-gray-600 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
             }`}
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-11 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-all duration-200 transform hover:scale-110"
+            className="absolute right-3 top-11 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors duration-200"
           >
             {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
           {errors.password && (
-            <p className="mt-1 text-sm text-red-600 animate-slideDown">{errors.password}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.password}</p>
           )}
         </div>
 
-        <div className="relative transform transition-all duration-300 hover:scale-105">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 transition-colors duration-200">
+        <div className="relative">
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Confirm Password *
           </label>
           <input
+            key="confirmPassword-input"
             type={showConfirmPassword ? "text" : "password"}
             name="confirmPassword"
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder="Confirm your password"
-            className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition-all duration-300 transform hover:scale-[1.02] focus:scale-[1.02] ${
+            className={`w-full px-4 py-3 pr-12 border rounded-lg focus:outline-none focus:ring-2 transition-colors duration-200 ${
               errors.confirmPassword 
-                ? "border-red-500 focus:ring-red-500 animate-shake" 
+                ? "border-red-500 focus:ring-red-500" 
                 : "border-gray-300 dark:border-gray-600 focus:ring-orange-500 focus:border-orange-500 dark:bg-gray-700 dark:text-white"
             }`}
           />
           <button
             type="button"
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            className="absolute right-3 top-11 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-all duration-200 transform hover:scale-110"
+            className="absolute right-3 top-11 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors duration-200"
           >
             {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
           </button>
           {errors.confirmPassword && (
-            <p className="mt-1 text-sm text-red-600 animate-slideDown">{errors.confirmPassword}</p>
+            <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
           )}
         </div>
       </div>
 
       {/* Terms Agreement */}
-      <div className="flex items-start space-x-3 animate-fadeIn transform transition-all duration-300 hover:scale-105" style={{ animationDelay: '400ms' }}>
+      <div className="flex items-start space-x-3">
         <input
+          key="agreeToTerms-checkbox"
           id="agreeToTerms"
           name="agreeToTerms"
           type="checkbox"
           checked={formData.agreeToTerms}
           onChange={handleChange}
-          className="mt-1 h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500 transition-all duration-200 transform hover:scale-110"
+          className="mt-1 h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
         />
-        <label htmlFor="agreeToTerms" className="text-sm text-gray-700 dark:text-gray-300 transition-colors duration-200">
+        <label htmlFor="agreeToTerms" className="text-sm text-gray-700 dark:text-gray-300">
           I agree to the{' '}
-          <a href="#" className="text-orange-600 hover:text-orange-700 underline transition-colors duration-200">
+          <a href="#" className="text-orange-600 hover:text-orange-700 underline">
             Terms and Conditions
           </a>{' '}
           and{' '}
-          <a href="#" className="text-orange-600 hover:text-orange-700 underline transition-colors duration-200">
+          <a href="#" className="text-orange-600 hover:text-orange-700 underline">
             Privacy Policy
           </a>
         </label>
       </div>
       {errors.agreeToTerms && (
-        <p className="text-sm text-red-600 animate-slideDown">{errors.agreeToTerms}</p>
+        <p className="text-sm text-red-600">{errors.agreeToTerms}</p>
       )}
 
       <button
         type="submit"
-        className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-300 flex items-center justify-center space-x-2 transform hover:scale-105 hover:shadow-lg animate-fadeIn"
-        style={{ animationDelay: '500ms' }}
+        className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 px-6 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-colors duration-200 flex items-center justify-center space-x-2"
       >
         <span>Continue to Image Upload</span>
-        <ArrowRight className="w-5 h-5 transition-transform duration-200 group-hover:translate-x-1" />
+        <ArrowRight className="w-5 h-5" />
       </button>
     </form>
-  );
+  ), [formData, errors, handleFormSubmit, companyTypes, countryCodes, showPassword, showConfirmPassword, InputField]);
 
   // Step 2: Image Upload
-  const ImageUploadStep = () => (
+  const ImageUploadStep = useMemo(() => (
     <form onSubmit={handleImageSubmit} className="space-y-6">
       <div className="text-center space-y-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -1157,6 +1168,7 @@ const CompanyRegistrationForm = () => {
                 </span>
               </label>
               <input
+                key="image-upload-input"
                 id="image-upload"
                 name="image-upload"
                 type="file"
@@ -1198,7 +1210,7 @@ const CompanyRegistrationForm = () => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200 disabled:opacity-60 flex items-center justify-center space-x-2"
+          className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-colors disabled:opacity-60 flex items-center justify-center space-x-2"
         >
           {isSubmitting ? (
             <>
@@ -1208,16 +1220,16 @@ const CompanyRegistrationForm = () => {
           ) : (
             <>
               <span>Submit Registration</span>
-              <CheckCircle className="w-5 h-5" />
+              <CheckCircle className="w-5 w-5" />
             </>
           )}
         </button>
       </div>
     </form>
-  );
+  ), [handleImageSubmit, imagePreview, handleImageChange, removeImage, isSubmitting]);
 
-  // Step 3: Success/Pending Approval
-  const SuccessStep = () => (
+  // Step 3: Success
+  const SuccessStep = useMemo(() => (
     <div className="text-center space-y-6">
       <div className="flex justify-center">
         <div className="w-16 h-16 bg-yellow-100 dark:bg-yellow-900/20 rounded-full flex items-center justify-center">
@@ -1267,7 +1279,6 @@ const CompanyRegistrationForm = () => {
       <div className="flex space-x-4">
         <button
           onClick={() => {
-            // Reset form for new registration
             setStep(1);
             setFormData({
               firstName: "",
@@ -1291,14 +1302,16 @@ const CompanyRegistrationForm = () => {
           New Registration
         </button>
         <button
-          onClick={() => window.location.href = '/login'}
-          className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-all duration-200"
+          onClick={() => {
+            window.location.href = '/login';
+          }}
+          className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-lg font-semibold hover:from-orange-600 hover:to-red-600 transition-colors"
         >
           Go to Login
         </button>
       </div>
     </div>
-  );
+  ), [formData, registrationId]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
@@ -1335,13 +1348,13 @@ const CompanyRegistrationForm = () => {
               </div>
             </div>
             
-            <ProgressIndicator />
+            {ProgressIndicator}
           </div>
 
           {/* Render current step */}
-          {step === 1 && <RegistrationFormStep />}
-          {step === 2 && <ImageUploadStep />}
-          {step === 3 && <SuccessStep />}
+          {step === 1 && RegistrationFormStep}
+          {step === 2 && ImageUploadStep}
+          {step === 3 && SuccessStep}
         </div>
       </div>
     </div>

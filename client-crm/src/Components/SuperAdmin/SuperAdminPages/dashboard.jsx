@@ -27,6 +27,7 @@ import {
   LogOut,
   ChevronDown
 } from 'lucide-react';
+import { API_BASE_URL } from "../../../config/api";
 
 const AdminDashboard = () => {
   // Sidebar state
@@ -44,60 +45,112 @@ const AdminDashboard = () => {
   const [showModal, setShowModal] = useState(false);
   const [actionType, setActionType] = useState('');
   const [actionReason, setActionReason] = useState('');
+  
+  // Sign out modal state
+  const [showSignOutModal, setShowSignOutModal] = useState(false);
 
-  // Static stats data
+  // Add new state for API count data
+  const [countData, setCountData] = useState({
+    total: 0,
+    approvedCount: 0,
+    pendingCount: 0,
+    rejectedCount: 0
+  });
+  const [isCountLoading, setIsCountLoading] = useState(false);
+
+  // Add function to fetch count data from API with token
+  const fetchCountData = async () => {
+    setIsCountLoading(true);
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/superAdmin/count`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          // Token might be expired, redirect to login
+          localStorage.removeItem('token');
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setCountData(data);
+    } catch (error) {
+      console.error('Error fetching count data:', error);
+      // Optionally show error message to user
+      // You can add a toast notification here if you have one
+    } finally {
+      setIsCountLoading(false);
+    }
+  };
+
+  // Updated dashboard stats using API data
   const overviewStats = [
     {
-      id: 'totalLeads',
-      title: "Total Leads",
-      value: "152",
+      id: 'totalCompanies',
+      title: "Total Companies",
+      value: isCountLoading ? "..." : countData.total.toString(),
       change: "+12%",
       trend: "up",
-      icon: Target,
+      icon: Building,
       color: "from-blue-500 to-blue-600",
       lightColor: "bg-blue-50 dark:bg-blue-900/20",
       textColor: "text-blue-600 dark:text-blue-400",
-      subtitle: "This month"
+      subtitle: "Registered companies"
     },
     {
-      id: 'qualifiedLeads',
-      title: "Qualified Leads",
-      value: "89",
+      id: 'approvedCompanies',
+      title: "Approved Companies",
+      value: isCountLoading ? "..." : countData.approvedCount.toString(),
       change: "+8%",
       trend: "up",
-      icon: Award,
+      icon: CheckCircle,
       color: "from-emerald-500 to-emerald-600",
       lightColor: "bg-emerald-50 dark:bg-emerald-900/20",
       textColor: "text-emerald-600 dark:text-emerald-400",
-      subtitle: "Active pipeline"
+      subtitle: "Active companies"
     },
     {
-      id: 'pendingLeads',
-      title: "Pending Leads",
-      value: "48",
+      id: 'pendingCompanies',
+      title: "Pending Approval",
+      value: isCountLoading ? "..." : countData.pendingCount.toString(),
       change: "+15%",
       trend: "up",
       icon: Clock,
       color: "from-amber-500 to-amber-600",
       lightColor: "bg-amber-50 dark:bg-amber-900/20",
       textColor: "text-amber-600 dark:text-amber-400",
-      subtitle: "Awaiting follow-up"
+      subtitle: "Awaiting approval"
     },
     {
-      id: 'lossLeads',
-      title: "Lost Leads",
-      value: "22",
+      id: 'rejectedCompanies',
+      title: "Rejected Applications",
+      value: isCountLoading ? "..." : countData.rejectedCount.toString(),
       change: "-3%",
       trend: "down",
-      icon: AlertCircle,
+      icon: XCircle,
       color: "from-red-500 to-red-600",
       lightColor: "bg-red-50 dark:bg-red-900/20",
       textColor: "text-red-600 dark:text-red-400",
-      subtitle: "Lost opportunities"
+      subtitle: "Rejected applications"
     }
   ];
 
-  // Mock registration data
+  // Mock registration data (you can replace this with API call later)
   const mockRegistrationData = [
     {
       id: 'REQ001',
@@ -161,6 +214,11 @@ const AdminDashboard = () => {
     { value: 'consulting', label: 'Consulting' }
   ];
 
+  // Update useEffect to fetch count data on component mount
+  useEffect(() => {
+    fetchCountData();
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'registrations') {
       fetchPendingRequests();
@@ -170,6 +228,55 @@ const AdminDashboard = () => {
   useEffect(() => {
     filterRequests();
   }, [pendingRequests, searchTerm, statusFilter, companyTypeFilter]);
+
+  const handleSignOut = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Clear the specific localStorage items used by your auth system
+      localStorage.removeItem('loggedIn');
+      localStorage.removeItem('userType');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Clear any other potential auth-related items
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userSession');
+      localStorage.removeItem('adminSession');
+      localStorage.removeItem('userRole');
+      
+      // Clear sessionStorage
+      sessionStorage.clear();
+      
+      // Clear cookies
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      
+      // Trigger storage event to notify other components (like your App.js)
+      window.dispatchEvent(new Event('storage'));
+      
+      setShowSignOutModal(false);
+      
+      // Show success message
+      alert('Successfully signed out! Redirecting to login page...');
+      
+      // Use React Router navigation
+      navigate('/login'); // or navigate('/') if login is at root
+      
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      
+      // Fallback redirect if navigate fails
+      try {
+        window.location.href = '/login';
+      } catch (e) {
+        window.location.reload();
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const fetchPendingRequests = async () => {
     setIsLoading(true);
@@ -230,6 +337,9 @@ const AdminDashboard = () => {
       
       alert(message);
       
+      // Refresh count data after action
+      fetchCountData();
+      
     } catch (error) {
       console.error(`Error ${action}ing registration:`, error);
       alert(`Error ${action}ing registration`);
@@ -287,7 +397,7 @@ const AdminDashboard = () => {
             
             <div className="ml-4 lg:ml-0">
               <h1 className="text-xl font-semibold text-gray-900 dark:text-white">
-                Admin Portal
+                Super Admin Portal
               </h1>
             </div>
           </div>
@@ -296,24 +406,13 @@ const AdminDashboard = () => {
             <button className="p-2 text-gray-500 hover:text-gray-600 dark:text-gray-400 dark:hover:text-gray-300">
               <Bell className="h-5 w-5" />
             </button>
-            
-            <div className="relative">
-              <button className="flex items-center space-x-3 p-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700">
-                <img
-                  className="h-8 w-8 rounded-full object-cover"
-                  src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face"
-                  alt="Admin"
-                />
-                <ChevronDown className="h-4 w-4 text-gray-500" />
-              </button>
-            </div>
           </div>
         </div>
       </div>
     </header>
   );
 
-  // Sidebar Component
+  // Sidebar Component with Updated Sign Out
   const Sidebar = () => (
     <>
       {/* Mobile backdrop */}
@@ -337,7 +436,7 @@ const AdminDashboard = () => {
                 <Building className="w-5 h-5 text-white" />
               </div>
               <span className="text-lg font-semibold text-gray-900 dark:text-white">
-                AdminHub
+                Super Admin Hub
               </span>
             </div>
             <button
@@ -371,10 +470,13 @@ const AdminDashboard = () => {
             ))}
           </nav>
 
-          {/* Footer */}
+          {/* Footer - Updated Sign Out Button */}
           <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-            <button className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 transition-colors">
-              <LogOut className="h-5 w-5" />
+            <button 
+              onClick={() => setShowSignOutModal(true)}
+              className="w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 transition-all duration-200 group"
+            >
+              <LogOut className="h-5 w-5 group-hover:scale-110 transition-transform" />
               <span className="font-medium">Sign Out</span>
             </button>
           </div>
@@ -396,6 +498,14 @@ const AdminDashboard = () => {
             Monitor your business performance and key metrics
           </p>
         </div>
+        <button
+          onClick={fetchCountData}
+          disabled={isCountLoading}
+          className="flex items-center space-x-2 bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw className={`w-4 h-4 ${isCountLoading ? 'animate-spin' : ''}`} />
+          <span>Refresh</span>
+        </button>
       </div>
 
       {/* Stats Cards */}
@@ -458,16 +568,19 @@ const AdminDashboard = () => {
           <p className="text-gray-600 dark:text-gray-400 mt-1">Review and manage company registration requests</p>
         </div>
         <button
-          onClick={fetchPendingRequests}
-          disabled={isLoading}
+          onClick={() => {
+            fetchPendingRequests();
+            fetchCountData(); // Also refresh count data
+          }}
+          disabled={isLoading || isCountLoading}
           className="flex items-center space-x-2 bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${(isLoading || isCountLoading) ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
         </button>
       </div>
 
-      {/* Registration Stats */}
+      {/* Registration Stats - Updated to use API data */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
           <div className="flex items-center">
@@ -475,7 +588,7 @@ const AdminDashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {pendingRequests.filter(r => r.status === 'pending').length}
+                {isCountLoading ? "..." : countData.pendingCount}
               </p>
             </div>
           </div>
@@ -487,7 +600,7 @@ const AdminDashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Approved</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {pendingRequests.filter(r => r.status === 'approved').length}
+                {isCountLoading ? "..." : countData.approvedCount}
               </p>
             </div>
           </div>
@@ -499,7 +612,7 @@ const AdminDashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Rejected</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {pendingRequests.filter(r => r.status === 'rejected').length}
+                {isCountLoading ? "..." : countData.rejectedCount}
               </p>
             </div>
           </div>
@@ -510,7 +623,9 @@ const AdminDashboard = () => {
             <Building className="w-8 h-8 text-blue-500" />
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{pendingRequests.length}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                {isCountLoading ? "..." : countData.total}
+              </p>
             </div>
           </div>
         </div>
@@ -743,7 +858,7 @@ const AdminDashboard = () => {
         </main>
       </div>
 
-      {/* Action Modal */}
+      {/* Registration Action Modal */}
       {showModal && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -874,6 +989,62 @@ const AdminDashboard = () => {
                     {isLoading ? 'Rejecting...' : 'Reject Registration'}
                   </button>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Sign Out Confirmation Modal */}
+      {showSignOutModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full shadow-2xl">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mr-4 flex-shrink-0">
+                  <LogOut className="w-6 h-6 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Confirm Sign Out
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Are you sure you want to sign out?
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  You will be redirected to the login page and will need to authenticate again to access the admin dashboard.
+                </p>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowSignOutModal(false)}
+                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  disabled={isLoading}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center space-x-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Signing Out...</span>
+                    </>
+                  ) : (
+                    <>
+                      <LogOut className="w-4 h-4" />
+                      <span>Sign Out</span>
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>

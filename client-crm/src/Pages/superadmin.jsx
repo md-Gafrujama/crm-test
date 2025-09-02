@@ -27,15 +27,27 @@ const OTPVerificationForm = () => {
       
       const data = await response.json();
       
+      // Console log the response data to see if OTP is included
+      console.log('Send OTP Response:', data);
+      
+      // If the server sends back the OTP in the response (for development/testing)
+      if (data.otp) {
+        console.log('🔢 Generated OTP:', data.otp);
+      }
+      
       if (data.message === 'OTP sent to your email.') {
         setStatusMessage(data.message);
         setStep(2);
+        
+        // Additional console log for successful OTP sending
+        console.log('✅ OTP sent successfully to:', email);
       } else {
         setStatusMessage('Failed to send OTP');
+        console.log('❌ Failed to send OTP:', data);
       }
     } catch (error) {
       setStatusMessage('Error sending OTP. Please try again.');
-      console.error('Error:', error);
+      console.error('❌ Error sending OTP:', error);
     } finally {
       setLoading(false);
     }
@@ -44,6 +56,10 @@ const OTPVerificationForm = () => {
   const verifyOTP = async () => {
     setLoading(true);
     setStatusMessage('Verifying OTP...');
+    
+    // Console log the OTP being sent for verification
+    console.log('🔍 Verifying OTP:', otp);
+    console.log('📧 For email:', email);
     
     try {
       const response = await fetch(`${API_BASE_URL}/api/superAdmin/verify-otp`, {
@@ -56,30 +72,52 @@ const OTPVerificationForm = () => {
       
       const data = await response.json();
       
+      // Console log the verification response
+      console.log('Verify OTP Response:', data);
+      
       if (data.message === 'OTP verified successfully.') {
+        console.log('✅ OTP verified successfully!');
         setStatusMessage(data.message);
         
-        // **KEY FIX**: Set the required localStorage values for authentication
+        // Set the required localStorage values for authentication
         localStorage.setItem('loggedIn', 'true');
         localStorage.setItem('userType', 'superadmin');
         localStorage.setItem('token', data.token || 'superadmin-token');
         localStorage.setItem('user', JSON.stringify(data.user || { type: 'superadmin' }));
+        
+        console.log('🔐 Authentication data stored in localStorage');
         
         // Trigger a storage event to notify App.js immediately
         window.dispatchEvent(new Event('storage'));
         
         // Navigate directly to superadmin dashboard
         setTimeout(() => {
+          console.log('🚀 Navigating to superadmin dashboard...');
           navigate('/superadmin');
         }, 1000);
       } else {
+        console.log('❌ Invalid OTP:', otp);
         setStatusMessage('Invalid OTP. Please try again.');
       }
     } catch (error) {
       setStatusMessage('Error verifying OTP. Please try again.');
-      console.error('Error:', error);
+      console.error('❌ Error verifying OTP:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Enhanced OTP input handler with console logging
+  const handleOTPChange = (e) => {
+    const newOtp = e.target.value;
+    setOtp(newOtp);
+    
+    // Console log each character typed in OTP field
+    console.log('🔢 OTP Input:', newOtp);
+    
+    // Log when OTP reaches 6 digits
+    if (newOtp.length === 6) {
+      console.log('✅ 6-digit OTP entered:', newOtp);
     }
   };
 
@@ -170,7 +208,7 @@ const OTPVerificationForm = () => {
             <input 
               type="text" 
               value={otp} 
-              onChange={(e) => setOtp(e.target.value)}
+              onChange={handleOTPChange} // Using the enhanced handler
               onKeyPress={(e) => handleKeyPress(e, verifyOTP)}
               placeholder="Enter 6-digit OTP"
               maxLength="6"
