@@ -9,40 +9,43 @@ const company = {
         lastName,
         username,
         companyName,
+        compAnyType,
         email,
         phone,
         password,
         agreeToTerms,
       } = req.body;
 
-      const requiredFields = {
-        firstName: "First name",
-        lastName: "Last name",
-        username: "Username",
-        companyName: "Company name",
-        email: "Email",
-        phone: "Phone",
-        password: "Password",
-        agreeToTerms: "Terms agreement"
-      };
+      // uncomment the section if data is not verififed in frontend only
+      // const requiredFields = {
+      //   firstName: "First name",
+      //   lastName: "Last name",
+      //   username: "Username",
+      //   companyName: "Company name",
+      //   compAnyType :"Company TYpe",
+      //   email: "Email",
+      //   phone: "Phone",
+      //   password: "Password",
+      //   agreeToTerms: "Terms agreement"
+      // };
 
-      const missingFields = Object.entries(requiredFields)
-        .filter(([key]) => !req.body[key])
-        .map(([_, value]) => value);
+      // const missingFields = Object.entries(requiredFields)
+      //   .filter(([key]) => !req.body[key])
+      //   .map(([_, value]) => value);
 
-      if (missingFields.length > 0) {
-        return res.status(400).json({
-          success: false,
-          message: `Missing required fields: ${missingFields.join(', ')}`
-        });
-      }
+      // if (missingFields.length > 0) {
+      //   return res.status(400).json({
+      //     success: false,
+      //     message: `Missing required fields: ${missingFields.join(', ')}`
+      //   });
+      // }
 
       const existingCompany = await prisma.company.findFirst({
         where: {
           OR: [
             { companyName },
             { email },
-            { username }
+            { username },
           ]
         }
       });
@@ -64,6 +67,7 @@ const company = {
       const createdCompany = await prisma.company.create({
         data: {
           companyName,
+          companyType,
           owners_firstName: firstName,
           owners_lastName: lastName,
           username,

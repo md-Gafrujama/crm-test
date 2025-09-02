@@ -92,21 +92,23 @@ model company {
   owners_firstName String 
   owners_lastName  String
   username       String
+
+  companyName    String   @unique
+  companyType    String   @unique  
+  
   email          String   @unique
   phone          String
   hashedPassword String
-  companyName    String   @unique
+
   agreeToterms   Boolean  @default(false)
+  status         String @default("Pending")
   noOfUsers      Int      @default(0)
+  profileImage   String
+  subscription   Boolean @default(false)
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  profileImage          String
-
-  //new fields to be updated in frontend
-  companyType String?
-  subscription Boolean @default(false)
-  status       String @default("Pending")
-
+  
   users          User[]               @relation("CompanyUsers")
   employees      Employee[]           @relation("CompanyEmployees")
   leads          Lead[]               @relation("CompanyLeads")

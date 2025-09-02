@@ -2,53 +2,56 @@ import express from "express";
 import prisma from "../../prisma/prismaClient.js";
 import bcrypt from "bcrypt";
 
+function checkSuperAdmin(userType) {
+  if (userType !== "superAdmin") {
+    return res.status(403).json({ message: "Access denied." });
+  }
+}
+
 const superAdmin = {
   //if we keep this system then anyone can become super admin
-  async createSuperAdmin(req, res) {
-    try {
-      const { firstName, lastName, userName, email, phone, password } =
-        req.body;
-      const hashedPassword = await bcrypt.hash(password, 10);
+  // async createSuperAdmin(req, res) {
+  //   try {
+  //     const { firstName, lastName, userName, email, phone, password } =
+  //       req.body;
+  //     const hashedPassword = await bcrypt.hash(password, 10);
 
-      const existingUser = await prisma.superAdmin.findUnique({
-        where: { email },
-      });
+  //     const existingUser = await prisma.superAdmin.findUnique({
+  //       where: { email },
+  //     });
 
-      if (existingUser) {
-        return res
-          .status(409)
-          .json({ msg: "User with this email already exists." });
-      }
+  //     if (existingUser) {
+  //       return res
+  //         .status(409)
+  //         .json({ msg: "User with this email already exists." });
+  //     }
 
-      const newUser = await prisma.superAdmin.create({
-        data: {
-          firstName,
-          lastName,
-          userName,
-          email,
-          phone,
-          password: hashedPassword,
-        },
-      });
+  //     const newUser = await prisma.superAdmin.create({
+  //       data: {
+  //         firstName,
+  //         lastName,
+  //         userName,
+  //         email,
+  //         phone,
+  //         password: hashedPassword,
+  //       },
+  //     });
 
-      res.status(201).json({
-        message: "Super Admin created successfully",
-        user: newUser,
-      });
-    } catch (error) {
-      res.status(500).json({
-        msg: " Something went wrong.",
-        error: error.message || error,
-      });
-    }
-  },
+  //     res.status(201).json({
+  //       message: "Super Admin created successfully",
+  //       user: newUser,
+  //     });
+  //   } catch (error) {
+  //     res.status(500).json({
+  //       msg: " Something went wrong.",
+  //       error: error.message || error,
+  //     });
+  //   }
+  // },
 
   async getAllData(req, res) {
     const userType = req.user.userType;
-
-    if (req.user.userType !== "superAdmin") {
-      return res.status(403).json({ message: "Access denied." });
-    }
+    checkSuperAdmin(userType);
 
     try {
       const companies = await prisma.company.findMany({
@@ -167,12 +170,7 @@ const superAdmin = {
     const companyId = req.parasms.id;
     const updateCompany = req.body;
 
-    if (userType !== "superAdmin") {
-      res.status(200).json({
-        msg: "You cannot modify the company's detail as you are not the superAdmin.",
-      });
-    }
-
+    checkSuperAdmin(userType);
     try {
       const company = await prisma.company.findUnique({
         where: { id: companyId },
@@ -194,22 +192,16 @@ const superAdmin = {
   async deleteCompany(req, res) {
     const { userType, uid } = req.user;
     const companyId = req.parasms.id;
-
-    if (userType === "superAdmin") {
-      try {
-        await prisma.user.delete({
-          where: { id: req.params.id },
-        });
-        res.json({ message: "Company has been deleted successfully" });
-      } catch (error) {
-        res.status(500).json({
-          msg: "Something went wrong in server",
-          error: error,
-        });
-      }
-    } else {
-      res.status(200).json({
-        msg: "You cannot delete this company as you are not super-admin",
+    checkSuperAdmin(userType);
+    try {
+      await prisma.user.delete({
+        where: { id: req.params.id },
+      });
+      res.json({ message: "Company has been deleted successfully" });
+    } catch (error) {
+      res.status(500).json({
+        msg: "Something went wrong in server",
+        error: error,
       });
     }
   },
@@ -217,11 +209,7 @@ const superAdmin = {
   async count(req, res) {
     try {
       const userType = req.user.userType;
-      if (userType !== "superAdmin") {
-        return res.status(200).json({
-          msg: "You are unauthoried to get the requested data",
-        });
-      }
+      checkSuperAdmin(userType);
       const approvedCount = await prisma.company.count({
         where: {
           status: "Approved",
@@ -243,7 +231,7 @@ const superAdmin = {
         approvedCount,
         pendingCount,
         rejectedCount,
-      })
+      });
     } catch (error) {
       res.status(500).json({
         msg: "Something is not working well in backend, We will fix it soon.",
@@ -253,48 +241,38 @@ const superAdmin = {
   },
 
   async approved(req, res) {
-    try{
-
+    try {
       const userType = req.user.userType;
-      if(userType!== "superAdmin"){
-        return res.status(200).json({
-          msg:"Sorry you are not Super Admin to get the data",
-        })
-      }
+      checkSuperAdmin(userType);
 
       const approve = await prisma.company.findMany({
         where: {
           status: "Approved",
-        }})
-      
-        const approvedCount = await prisma.company.count({
+        },
+      });
+
+      const approvedCount = await prisma.company.count({
         where: {
           status: "Approved",
         },
       });
 
       return res.status(200).json({
-        data :approve,
-        count:approvedCount,
+        data: approve,
+        count: approvedCount,
       });
-    }
-    catch(error){
+    } catch (error) {
       res.status(500).json({
-        msg:"Something went wrong in server. We will fix it soon",
-        error:error.msg||error,
-      })
+        msg: "Something went wrong in server. We will fix it soon",
+        error: error.msg || error,
+      });
     }
   },
 
   async pending(req, res) {
-    try{
-
+    try {
       const userType = req.user.userType;
-      if(userType!== "superAdmin"){
-        return res.status(200).json({
-          msg:"Sorry you are not Super Admin to get the data",
-        })
-      }
+      checkSuperAdmin(userType);
 
       const pending = await prisma.company.findMany({
         where: {
@@ -309,28 +287,21 @@ const superAdmin = {
       });
 
       return res.status(200).json({
-        pending :pending,
-        count : pendingCount
-      })
-
-    }
-    catch(error){
+        pending: pending,
+        count: pendingCount,
+      });
+    } catch (error) {
       res.status(500).json({
-        msg:"Something went wrong in server. We will fix it soon",
-        error:error.msg||error,
-      })
+        msg: "Something went wrong in server. We will fix it soon",
+        error: error.msg || error,
+      });
     }
   },
 
   async rejected(req, res) {
-    try{
-
+    try {
       const userType = req.user.userType;
-      if(userType!== "superAdmin"){
-        return res.status(200).json({
-          msg:"Sorry you are not Super Admin to get the data",
-        })
-      }
+      checkSuperAdmin(userType);
 
       const rejected = await prisma.company.findMany({
         where: {
@@ -343,19 +314,45 @@ const superAdmin = {
           status: "Rejected",
         },
       });
-      
-      return res.status(200).json({
-        rejected:rejected,
-        count:rejectedCount
-      })
 
-    }
-    catch(error){
+      return res.status(200).json({
+        rejected: rejected,
+        count: rejectedCount,
+      });
+    } catch (error) {
       res.status(500).json({
-        msg:"Something went wrong in server. We will fix it soon",
-        error:error.msg||error,
-      })
+        msg: "Something went wrong in server. We will fix it soon",
+        error: error.msg || error,
+      });
     }
   },
+
+  async companyType(req,res){
+    try{
+      const userType = req.user.userType;
+      checkSuperAdmin(userType);
+      const allCompanyData = [];
+  
+      const companyLabels = [ "Technology", "Marketing",  "Sales", "Healthcare", "Finance", "Education", "Manufacturing", "Retail", "Consulting", "Real Estate", "Hospitality", "Non-Profit", "Government", "Startup", "Other"];
+
+      for (const label of companyLabels) {
+        const companyData = await prisma.company.findMany({
+        where: {  companyType: label    }})
+         
+        allCompanyData.push({companyType: label,companies: companyData,});
+      }
+      
+      return res.status(200).json({
+        msg:"All data according to company type",
+        companyData: allCompanyData,
+      })
+  }
+    catch(error){
+      res.status(500).json({
+        msg:"Sorry somthing went wrong in server",
+        error : error.msg|| error,
+      })
+    }
+  }
 };
 export default superAdmin;

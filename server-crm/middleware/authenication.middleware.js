@@ -72,3 +72,12 @@ export async function sendVerificationMailforRegisteringCompany(mailling, otp) {
   return { success: true, status: 200, message: "OTP is being sent" };
 }
 
+// export async function sendVerificationMailforRegisteringCompany(mailling, otp) {
+//     try {
+//         await mailer(mailling, otp);
+//         return { success: true, status: 200, message: "OTP sent successfully" };
+//     } catch (error) {
+//         return { success: false, status: 500, message: "Failed to send OTP", error: error.message };
+//     }
+// }
+
