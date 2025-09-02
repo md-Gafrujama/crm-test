@@ -58,6 +58,13 @@ const superAdmin = {
         select: {
           id: true,
           companyName: true,
+          companyType: true,
+          owners_firstName: true,
+          owners_lastName: true,
+          email: true,
+          phone: true,
+          createdAt: true,
+          status: true,
         },
       });
 
@@ -95,6 +102,13 @@ const superAdmin = {
           return {
             companyId: company.id,
             companyName: company.companyName,
+            companyType: company.companyType,
+            owners_firstName: company.owners_firstName,
+            owners_lastName: company.owners_lastName,
+            email: company.email,
+            phone: company.phone,
+            createdAt: company.createdAt,
+            status: company.status,
             adminCount,
             employeeCount,
             leadCount,
@@ -107,6 +121,13 @@ const superAdmin = {
       companyStats.forEach((entry) => {
         formatted[entry.companyId] = {
           companyName: entry.companyName,
+          companyType: entry.companyType,
+          owners_firstName: entry.owners_firstName,
+          owners_lastName: entry.owners_lastName,
+          email: entry.email,
+          phone: entry.phone,
+          createdAt: entry.createdAt,
+          status: entry.status,
           adminCount: entry.adminCount,
           employeeCount: entry.employeeCount,
           leadCount: entry.leadCount,
@@ -117,8 +138,91 @@ const superAdmin = {
       res.status(200).json(formatted);
     } catch (error) {
       console.error(error);
-      res.status(500).json({ message: "Internal Server Error" });
+      res
+        .status(500)
+        .json({ error: "An error occurred while fetching company data" });
     }
+
+    // try {
+    //   const companies = await prisma.company.findMany({
+    //     select: {
+    //       id: true,
+    //       companyName: true,
+    //       companyType: true,
+    //       owners_firstName: true,
+    //       owners_lastName: true,
+    //       email: true,
+    //       phone: true,
+    //       createdAt: true,
+    //       status: true,
+    //     },
+    //   });
+
+    //   const companyStats = await Promise.all(
+    //     companies.map(async (company) => {
+    //       const [adminCount, employeeCount, leadCount, alertCount] =
+    //         await Promise.all([
+    //           prisma.user.count({
+    //             where: {
+    //               userType: "admin",
+    //               companyId: company.id,
+    //             },
+    //           }),
+
+    //           prisma.employee.count({
+    //             where: {
+    //               companyId: company.id,
+    //             },
+    //           }),
+
+    //           prisma.lead.count({
+    //             where: {
+    //               companyId: company.id,
+    //               isCurrentVersion: true,
+    //             },
+    //           }),
+
+    //           prisma.alertsandremainder.count({
+    //             where: {
+    //               companyId: company.id,
+    //             },
+    //           }),
+    //         ]);
+
+    //       return {
+    //         companyId: company.id,
+    //         companyName: company.companyName,
+    //         adminCount,
+    //         employeeCount,
+    //         leadCount,
+    //         alertCount,
+    //       };
+    //     })
+    //   );
+
+    //   const formatted = {};
+    //   companyStats.forEach((entry) => {
+    //     formatted[entry.companyId] = {
+    //       companyName: entry.companyName,
+    //       companyType: entry.companyType,
+    //       owners_firstName: entry.owners_firstName,
+    //       owners_lastName: entry.owners_lastName,
+    //       email: entry.email,
+    //       phone: entry.phone,
+    //       createdAt: entry.createdAt,
+    //       status: entry.status,
+    //       adminCount: entry.adminCount,
+    //       employeeCount: entry.employeeCount,
+    //       leadCount: entry.leadCount,
+    //       alertCount: entry.alertCount,
+    //     };
+    //   });
+
+    //   res.status(200).json(formatted);
+    // } catch (error) {
+    //   console.error(error);
+    //   res.status(500).json({ message: "Internal Server Error" });
+    // }
 
     // try {
     //   const { uid, userType } = req.user;
@@ -327,32 +431,48 @@ const superAdmin = {
     }
   },
 
-  async companyType(req,res){
-    try{
+  async companyType(req, res) {
+    try {
       const userType = req.user.userType;
       checkSuperAdmin(userType);
       const allCompanyData = [];
-  
-      const companyLabels = [ "Technology", "Marketing",  "Sales", "Healthcare", "Finance", "Education", "Manufacturing", "Retail", "Consulting", "Real Estate", "Hospitality", "Non-Profit", "Government", "Startup", "Other"];
+
+      const companyLabels = [
+        "Technology",
+        "Marketing",
+        "Sales",
+        "Healthcare",
+        "Finance",
+        "Education",
+        "Manufacturing",
+        "Retail",
+        "Consulting",
+        "Real Estate",
+        "Hospitality",
+        "Non-Profit",
+        "Government",
+        "Startup",
+        "Other",
+      ];
 
       for (const label of companyLabels) {
         const companyData = await prisma.company.findMany({
-        where: {  companyType: label    }})
-         
-        allCompanyData.push({companyType: label,companies: companyData,});
+          where: { companyType: label },
+        });
+
+        allCompanyData.push({ companyType: label, companies: companyData });
       }
-      
+
       return res.status(200).json({
-        msg:"All data according to company type",
+        msg: "All data according to company type",
         companyData: allCompanyData,
-      })
-  }
-    catch(error){
+      });
+    } catch (error) {
       res.status(500).json({
-        msg:"Sorry somthing went wrong in server",
-        error : error.msg|| error,
-      })
+        msg: "Sorry somthing went wrong in server",
+        error: error.msg || error,
+      });
     }
-  }
+  },
 };
 export default superAdmin;
