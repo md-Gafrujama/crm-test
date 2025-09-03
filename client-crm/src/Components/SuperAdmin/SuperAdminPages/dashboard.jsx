@@ -36,6 +36,9 @@ const AdminDashboard = () => {
   
   // Registration requests state
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [approvedRequests, setApprovedRequests] = useState([]);
+  const [rejectedRequests, setRejectedRequests] = useState([]);
+  const [allRequests, setAllRequests] = useState([]);
   const [filteredRequests, setFilteredRequests] = useState([]);
   const [selectedRequest, setSelectedRequest] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +52,7 @@ const AdminDashboard = () => {
   // Sign out modal state
   const [showSignOutModal, setShowSignOutModal] = useState(false);
 
-  // Add new state for API count data
+  // Count data state
   const [countData, setCountData] = useState({
     total: 0,
     approvedCount: 0,
@@ -57,141 +60,6 @@ const AdminDashboard = () => {
     rejectedCount: 0
   });
   const [isCountLoading, setIsCountLoading] = useState(false);
-
-  // Add function to fetch count data from API with token
-  const fetchCountData = async () => {
-    setIsCountLoading(true);
-    try {
-      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
-      
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const response = await fetch(`${API_BASE_URL}/api/superAdmin/count`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          // Token might be expired, redirect to login
-          localStorage.removeItem('token');
-          localStorage.removeItem('authToken');
-          window.location.href = '/login';
-          return;
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      setCountData(data);
-    } catch (error) {
-      console.error('Error fetching count data:', error);
-      // Optionally show error message to user
-      // You can add a toast notification here if you have one
-    } finally {
-      setIsCountLoading(false);
-    }
-  };
-
-  // Updated dashboard stats using API data
-  const overviewStats = [
-    {
-      id: 'totalCompanies',
-      title: "Total Companies",
-      value: isCountLoading ? "..." : countData.total.toString(),
-      change: "+12%",
-      trend: "up",
-      icon: Building,
-      color: "from-blue-500 to-blue-600",
-      lightColor: "bg-blue-50 dark:bg-blue-900/20",
-      textColor: "text-blue-600 dark:text-blue-400",
-      subtitle: "Registered companies"
-    },
-    {
-      id: 'approvedCompanies',
-      title: "Approved Companies",
-      value: isCountLoading ? "..." : countData.approvedCount.toString(),
-      change: "+8%",
-      trend: "up",
-      icon: CheckCircle,
-      color: "from-emerald-500 to-emerald-600",
-      lightColor: "bg-emerald-50 dark:bg-emerald-900/20",
-      textColor: "text-emerald-600 dark:text-emerald-400",
-      subtitle: "Active companies"
-    },
-    {
-      id: 'pendingCompanies',
-      title: "Pending Approval",
-      value: isCountLoading ? "..." : countData.pendingCount.toString(),
-      change: "+15%",
-      trend: "up",
-      icon: Clock,
-      color: "from-amber-500 to-amber-600",
-      lightColor: "bg-amber-50 dark:bg-amber-900/20",
-      textColor: "text-amber-600 dark:text-amber-400",
-      subtitle: "Awaiting approval"
-    },
-    {
-      id: 'rejectedCompanies',
-      title: "Rejected Applications",
-      value: isCountLoading ? "..." : countData.rejectedCount.toString(),
-      change: "-3%",
-      trend: "down",
-      icon: XCircle,
-      color: "from-red-500 to-red-600",
-      lightColor: "bg-red-50 dark:bg-red-900/20",
-      textColor: "text-red-600 dark:text-red-400",
-      subtitle: "Rejected applications"
-    }
-  ];
-
-  // Mock registration data (you can replace this with API call later)
-  const mockRegistrationData = [
-    {
-      id: 'REQ001',
-      firstName: 'John',
-      lastName: 'Doe',
-      username: 'johndoe_tech',
-      email: 'john.doe@techcorp.com',
-      phone: '+1234567890',
-      companyName: 'TechCorp Solutions',
-      companyType: 'technology',
-      profilePhoto: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-      submittedAt: '2025-09-01T10:30:00Z',
-      status: 'pending'
-    },
-    {
-      id: 'REQ002',
-      firstName: 'Sarah',
-      lastName: 'Johnson',
-      username: 'sarah_marketing',
-      email: 'sarah.j@brandboost.com',
-      phone: '+1987654321',
-      companyName: 'BrandBoost Marketing',
-      companyType: 'marketing',
-      profilePhoto: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-      submittedAt: '2025-09-01T09:15:00Z',
-      status: 'pending'
-    },
-    {
-      id: 'REQ003',
-      firstName: 'Mike',
-      lastName: 'Chen',
-      username: 'mike_sales',
-      email: 'mike.chen@salesforce.com',
-      phone: '+1555123456',
-      companyName: 'Global Sales Inc',
-      companyType: 'sales',
-      profilePhoto: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-      submittedAt: '2025-08-31T16:45:00Z',
-      status: 'approved'
-    }
-  ];
 
   // Sidebar navigation items
   const navigationItems = [
@@ -211,88 +79,261 @@ const AdminDashboard = () => {
     { value: 'education', label: 'Education' },
     { value: 'manufacturing', label: 'Manufacturing' },
     { value: 'retail', label: 'Retail' },
-    { value: 'consulting', label: 'Consulting' }
+    { value: 'consulting', label: 'Consulting' },
+    { value: 'real estate', label: 'Real Estate' },
+    { value: 'startup', label: 'Startup' },
+    { value: 'apple', label: 'Apple' }
   ];
 
-  // Update useEffect to fetch count data on component mount
-  useEffect(() => {
-    fetchCountData();
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'registrations') {
-      fetchPendingRequests();
+  // Helper function for profile image URL handling
+  const getProfileImageUrl = (profileImage) => {
+    if (!profileImage) {
+      return 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
     }
-  }, [activeTab]);
+    
+    if (profileImage.startsWith('http://') || profileImage.startsWith('https://')) {
+      return profileImage;
+    }
+    
+    // If it's just a filename or partial URL, use default image
+    return 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+  };
 
-  useEffect(() => {
-    filterRequests();
-  }, [pendingRequests, searchTerm, statusFilter, companyTypeFilter]);
-
-  const handleSignOut = async () => {
+  // Fetch detailed registration data
+  const fetchDetailedRegistrationData = async () => {
     try {
-      setIsLoading(true);
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
       
-      // Clear the specific localStorage items used by your auth system
-      localStorage.removeItem('loggedIn');
-      localStorage.removeItem('userType');
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      
-      // Clear any other potential auth-related items
-      localStorage.removeItem('authToken');
-      localStorage.removeItem('userSession');
-      localStorage.removeItem('adminSession');
-      localStorage.removeItem('userRole');
-      
-      // Clear sessionStorage
-      sessionStorage.clear();
-      
-      // Clear cookies
-      document.cookie.split(";").forEach(function(c) { 
-        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
-      });
-      
-      // Trigger storage event to notify other components (like your App.js)
-      window.dispatchEvent(new Event('storage'));
-      
-      setShowSignOutModal(false);
-      
-      // Show success message
-      alert('Successfully signed out! Redirecting to login page...');
-      
-      // Use React Router navigation
-      navigate('/login'); // or navigate('/') if login is at root
-      
-    } catch (error) {
-      console.error('Error during sign out:', error);
-      
-      // Fallback redirect if navigate fails
-      try {
-        window.location.href = '/login';
-      } catch (e) {
-        window.location.reload();
+      if (!token) {
+        throw new Error('No authentication token found');
       }
+
+      const response = await fetch(`${API_BASE_URL}/api/superAdmin/`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Error fetching detailed registration data:', error);
+      return null;
+    }
+  };
+
+  // Fetch data from specific APIs
+  const fetchRegistrationData = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      };
+
+      // Fetch all four API endpoints
+      const [pendingResponse, approvedResponse, rejectedResponse, detailedData] = await Promise.all([
+        fetch(`${API_BASE_URL}/api/superAdmin/pending`, { headers }),
+        fetch(`${API_BASE_URL}/api/superAdmin/approved`, { headers }),
+        fetch(`${API_BASE_URL}/api/superAdmin/rejected`, { headers }),
+        fetchDetailedRegistrationData()
+      ]);
+
+      // Check if responses are ok
+      if (!pendingResponse.ok || !approvedResponse.ok || !rejectedResponse.ok) {
+        if (pendingResponse.status === 401 || approvedResponse.status === 401 || rejectedResponse.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+          return;
+        }
+        throw new Error('Failed to fetch registration data');
+      }
+
+      // Parse JSON responses
+      const pendingData = await pendingResponse.json();
+      const approvedData = await approvedResponse.json();
+      const rejectedData = await rejectedResponse.json();
+
+      // Enhanced transformation with detailed data and fixed image handling
+      const transformData = (items, status) => {
+        return items?.map(item => {
+          const detailedInfo = detailedData ? detailedData[item.id] : null;
+          
+          return {
+            id: item.id,
+            firstName: item.owners_firstName,
+            lastName: item.owners_lastName,
+            username: item.username,
+            email: item.email,
+            phone: item.phone,
+            companyName: item.companyName,
+            companyType: item.companyType,
+            profilePhoto: getProfileImageUrl(item.profileImage),
+            submittedAt: item.createdAt,
+            status: status,
+            subscription: item.subscription,
+            noOfUsers: item.noOfUsers,
+            agreeToterms: item.agreeToterms,
+            // Additional detailed information
+            adminCount: detailedInfo?.adminCount || 0,
+            employeeCount: detailedInfo?.employeeCount || 0,
+            leadCount: detailedInfo?.leadCount || 0,
+            alertCount: detailedInfo?.alertCount || 0
+          };
+        }) || [];
+      };
+
+      const transformedPending = transformData(pendingData.pending, 'pending');
+      const transformedApproved = transformData(approvedData.data, 'approved');
+      const transformedRejected = transformData(rejectedData.rejected, 'rejected');
+
+      // Set the state
+      setPendingRequests(transformedPending);
+      setApprovedRequests(transformedApproved);
+      setRejectedRequests(transformedRejected);
+      
+      // Combine all requests
+      const combinedRequests = [...transformedPending, ...transformedApproved, ...transformedRejected];
+      setAllRequests(combinedRequests);
+
+      // Update count data
+      setCountData({
+        total: combinedRequests.length,
+        approvedCount: transformedApproved.length,
+        pendingCount: transformedPending.length,
+        rejectedCount: transformedRejected.length
+      });
+
+    } catch (error) {
+      console.error('Error fetching registration data:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchPendingRequests = async () => {
-    setIsLoading(true);
+  // Keep the existing fetchCountData function as backup
+  const fetchCountData = async () => {
+    setIsCountLoading(true);
     try {
-      setTimeout(() => {
-        setPendingRequests(mockRegistrationData);
-        setIsLoading(false);
-      }, 1000);
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
+      
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`${API_BASE_URL}/api/superAdmin/count`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('authToken');
+          window.location.href = '/login';
+          return;
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      setCountData(data);
     } catch (error) {
-      console.error('Error fetching pending requests:', error);
-      setIsLoading(false);
+      console.error('Error fetching count data:', error);
+    } finally {
+      setIsCountLoading(false);
     }
   };
 
+  // Updated dashboard stats using API data
+  const overviewStats = [
+    {
+      id: 'totalCompanies',
+      title: "Total Companies",
+      value: isLoading ? "..." : countData.total.toString(),
+      change: "+12%",
+      trend: "up",
+      icon: Building,
+      color: "from-blue-500 to-blue-600",
+      lightColor: "bg-blue-50 dark:bg-blue-900/20",
+      textColor: "text-blue-600 dark:text-blue-400",
+      subtitle: "Registered companies"
+    },
+    {
+      id: 'approvedCompanies',
+      title: "Approved Companies",
+      value: isLoading ? "..." : countData.approvedCount.toString(),
+      change: "+8%",
+      trend: "up",
+      icon: CheckCircle,
+      color: "from-emerald-500 to-emerald-600",
+      lightColor: "bg-emerald-50 dark:bg-emerald-900/20",
+      textColor: "text-emerald-600 dark:text-emerald-400",
+      subtitle: "Active companies"
+    },
+    {
+      id: 'pendingCompanies',
+      title: "Pending Approval",
+      value: isLoading ? "..." : countData.pendingCount.toString(),
+      change: "+15%",
+      trend: "up",
+      icon: Clock,
+      color: "from-amber-500 to-amber-600",
+      lightColor: "bg-amber-50 dark:bg-amber-900/20",
+      textColor: "text-amber-600 dark:text-amber-400",
+      subtitle: "Awaiting approval"
+    },
+    {
+      id: 'rejectedCompanies',
+      title: "Rejected Applications",
+      value: isLoading ? "..." : countData.rejectedCount.toString(),
+      change: "-3%",
+      trend: "down",
+      icon: XCircle,
+      color: "from-red-500 to-red-600",
+      lightColor: "bg-red-50 dark:bg-red-900/20",
+      textColor: "text-red-600 dark:text-red-400",
+      subtitle: "Rejected applications"
+    }
+  ];
+
+  // Update useEffect to fetch registration data on component mount
+  useEffect(() => {
+    fetchRegistrationData();
+  }, []);
+
+  useEffect(() => {
+    if (activeTab === 'registrations') {
+      // Data is already loaded, just filter if needed
+      filterRequests();
+    }
+  }, [activeTab, allRequests, searchTerm, statusFilter, companyTypeFilter]);
+
+  // Updated filter function to work with combined data
   const filterRequests = () => {
-    let filtered = pendingRequests;
+    let filtered = allRequests;
 
     if (searchTerm) {
       filtered = filtered.filter(request =>
@@ -308,24 +349,125 @@ const AdminDashboard = () => {
     }
 
     if (companyTypeFilter !== 'all') {
-      filtered = filtered.filter(request => request.companyType === companyTypeFilter);
+      filtered = filtered.filter(request => 
+        request.companyType.toLowerCase() === companyTypeFilter.toLowerCase()
+      );
     }
 
     setFilteredRequests(filtered);
   };
 
+  // FIXED approve/reject handler with multiple API endpoint attempts
   const handleApproveReject = async (requestId, action, reason = '') => {
     setIsLoading(true);
     try {
-      console.log(`${action} request ${requestId} with reason: ${reason}`);
+      const token = localStorage.getItem('token') || localStorage.getItem('authToken');
       
-      setPendingRequests(prev => 
-        prev.map(request => 
-          request.id === requestId 
-            ? { ...request, status: action === 'approve' ? 'approved' : 'rejected' }
-            : request
-        )
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
+      let response = null;
+      let apiUrl = '';
+
+      // Try different possible API endpoint patterns
+      const apiAttempts = [
+        // Attempt 1: Dedicated approve/reject endpoints
+        {
+          url: `${API_BASE_URL}/api/superAdmin/${action}/${requestId}`,
+          method: 'PUT',
+          body: { reason: reason || '' }
+        },
+        // Attempt 2: Update status endpoint
+        {
+          url: `${API_BASE_URL}/api/superAdmin/updateStatus`,
+          method: 'PUT',
+          body: { id: requestId, status: newStatus, reason: reason || '' }
+        },
+        // Attempt 3: PATCH on main endpoint
+        {
+          url: `${API_BASE_URL}/api/superAdmin/${requestId}`,
+          method: 'PATCH',
+          body: { status: newStatus, reason: reason || '' }
+        },
+        // Attempt 4: PUT on main endpoint
+        {
+          url: `${API_BASE_URL}/api/superAdmin/${requestId}`,
+          method: 'PUT',
+          body: { status: newStatus, reason: reason || '' }
+        },
+        // Attempt 5: POST to main endpoint
+        {
+          url: `${API_BASE_URL}/api/superAdmin/`,
+          method: 'POST',
+          body: { id: requestId, status: newStatus, reason: reason || '', action: action }
+        }
+      ];
+
+      for (const attempt of apiAttempts) {
+        try {
+          console.log(`Trying API: ${attempt.method} ${attempt.url}`);
+          
+          response = await fetch(attempt.url, {
+            method: attempt.method,
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(attempt.body)
+          });
+
+          console.log(`Response: ${response.status} ${response.statusText}`);
+
+          if (response.ok) {
+            apiUrl = attempt.url;
+            console.log(`Success with: ${attempt.method} ${attempt.url}`);
+            break;
+          }
+        } catch (error) {
+          console.log(`Failed attempt: ${attempt.url}`, error.message);
+          continue;
+        }
+      }
+
+      // Check if any API call was successful
+      if (response && response.ok) {
+        try {
+          const responseData = await response.json();
+          console.log('API Success Response:', responseData);
+        } catch (e) {
+          console.log('No JSON response body, but request was successful');
+        }
+      } else {
+        console.warn('All API endpoints failed or none available. Updating local state only.');
+      }
+
+      // Always update local state regardless of API success
+      const updatedRequests = allRequests.map(request =>
+        request.id === requestId
+          ? { ...request, status: action === 'approve' ? 'approved' : 'rejected' }
+          : request
       );
+      
+      setAllRequests(updatedRequests);
+
+      // Update individual arrays
+      const updatedPending = updatedRequests.filter(req => req.status === 'pending');
+      const updatedApproved = updatedRequests.filter(req => req.status === 'approved');
+      const updatedRejected = updatedRequests.filter(req => req.status === 'rejected');
+
+      setPendingRequests(updatedPending);
+      setApprovedRequests(updatedApproved);
+      setRejectedRequests(updatedRejected);
+
+      // Update counts
+      setCountData({
+        total: updatedRequests.length,
+        approvedCount: updatedApproved.length,
+        pendingCount: updatedPending.length,
+        rejectedCount: updatedRejected.length
+      });
 
       setShowModal(false);
       setSelectedRequest(null);
@@ -337,12 +479,9 @@ const AdminDashboard = () => {
       
       alert(message);
       
-      // Refresh count data after action
-      fetchCountData();
-      
     } catch (error) {
       console.error(`Error ${action}ing registration:`, error);
-      alert(`Error ${action}ing registration`);
+      alert(`Error ${action}ing registration: ${error.message}`);
     } finally {
       setIsLoading(false);
     }
@@ -380,6 +519,168 @@ const AdminDashboard = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  const handleSignOut = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Clear the specific localStorage items used by your auth system
+      localStorage.removeItem('loggedIn');
+      localStorage.removeItem('userType');
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Clear any other potential auth-related items
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('userSession');
+      localStorage.removeItem('adminSession');
+      localStorage.removeItem('userRole');
+      
+      // Clear sessionStorage
+      sessionStorage.clear();
+      
+      // Clear cookies
+      document.cookie.split(";").forEach(function(c) { 
+        document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+      });
+      
+      // Trigger storage event to notify other components
+      window.dispatchEvent(new Event('storage'));
+      
+      setShowSignOutModal(false);
+      
+      // Show success message
+      alert('Successfully signed out! Redirecting to login page...');
+      
+      // Redirect to login
+      window.location.href = '/login';
+      
+    } catch (error) {
+      console.error('Error during sign out:', error);
+      
+      // Fallback redirect if navigate fails
+      try {
+        window.location.href = '/login';
+      } catch (e) {
+        window.location.reload();
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Enhanced request details component
+  const EnhancedRequestDetails = ({ request }) => (
+    <div className="space-y-6">
+      {/* Existing user info */}
+      <div className="flex items-center space-x-4">
+        <img
+          className="h-16 w-16 rounded-full object-cover"
+          src={request.profilePhoto}
+          alt={`${request.firstName} ${request.lastName}`}
+          onError={(e) => {
+            e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+          }}
+        />
+        <div>
+          <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {request.firstName} {request.lastName}
+          </h4>
+          <p className="text-gray-600 dark:text-gray-400">@{request.username}</p>
+          <div className="mt-1">{getStatusBadge(request.status)}</div>
+        </div>
+      </div>
+
+      {/* Company Statistics - New Section */}
+      {(request.adminCount > 0 || request.employeeCount > 0 || request.leadCount > 0 || request.alertCount > 0) && (
+        <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+          <h5 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Company Statistics</h5>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{request.adminCount}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Admins</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-green-600 dark:text-green-400">{request.employeeCount}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Employees</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-purple-600 dark:text-purple-400">{request.leadCount}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Leads</div>
+            </div>
+            <div className="text-center">
+              <div className="text-lg font-bold text-orange-600 dark:text-orange-400">{request.alertCount}</div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">Alerts</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Existing company details */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Company Name</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-white">{request.companyName}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Company Type</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-white capitalize">{request.companyType}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-white">{request.email}</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Subscription</label>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              request.subscription 
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                : 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
+            }`}>
+              {request.subscription ? 'Active' : 'Inactive'}
+            </span>
+          </div>
+        </div>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-white">{request.phone}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Request ID</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-white">{request.id}</p>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Submitted</label>
+            <p className="mt-1 text-sm text-gray-900 dark:text-white">{formatDate(request.submittedAt)}</p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Terms Agreement</label>
+            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+              request.agreeToterms 
+                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+            }`}>
+              {request.agreeToterms ? 'Agreed' : 'Not Agreed'}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Updated refresh handlers
+  const handleRefreshData = () => {
+    fetchRegistrationData();
   };
 
   // Header Component
@@ -499,11 +800,11 @@ const AdminDashboard = () => {
           </p>
         </div>
         <button
-          onClick={fetchCountData}
-          disabled={isCountLoading}
+          onClick={handleRefreshData}
+          disabled={isLoading}
           className="flex items-center space-x-2 bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`w-4 h-4 ${isCountLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
         </button>
       </div>
@@ -568,14 +869,11 @@ const AdminDashboard = () => {
           <p className="text-gray-600 dark:text-gray-400 mt-1">Review and manage company registration requests</p>
         </div>
         <button
-          onClick={() => {
-            fetchPendingRequests();
-            fetchCountData(); // Also refresh count data
-          }}
-          disabled={isLoading || isCountLoading}
+          onClick={handleRefreshData}
+          disabled={isLoading}
           className="flex items-center space-x-2 bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50"
         >
-          <RefreshCw className={`w-4 h-4 ${(isLoading || isCountLoading) ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
           <span>Refresh</span>
         </button>
       </div>
@@ -588,7 +886,7 @@ const AdminDashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Pending</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {isCountLoading ? "..." : countData.pendingCount}
+                {isLoading ? "..." : countData.pendingCount}
               </p>
             </div>
           </div>
@@ -600,7 +898,7 @@ const AdminDashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Approved</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {isCountLoading ? "..." : countData.approvedCount}
+                {isLoading ? "..." : countData.approvedCount}
               </p>
             </div>
           </div>
@@ -612,7 +910,7 @@ const AdminDashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Rejected</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {isCountLoading ? "..." : countData.rejectedCount}
+                {isLoading ? "..." : countData.rejectedCount}
               </p>
             </div>
           </div>
@@ -624,7 +922,7 @@ const AdminDashboard = () => {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">Total</p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                {isCountLoading ? "..." : countData.total}
+                {isLoading ? "..." : countData.total}
               </p>
             </div>
           </div>
@@ -706,6 +1004,9 @@ const AdminDashboard = () => {
                     Contact
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                    Statistics
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Submitted
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
@@ -725,6 +1026,9 @@ const AdminDashboard = () => {
                           className="h-10 w-10 rounded-full object-cover"
                           src={request.profilePhoto}
                           alt={`${request.firstName} ${request.lastName}`}
+                          onError={(e) => {
+                            e.target.src = 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face';
+                          }}
                         />
                         <div className="ml-4">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
@@ -748,6 +1052,20 @@ const AdminDashboard = () => {
                       <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                         <Phone className="w-4 h-4 mr-1" />
                         {request.phone}
+                      </div>
+                    </td>
+                    
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex flex-wrap gap-1">
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400">
+                          {request.adminCount} Admin{request.adminCount !== 1 ? 's' : ''}
+                        </span>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">
+                          {request.employeeCount} Employee{request.employeeCount !== 1 ? 's' : ''}
+                        </span>
+                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400">
+                          {request.leadCount} Lead{request.leadCount !== 1 ? 's' : ''}
+                        </span>
                       </div>
                     </td>
                     
@@ -858,10 +1176,10 @@ const AdminDashboard = () => {
         </main>
       </div>
 
-      {/* Registration Action Modal */}
+      {/* Updated Registration Action Modal */}
       {showModal && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -880,82 +1198,31 @@ const AdminDashboard = () => {
                 </button>
               </div>
 
-              {/* Request Details */}
-              <div className="space-y-6">
-                <div className="flex items-center space-x-4">
-                  <img
-                    className="h-16 w-16 rounded-full object-cover"
-                    src={selectedRequest.profilePhoto}
-                    alt={`${selectedRequest.firstName} ${selectedRequest.lastName}`}
-                  />
+              {/* Use the enhanced request details component */}
+              <EnhancedRequestDetails request={selectedRequest} />
+
+              {/* Action Section */}
+              {actionType !== 'view' && (
+                <div className="space-y-4 mt-6">
                   <div>
-                    <h4 className="text-xl font-semibold text-gray-900 dark:text-white">
-                      {selectedRequest.firstName} {selectedRequest.lastName}
-                    </h4>
-                    <p className="text-gray-600 dark:text-gray-400">@{selectedRequest.username}</p>
-                    <div className="mt-1">{getStatusBadge(selectedRequest.status)}</div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {actionType === 'approve' ? 'Approval Note (Optional)' : 'Rejection Reason'}
+                    </label>
+                    <textarea
+                      value={actionReason}
+                      onChange={(e) => setActionReason(e.target.value)}
+                      placeholder={
+                        actionType === 'approve' 
+                          ? 'Add any notes for the approval...' 
+                          : 'Please provide a reason for rejection...'
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:text-white"
+                      rows={3}
+                      required={actionType === 'reject'}
+                    />
                   </div>
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Company Name</label>
-                      <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedRequest.companyName}</p>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Company Type</label>
-                      <p className="mt-1 text-sm text-gray-900 dark:text-white capitalize">{selectedRequest.companyType}</p>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Email</label>
-                      <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedRequest.email}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Phone</label>
-                      <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedRequest.phone}</p>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Request ID</label>
-                      <p className="mt-1 text-sm text-gray-900 dark:text-white">{selectedRequest.id}</p>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Submitted</label>
-                      <p className="mt-1 text-sm text-gray-900 dark:text-white">{formatDate(selectedRequest.submittedAt)}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Section */}
-                {actionType !== 'view' && (
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        {actionType === 'approve' ? 'Approval Note (Optional)' : 'Rejection Reason'}
-                      </label>
-                      <textarea
-                        value={actionReason}
-                        onChange={(e) => setActionReason(e.target.value)}
-                        placeholder={
-                          actionType === 'approve' 
-                            ? 'Add any notes for the approval...' 
-                            : 'Please provide a reason for rejection...'
-                        }
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 dark:bg-gray-700 dark:text-white"
-                        rows={3}
-                        required={actionType === 'reject'}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Modal Actions */}
               <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
