@@ -9,7 +9,7 @@ const company = {
         lastName,
         username,
         companyName,
-        compAnyType,
+        companyType,
         email,
         phone,
         password,

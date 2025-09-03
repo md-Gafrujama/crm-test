@@ -39,9 +39,9 @@ connectDB();
   app.use("/api/forgetPass2",forgetPass2);
 
   import company from "./api/company/companie.routes.js";
-  import otpForCompany from "./api/company/otp.routes.js";
+  // import otpForCompany from "./api/company/otp.routes.js";
   app.use("/api/registerComp",company);
-  app.use("/api/companyOTP",otpForCompany)
+  // app.use("/api/companyOTP",otpForCompany)
 
   import adminAnalytics from "./api/admin/analytics.routes.js";
   app.use("/api/analytics",adminAnalytics);

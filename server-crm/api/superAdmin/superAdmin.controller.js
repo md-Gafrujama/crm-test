@@ -271,7 +271,7 @@ const superAdmin = {
 
   async updateCompanyStatus(req, res) {
     const { userType, uid } = req.user;
-    const companyId = req.parasms.id;
+    const companyId = req.params.id;
     const updateCompany = req.body;
 
     checkSuperAdmin(userType);
@@ -289,6 +289,7 @@ const superAdmin = {
     } catch (error) {
       res.status(500).json({
         msg: "Something went wrong . We will try to fix this issue soon.",
+        error:error.meta.message||error,
       });
     }
   },

@@ -16,8 +16,8 @@ router.get("/companyType",superAdminAuthMiddleware,superAdmin.companyType);
 
 router.get("/leadsCount",superAdminAuthMiddleware,superAdminSecond.getLeadsData)
 
-router.delete("/:id",superAdminAuthMiddleware,superAdmin.deleteCompany);
-router.put("/:id",superAdminAuthMiddleware,superAdmin.updateCompanyStatus);
+router.delete("/del/:id",superAdminAuthMiddleware,superAdmin.deleteCompany);
+router.put("/update/:id",superAdminAuthMiddleware,superAdmin.updateCompanyStatus);
 
 router.post("/send-otp", sendOtp);  
 router.post("/verify-otp", verifyOtp); 
