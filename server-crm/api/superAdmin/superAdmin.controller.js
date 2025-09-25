@@ -6,6 +6,9 @@ function checkSuperAdmin(userType) {
   if (userType !== "superAdmin") {
     return res.status(403).json({ message: "Access denied." });
   }
+  else{
+    return true;
+  }
 }
 
 const superAdmin = {
@@ -269,30 +272,45 @@ const superAdmin = {
     // }
   },
 
-  async updateCompanyStatus(req, res) {
-    const { userType, uid } = req.user;
-    const companyId = req.params.id;
-    const updateCompany = req.body;
+ async updateCompanyStatus(req, res) {
+  const { userType } = req.user;
+  const companyId = req.params.id;
+  const {status} = req.body;
 
+  try {
     checkSuperAdmin(userType);
-    try {
-      const company = await prisma.company.findUnique({
-        where: { id: companyId },
-      });
 
-      if (!company) {
-        return res.status(404).json({
-          success: false,
-          message: "Company not found",
-        });
-      }
-    } catch (error) {
-      res.status(500).json({
-        msg: "Something went wrong . We will try to fix this issue soon.",
-        error:error.meta.message||error,
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+    });
+
+    if (!company) {
+      return res.status(404).json({
+        success: false,
+        message: "Company not found",
       });
     }
-  },
+
+    const updatedCompany = await prisma.company.update({
+      where: { id: companyId },
+      updateCompany,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Company status updated successfully",
+    });
+
+  } catch (error) {
+    console.error("Update error:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Something went wrong. We will try to fix this issue soon.",
+      error: error?.meta?.message || error?.message || String(error),
+    });
+  }
+},
 
   async deleteCompany(req, res) {
     const { userType, uid } = req.user;
