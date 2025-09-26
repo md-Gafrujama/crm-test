@@ -114,7 +114,7 @@ const Calendar = () => {
 
   const createEvent = async (eventData) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/calendar/events`, eventData);
+      const response = await axios.post(`${API_BASE_URL}/api/calendar/addEvent`, eventData);
       return response.data;
     } catch (error) {
       console.error('Error creating event:', error);
@@ -133,41 +133,73 @@ const Calendar = () => {
         return;
       }
 
-      // Prepare event data
-      const startDateTime = `${eventForm.startDate}T${eventForm.startTime}:00`;
-      const endDateTime = eventForm.endDate && eventForm.endTime 
-        ? `${eventForm.endDate}T${eventForm.endTime}:00`
-        : `${eventForm.startDate}T${eventForm.startTime}:00`;
+      // Prepare event data to match the backend API format
+      // Add timezone offset to create proper ISO string
+      const startDateTime = `${eventForm.startDate}T${eventForm.startTime}:00.000Z`;
+      
+      let endDateTime;
+      if (eventForm.endDate && eventForm.endTime) {
+        endDateTime = `${eventForm.endDate}T${eventForm.endTime}:00.000Z`;
+      } else {
+        // Default to 1 hour after start time if no end time specified
+        const startDate = new Date(`${eventForm.startDate}T${eventForm.startTime}:00.000Z`);
+        const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // Add 1 hour
+        endDateTime = endDate.toISOString();
+      }
 
       const eventData = {
         summary: eventForm.summary,
-        description: eventForm.description,
-        start: {
-          dateTime: startDateTime,
-          timeZone: 'UTC'
-        },
-        end: {
-          dateTime: endDateTime,
-          timeZone: 'UTC'
-        }
+        description: eventForm.description || '',
+        startDateTime: startDateTime,
+        endDateTime: endDateTime,
+        timeZone: 'UTC'
       };
 
-      if (eventForm.location) {
-        eventData.location = eventForm.location;
-      }
+      console.log('Sending event data:', eventData);
 
       const result = await createEvent(eventData);
+      console.log('API Response:', result);
       
       if (result.success) {
         alert('Event created successfully!');
         closeEventForm();
         fetchEvents(); // Refresh events list
       } else {
-        alert('Failed to create event. Please try again.');
+        console.error('Event creation failed:', result);
+        alert(`Failed to create event: ${result.message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Error submitting event:', error);
-      alert('Error creating event. Please try again.');
+      
+      // Better error handling
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        
+        const errorMessage = error.response.data.error || error.response.data.message || 'Server error';
+        
+        // Check if it's an authentication error
+        if (error.response.status === 401 || errorMessage.includes('Not authenticated')) {
+          const shouldReauth = confirm(
+            'You need to re-authenticate with Google Calendar to create events. ' +
+            'This will redirect you to Google for permission to manage your calendar. ' +
+            'Click OK to continue or Cancel to close this dialog.'
+          );
+          
+          if (shouldReauth) {
+            window.location.href = `${API_BASE_URL}/api/calendar/auth`;
+            return;
+          }
+        } else {
+          alert(`Error creating event: ${errorMessage}`);
+        }
+      } else if (error.request) {
+        console.error('Request error:', error.request);
+        alert('Error creating event: No response from server');
+      } else {
+        console.error('Error:', error.message);
+        alert(`Error creating event: ${error.message}`);
+      }
     } finally {
       setSubmitting(false);
     }
