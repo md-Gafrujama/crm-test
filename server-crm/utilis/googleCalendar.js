@@ -13,8 +13,11 @@ router.get("/auth", (req, res) => {
   try {
     const url = oauth2Client.generateAuthUrl({
       access_type: "offline",
-      scope: "https://www.googleapis.com/auth/calendar.readonly",
-      prompt: "consent" 
+      scope: [
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/calendar.events"
+      ],
+      prompt: "consent"
     });
     console.log("Generated auth URL:", url);
     res.redirect(url);
@@ -36,9 +39,7 @@ router.get('/redirect', async (req, res) => {
 
         const { tokens } = await oauth2Client.getToken(code);
         oauth2Client.setCredentials(tokens);
-        
-        console.log('Tokens received successfully');
-        
+                
         const calendar = google.calendar({ version: "v3", auth: oauth2Client });
         
         const calendarsResponse = await calendar.calendarList.list();
@@ -116,6 +117,70 @@ router.get("/events", async (req, res) => {
   } catch (err) {
     console.error("Error fetching events:", err);
     res.status(500).json({ error: "Error fetching events: " + err.message });
+  }
+});
+
+router.post("/addEvent", async (req, res) => {
+  try {
+    if (!oauth2Client.credentials?.access_token) {
+      return res.status(401).json({ 
+        error: "Not authenticated. Please go to /api/calendar/auth first" 
+      });
+    }
+
+    const {
+      summary,
+      description,
+      startDateTime,
+      endDateTime,
+      calendarId = "primary",
+      timeZone = "UTC"
+    } = req.body;
+
+    if (!summary || !startDateTime || !endDateTime) {
+      return res.status(400).json({ 
+        error: "Missing required fields: summary, startDateTime, and endDateTime are required" 
+      });
+    }
+
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+    const event = {
+      summary,
+      description: description || "",
+      start: {
+        dateTime: startDateTime,
+        timeZone: timeZone,
+      },
+      end: {
+        dateTime: endDateTime,
+        timeZone: timeZone,
+      },
+    };
+
+    const response = await calendar.events.insert({
+      calendarId: calendarId,
+      resource: event,
+    });
+
+    console.log("Event created successfully:", response.data.id);
+    
+    res.json({ 
+      success: true, 
+      message: "Event created successfully",
+      event: {
+        id: response.data.id,
+        summary: response.data.summary,
+        start: response.data.start,
+        end: response.data.end,
+        htmlLink: response.data.htmlLink,
+        hangoutLink: response.data.hangoutLink
+      }
+    });
+    
+  } catch (err) {
+    console.error("Error creating event:", err);
+    res.status(500).json({ error: "Error creating event: " + err.message });
   }
 });
 
