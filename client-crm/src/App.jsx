@@ -38,6 +38,7 @@ import EmployeePage from './Components/Admin/AdminPages/EmployeePage.jsx';
 import AllLockedUsers from './Components/CombinedForUser&Admin/AllLockedUsers.jsx';
 import { SearchProvider } from './contexts/SearchContext.jsx';
 import UserAnalytics from '/src/Components/User/UserPages/UserAnalytics.jsx';
+import Calendar from './Components/Admin/AdminPages/Calendar.jsx';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem("loggedIn") === "true");
@@ -135,6 +136,7 @@ function App() {
               <Route path="/all-employees" element={<AllEmployees />} />
               <Route path="/all-locked-users" element={<AllLockedUsers />} />
               <Route path="/user-analytics" element={<UserAnalytics />} />
+              <Route path="/calendar" element={<Calendar />} />
             </Route>
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" />} />

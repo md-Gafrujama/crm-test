@@ -1,4 +1,4 @@
-import { ChartColumn, Building2,LayoutDashboard, FileText,Radar,BellPlus,FilePlus,NotepadText, Package, PackagePlus, Settings, ShoppingBag, UserCheck, UserPlus, Users } from "lucide-react";
+import { ChartColumn, Building2,LayoutDashboard, FileText,Radar,BellPlus,FilePlus,NotepadText, Package, PackagePlus, Settings, ShoppingBag, UserCheck, UserPlus, Users, Calendar } from "lucide-react";
 
 
 export const navbarLinks = [
@@ -14,6 +14,11 @@ export const navbarLinks = [
                 label: "Analytics",
                 icon: ChartColumn,
                 path: "/analytics",
+            },
+            {
+                label: "Calendar",
+                icon: Calendar,
+                path: "/calendar",
             },
         ],
     },
