@@ -12,7 +12,7 @@ import { cn } from "../../../utils/cn";
 import PropTypes from "prop-types";
 import { useTheme } from "../../../hooks/use-theme";
 
-export const Sidebar = ({ isOpen, onClose, children }) => {
+export const Sidebar = ({ isOpen, onClose, children, onCollapsedChange }) => {
   const { theme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [expandedSections, setExpandedSections] = useState(
@@ -61,26 +61,28 @@ export const Sidebar = ({ isOpen, onClose, children }) => {
   const toggleSection = (title) => {
     if (!collapsed) {
       setExpandedSections((prev) => ({
-        ...prev,
         [title]: !prev[title],
       }));
     }
   };
 
   const toggleCollapse = () => {
-    setCollapsed(!collapsed);
+    const newCollapsed = !collapsed;
+    setCollapsed(newCollapsed);
+    if (onCollapsedChange) {
+      onCollapsedChange(newCollapsed);
+    }
   };
 
   return (
     <>
       {isOpen && (
         <div
-          className="fixed inset-0 z-40 transition-opacity duration-300 ease-in-out md:hidden"
+          className="fixed inset-0 z-40 transition-opacity duration-300 ease-in-out md:hidden bg-black bg-opacity-50"
           onClick={onClose}
           aria-hidden="true"
         />
       )}
-
       {/* Sidebar */}
       <aside
         className={cn(
@@ -245,6 +247,7 @@ Sidebar.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   children: PropTypes.node,
+  onCollapsedChange: PropTypes.func,
 };
 
 

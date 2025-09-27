@@ -10,6 +10,11 @@ import Footer from '../common/Footer';
 const Calendar = () => {
   const { theme } = useTheme();
   const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const handleSidebarCollapsedChange = (collapsed) => {
+    setSidebarCollapsed(collapsed);
+  };
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState([]);
@@ -26,6 +31,8 @@ const Calendar = () => {
     location: ''
   });
   const [submitting, setSubmitting] = useState(false);
+  const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
+  const [tempDate, setTempDate] = useState(new Date());
 
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -219,6 +226,27 @@ const Calendar = () => {
     setCurrentDate(newDate);
   };
 
+  const handleMonthYearChange = (month, year) => {
+    const newDate = new Date(year, month, 1);
+    setCurrentDate(newDate);
+    setShowMonthYearPicker(false);
+  };
+
+  const openMonthYearPicker = () => {
+    setTempDate(new Date(currentDate));
+    setShowMonthYearPicker(true);
+  };
+
+  const getCurrentYear = () => new Date().getFullYear();
+  const getYearRange = () => {
+    const currentYear = getCurrentYear();
+    const years = [];
+    for (let i = currentYear - 10; i <= currentYear + 10; i++) {
+      years.push(i);
+    }
+    return years;
+  };
+
   const isToday = (day) => {
     const today = new Date();
     return (
@@ -268,9 +296,22 @@ const Calendar = () => {
     const days = [];
 
     // Empty cells for days before the first day of the month
-    for (let i = 0; i < firstDay; i++) {
+    // Adjust for Monday start (0 = Monday, 6 = Sunday)
+    const adjustedFirstDay = firstDay === 0 ? 6 : firstDay - 1;
+    
+    // Add previous month's trailing days
+    const prevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 0);
+    const prevMonthDays = prevMonth.getDate();
+    
+    for (let i = adjustedFirstDay - 1; i >= 0; i--) {
+      const day = prevMonthDays - i;
       days.push(
-        <div key={`empty-${i}`} className="h-10 md:h-12"></div>
+        <div
+          key={`prev-${day}`}
+          className="h-10 w-10 flex items-center justify-center text-sm text-gray-400 dark:text-gray-600 mx-auto"
+        >
+          {day}
+        </div>
       );
     }
 
@@ -289,20 +330,34 @@ const Calendar = () => {
             openEventForm(newSelectedDate);
           }}
           className={`
-            relative h-14 flex items-center justify-center cursor-pointer rounded-2xl transition-all duration-300 text-base font-medium transform hover:scale-105
+            relative h-10 w-10 flex items-center justify-center cursor-pointer transition-all duration-150 text-sm font-medium rounded-lg mx-auto
             ${isToday(day) 
-              ? 'bg-orange-500 text-white shadow-lg' 
+              ? 'bg-orange-500 text-white shadow-md' 
               : isSelected(day)
-              ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300 shadow-md'
-              : 'hover:bg-gray-50 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300 hover:shadow-md'
+              ? 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300'
+              : 'hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-300'
             }
-            ${hasEvents(day) ? 'ring-2 ring-blue-400 ring-opacity-30' : ''}
           `}
         >
           {day}
           {hasEvents(day) && (
-            <div className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+            <div className="absolute bottom-0.5 right-0.5 w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
           )}
+        </div>
+      );
+    }
+
+    // Add next month's leading days to fill the grid
+    const totalCells = Math.ceil((adjustedFirstDay + daysInMonth) / 7) * 7;
+    const remainingCells = totalCells - (adjustedFirstDay + daysInMonth);
+    
+    for (let day = 1; day <= remainingCells; day++) {
+      days.push(
+        <div
+          key={`next-${day}`}
+          className="h-10 w-10 flex items-center justify-center text-sm text-gray-400 dark:text-gray-600 mx-auto"
+        >
+          {day}
         </div>
       );
     }
@@ -316,7 +371,7 @@ const Calendar = () => {
     return (
       <>
         <Header onMenuClick={toggleSidebar} />
-        <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
+        <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} onCollapsedChange={handleSidebarCollapsedChange}>
           <div className="flex items-center justify-center min-h-screen">
             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-orange-500"></div>
           </div>
@@ -328,7 +383,7 @@ const Calendar = () => {
   return (
     <>
       <Header onMenuClick={toggleSidebar} />
-      <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar}>
+      <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} onCollapsedChange={handleSidebarCollapsedChange}>
         <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-slate-700">
         <div className="flex items-center space-x-4">
@@ -363,52 +418,63 @@ const Calendar = () => {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Calendar */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Compact Calendar */}
           <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-8 border border-gray-100 dark:border-slate-700">
-              <div className="flex items-center justify-between mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700 max-w-md mx-auto">
+              {/* Compact Calendar Header */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
+                <button
+                  onClick={() => navigateMonth(-1)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                </button>
+                
+                <button
+                  onClick={openMonthYearPicker}
+                  className="text-lg font-semibold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+                >
                   {months[currentDate.getMonth()]} {currentDate.getFullYear()}
-                </h2>
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => openEventForm()}
-                    className="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-xl transition-all duration-200 hover:scale-105 shadow-lg"
-                  >
-                    <Plus className="h-4 w-4" />
-                    <span>Add Event</span>
-                  </button>
-                  <button
-                    onClick={() => navigateMonth(-1)}
-                    className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-200 hover:scale-105"
-                  >
-                    <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                  </button>
-                  <button
-                    onClick={() => navigateMonth(1)}
-                    className="p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-200 hover:scale-105"
-                  >
-                    <ChevronRight className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                  </button>
+                </button>
+                
+                <button
+                  onClick={() => navigateMonth(1)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                </button>
+              </div>
+
+              {/* Compact Calendar Body */}
+              <div className="p-4">
+                {/* Days of week header - more compact */}
+                <div className="grid grid-cols-7 mb-2">
+                  {['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'].map((day) => (
+                    <div
+                      key={day}
+                      className="h-8 flex items-center justify-center text-xs font-medium text-gray-500 dark:text-gray-400"
+                    >
+                      {day}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Compact Calendar grid */}
+                <div className="grid grid-cols-7">
+                  {renderCalendarDays()}
                 </div>
               </div>
-
-              {/* Days of week header */}
-              <div className="grid grid-cols-7 gap-2 mb-4">
-                {daysOfWeek.map((day) => (
-                  <div
-                    key={day}
-                    className="h-12 flex items-center justify-center text-sm font-medium text-gray-500 dark:text-gray-400"
-                  >
-                    {day}
-                  </div>
-                ))}
-              </div>
-
-              {/* Calendar grid */}
-              <div className="grid grid-cols-7 gap-2">
-                {renderCalendarDays()}
+              
+              {/* Add Event Button */}
+              <div className="p-4 border-t border-gray-200 dark:border-slate-700">
+                <button
+                  onClick={() => openEventForm()}
+                  className="w-full flex items-center justify-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Add Event</span>
+                </button>
               </div>
             </div>
           </div>
@@ -482,6 +548,89 @@ const Calendar = () => {
                       event.start?.date || event.start?.dateTime?.split('T')[0]
                     )).size}
                   </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Month/Year Picker Modal */}
+      {showMonthYearPicker && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Select Month & Year
+                </h3>
+                <button
+                  onClick={() => setShowMonthYearPicker(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+                >
+                  <X className="h-5 w-5 text-gray-500" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                {/* Month Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Month
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {months.map((month, index) => (
+                      <button
+                        key={month}
+                        onClick={() => setTempDate(new Date(tempDate.getFullYear(), index, 1))}
+                        className={`p-3 rounded-lg text-sm font-medium transition-colors ${
+                          tempDate.getMonth() === index
+                            ? 'bg-orange-500 text-white'
+                            : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-orange-100 dark:hover:bg-orange-900'
+                        }`}
+                      >
+                        {month.slice(0, 3)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Year Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Year
+                  </label>
+                  <div className="grid grid-cols-4 gap-2 max-h-48 overflow-y-auto">
+                    {getYearRange().map((year) => (
+                      <button
+                        key={year}
+                        onClick={() => setTempDate(new Date(year, tempDate.getMonth(), 1))}
+                        className={`p-2 rounded-lg text-sm font-medium transition-colors ${
+                          tempDate.getFullYear() === year
+                            ? 'bg-orange-500 text-white'
+                            : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 hover:bg-orange-100 dark:hover:bg-orange-900'
+                        }`}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex space-x-3 pt-4">
+                  <button
+                    onClick={() => setShowMonthYearPicker(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleMonthYearChange(tempDate.getMonth(), tempDate.getFullYear())}
+                    className="flex-1 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition-colors"
+                  >
+                    Apply
+                  </button>
                 </div>
               </div>
             </div>
@@ -635,7 +784,7 @@ const Calendar = () => {
       )}
         </div>
       </Sidebar>
-      <Footer />
+      <Footer collapsed={sidebarCollapsed} />
     </>
   );
 };
