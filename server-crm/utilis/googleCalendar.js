@@ -184,6 +184,74 @@ router.post("/addEvent", async (req, res) => {
   }
 });
 
+router.post("/meeting", async (req, res) => {
+  try {
+    // Ensure the OAuth2 client has a valid access token
+    if (!oauth2Client.credentials?.access_token) {
+      return res.status(401).json({ 
+        error: "Not authenticated. Please go to /api/calendar/auth first" 
+      });
+    }
+
+    const { summary, description, startDateTime, endDateTime, timeZone = 'UTC' } = req.body;
+
+    if (!startDateTime || !endDateTime) {
+      return res.status(400).json({ error: "Missing startDateTime or endDateTime" });
+    }
+
+    const startDate = new Date(startDateTime);
+    const endDate = new Date(endDateTime);
+
+    if (endDate <= startDate) {
+      return res.status(400).json({ error: "End time must be after the start time" });
+    }
+
+    const event = {
+      summary: summary || "Google Meet Meeting",  
+      description: description || "Google Meet event",  
+      start: {
+        dateTime: startDateTime, 
+        timeZone: timeZone,
+      },
+      end: {
+        dateTime: endDateTime, 
+        timeZone: timeZone,
+      },
+      conferenceData: {
+        createRequest: {
+          requestId: `${Date.now()}`,  
+          conferenceSolutionKey: { type: 'hangoutsMeet' }, 
+          status: { statusCode: 'success' },
+        },
+      },
+    };
+
+    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+    const response = await calendar.events.insert({
+      calendarId: "primary",
+      resource: event,
+      conferenceDataVersion: 1,  
+    });
+
+    const hangoutLink = response.data.hangoutLink;
+
+    res.json({ 
+      success: true, 
+      message: "Google Meet link created successfully", 
+      hangoutLink: hangoutLink 
+    });
+
+  } catch (err) {
+    console.error("Error creating meeting:", err);
+    if (err.response) {
+      console.error("Error response details:", err.response.data);
+    }
+    res.status(500).json({ error: "Error creating Google Meet link: " + err.message });
+  }
+});
+
+
+
 router.get("/status", (req, res) => {
   const isAuthenticated = !!oauth2Client.credentials;
   res.json({
