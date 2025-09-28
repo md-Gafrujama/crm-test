@@ -40,17 +40,18 @@ model User {
   company         company  @relation("CompanyUsers", fields: [companyId], references: [id])
 
   otps            OTP[]
+  googleAuth      GoogleAuth? // Google Calendar OAuth integration
 }
 
-model superAdmin{
-  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+model superAdmin {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
   firstName String
-  lastName String
-  username String @unique
-  phone String  @unique
-  email String @unique
-  password String
-  role String @default("superAdmin")
+  lastName  String
+  username  String @unique
+  phone     String @unique
+  email     String @unique
+  password  String
+  role      String @default("superAdmin")
 }
 
 model OTP {
@@ -85,6 +86,8 @@ model Employee {
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  
+  googleAuth     GoogleAuth? // Google Calendar OAuth integration for employees
 }
 
 model company {
@@ -101,10 +104,10 @@ model company {
   hashedPassword String
 
   agreeToterms   Boolean  @default(false)
-  status         String @default("Pending")
+  status         String   @default("Pending")
   noOfUsers      Int      @default(0)
   profileImage   String
-  subscription   Boolean @default(false)
+  subscription   Boolean  @default(false)
 
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -137,6 +140,11 @@ model Lead {
   rootId              String?   
   versionNumber       Int      @default(1)
   isCurrentVersion    Boolean  @default(true)
+  
+  // Calendar integration fields
+  meetingLink         String?  // Store Google Meet links
+  calendarEventId     String?  // Store Google Calendar event ID for follow-ups
+  
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
@@ -151,30 +159,121 @@ model Alertsandremainder {
   date        DateTime
   time        String
   description String
+  
+  // Calendar integration
+  calendarEventId String? // Link to Google Calendar event
+  isCalendarSynced Boolean @default(false)
 }
 
-model Qb2b{
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-  customerName String
-  customerEmail String
+model Qb2b {
+  id             String @id @default(auto()) @map("_id") @db.ObjectId
+  customerName   String
+  customerEmail  String
   customerNumber String
-  comment String
+  comment        String
 }
 
-model compare{
-  id String @id @default(auto()) @map("_id") @db.ObjectId
+model compare {
+  id        String @id @default(auto()) @map("_id") @db.ObjectId
   firstName String
-  lastName String
-  comment String
+  lastName  String
+  comment   String
 }
 
-model qb2bLeads{
-  id String @id @default(auto()) @map("_id") @db.ObjectId
-  customerName String
-  emailAddress String
-  phoneNumber  String
+model qb2bLeads {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  customerName        String
+  emailAddress        String
+  phoneNumber         String
   serviceInterestedIn String
-  needs     String
-  promotion String
-  createdAt DateTime @default(now())
+  needs               String
+  promotion           String
+  createdAt           DateTime @default(now())
+}
+
+// Google OAuth Token Storage - Secure and Encrypted
+model GoogleAuth {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // User or Employee relation (flexible for both)
+  userId       String?  @unique @db.ObjectId
+  employeeId   String?  @unique @db.ObjectId
+  
+  // OAuth tokens (encrypted in database)
+  accessToken  String   @map("access_token")
+  refreshToken String   @map("refresh_token")
+  tokenType    String   @default("Bearer") @map("token_type")
+  scope        String?
+  
+  // Token metadata
+  expiryDate   DateTime @map("expiry_date")
+  issuedAt     DateTime @default(now()) @map("issued_at")
+  
+  // Google account information
+  googleId     String   @unique @map("google_id")
+  googleEmail  String   @map("google_email")
+  googleName   String?  @map("google_name")
+  
+  // Status and settings
+  isActive     Boolean  @default(true)
+  autoSync     Boolean  @default(true) // Auto sync calendar events
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relations (either User or Employee can have Google auth)
+  user         User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  employee     Employee? @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  
+  @@map("google_auth")
+}
+
+// Calendar Events - Track Google Calendar events created through CRM
+model CalendarEvent {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // Event details
+  googleEventId     String   @unique @map("google_event_id")
+  summary           String
+  description       String?
+  startDateTime     DateTime @map("start_date_time")
+  endDateTime       DateTime @map("end_date_time")
+  timeZone          String   @default("UTC")
+  
+  // Google Meet integration
+  meetingLink       String?  @map("meeting_link")
+  
+  // CRM Integration
+  leadId            String?  @db.ObjectId // Link to specific lead
+  alertId           String?  @db.ObjectId // Link to alert/reminder
+  
+  // Creator information
+  createdByUserId   String?  @db.ObjectId
+  createdByEmployeeId String? @db.ObjectId
+  
+  // Status
+  status            String   @default("active") // active, cancelled, completed
+  isRecurring       Boolean  @default(false)
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@map("calendar_events")
+}
+
+// Calendar Sync Log - Track sync operations
+model CalendarSyncLog {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  
+  userId        String?  @db.ObjectId
+  employeeId    String?  @db.ObjectId
+  
+  operation     String   // sync, create_event, update_event, delete_event
+  status        String   // success, failed, partial
+  details       String?  // Error messages or additional info
+  eventsCount   Int?     // Number of events processed
+  
+  createdAt     DateTime @default(now())
+  
+  @@map("calendar_sync_logs")
 }
