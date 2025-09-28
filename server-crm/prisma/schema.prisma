@@ -178,3 +178,17 @@ model qb2bLeads{
   promotion String
   createdAt DateTime @default(now())
 }
+// prisma/schema.prisma
+model GoogleToken {
+  id           String   @id @default(cuid())
+  userId       String   @unique  // You can link this to your user system
+  accessToken  String   @db.Text
+  refreshToken String?  @db.Text
+  expiresAt    DateTime
+  scope        String?
+  tokenType    String   @default("Bearer")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("google_tokens")
+}

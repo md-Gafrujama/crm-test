@@ -807,7 +807,10 @@ import {
   Globe,
   Zap,
   Star,
-  ArrowRight
+  ArrowRight,
+  AlertCircle,
+  CheckCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useTheme } from '../../../hooks/use-theme';
 import axios from 'axios';
@@ -841,6 +844,8 @@ const Calendar = () => {
   const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('month');
+  const [refreshingToken, setRefreshingToken] = useState(false);
+  const [retryQueue, setRetryQueue] = useState([]);
 
   // Get user's timezone
   const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -886,19 +891,138 @@ const Calendar = () => {
 
   // Helper function to create proper datetime string for API
   const createDateTimeString = (date, time) => {
-    // Create a proper datetime string in user's local timezone
     const dateTimeString = `${date}T${time}:00`;
     const localDate = new Date(dateTimeString);
-    
-    // Return ISO string which will be in UTC but properly converted
     return localDate.toISOString();
   };
 
-  // API Functions
+  // Enhanced token refresh function with retry logic [web:22][web:25]
+  const refreshAccessToken = async () => {
+    if (refreshingToken) {
+      // If already refreshing, wait for it to complete
+      return new Promise((resolve) => {
+        const interval = setInterval(() => {
+          if (!refreshingToken) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 100);
+      });
+    }
+
+    setRefreshingToken(true);
+    try {
+      const response = await axios.post(`${API_BASE_URL}/api/calendar/refresh-token`);
+      
+      if (response.data.success) {
+        console.log('Token refreshed successfully');
+        
+        // Process retry queue
+        if (retryQueue.length > 0) {
+          const queuedRequests = [...retryQueue];
+          setRetryQueue([]);
+          
+          // Retry all queued requests
+          for (const queuedRequest of queuedRequests) {
+            try {
+              await queuedRequest.retry();
+            } catch (error) {
+              console.error('Failed to retry queued request:', error);
+            }
+          }
+        }
+        
+        await checkAuthStatus(); // Update auth status
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      return false;
+    } finally {
+      setRefreshingToken(false);
+    }
+  };
+
+  // Enhanced API error handling with automatic retry [web:28][web:31]
+  const handleApiError = async (error, retryFunction = null) => {
+    if (error.response?.status === 401 || error.response?.data?.requiresAuth) {
+      // Check if we have a refresh token available
+      if (authStatus?.hasRefreshToken && !refreshingToken) {
+        try {
+          const refreshSuccess = await refreshAccessToken();
+          
+          if (refreshSuccess && retryFunction) {
+            // Add to retry queue if currently refreshing
+            if (refreshingToken) {
+              return new Promise((resolve) => {
+                setRetryQueue(prev => [...prev, { retry: retryFunction, resolve }]);
+              });
+            }
+            
+            // Retry immediately if refresh was successful
+            return await retryFunction();
+          }
+        } catch (refreshError) {
+          console.error('Auto-refresh failed:', refreshError);
+        }
+      }
+      
+      // If refresh fails or no refresh token, prompt for re-authentication
+      const shouldReauth = confirm(
+        'Your session has expired. Would you like to re-authenticate with Google Calendar?'
+      );
+      
+      if (shouldReauth) {
+        window.location.href = `${API_BASE_URL}/api/calendar/auth`;
+      }
+      
+      throw error;
+    }
+    
+    throw error;
+  };
+
+  // Enhanced API request wrapper with retry logic
+  const makeApiRequest = async (requestFunc, retryCount = 1) => {
+    try {
+      return await requestFunc();
+    } catch (error) {
+      if (retryCount > 0 && (error.response?.status === 401 || error.response?.data?.requiresAuth)) {
+        try {
+          await handleApiError(error, () => makeApiRequest(requestFunc, retryCount - 1));
+          return await requestFunc(); // Retry once after token refresh
+        } catch (retryError) {
+          throw retryError;
+        }
+      }
+      throw error;
+    }
+  };
+
+  // API Functions with enhanced error handling
   const checkAuthStatus = async () => {
     try {
       const response = await axios.get(`${API_BASE_URL}/api/calendar/status`);
       setAuthStatus(response.data);
+      
+      // Auto-refresh token if it's close to expiring [web:25]
+      if (response.data.authenticated && response.data.tokenExpiresAt) {
+        const expiresAt = new Date(response.data.tokenExpiresAt);
+        const now = new Date();
+        const timeUntilExpiry = expiresAt.getTime() - now.getTime();
+        
+        // If token expires in less than 10 minutes, try to refresh
+        if (timeUntilExpiry < 10 * 60 * 1000 && timeUntilExpiry > 0 && response.data.hasRefreshToken) {
+          console.log('Token expiring soon, attempting refresh...');
+          try {
+            await refreshAccessToken();
+          } catch (refreshError) {
+            console.log('Auto-refresh failed:', refreshError);
+          }
+        }
+      }
     } catch (error) {
       console.error('Error checking auth status:', error);
       setAuthStatus({ authenticated: false, error: true });
@@ -908,13 +1032,19 @@ const Calendar = () => {
   const fetchEvents = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/calendar/events`);
-      if (response.data.success) {
-        setEvents(response.data.events || []);
-      }
+      await makeApiRequest(async () => {
+        const response = await axios.get(`${API_BASE_URL}/api/calendar/events`);
+        if (response.data.success) {
+          setEvents(response.data.events || []);
+        }
+      });
     } catch (error) {
       console.error('Error fetching events:', error);
       setEvents([]);
+      
+      if (error.response?.status !== 401) {
+        showErrorNotification('Failed to fetch events. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -925,13 +1055,17 @@ const Calendar = () => {
   };
 
   const createEvent = async (eventData) => {
-    try {
+    return await makeApiRequest(async () => {
       const response = await axios.post(`${API_BASE_URL}/api/calendar/addEvent`, eventData);
       return response.data;
-    } catch (error) {
-      console.error('Error creating event:', error);
-      throw error;
-    }
+    });
+  };
+
+  const createMeetingLink = async (eventData) => {
+    return await makeApiRequest(async () => {
+      const response = await axios.post(`${API_BASE_URL}/api/calendar/meeting`, eventData);
+      return response.data;
+    });
   };
 
   // Event Form Functions
@@ -991,7 +1125,7 @@ const Calendar = () => {
 
     try {
       if (!eventForm.summary || !eventForm.startDate || !eventForm.startTime) {
-        alert('Please fill in all required fields (Title, Start Date, Start Time)');
+        showErrorNotification('Please fill in all required fields (Title, Start Date, Start Time)');
         return;
       }
 
@@ -1013,7 +1147,7 @@ const Calendar = () => {
         description: eventForm.description || '',
         startDateTime: startDateTime,
         endDateTime: endDateTime,
-        timeZone: userTimezone // Use user's timezone
+        timeZone: userTimezone
       };
 
       console.log('Sending event data with timezone:', eventData);
@@ -1021,7 +1155,6 @@ const Calendar = () => {
       const result = await createEvent(eventData);
       
       if (result.success) {
-        // Show success message with better styling
         showSuccessNotification('Event created successfully!');
         closeEventForm();
         fetchEvents();
@@ -1031,65 +1164,70 @@ const Calendar = () => {
     } catch (error) {
       console.error('Error submitting event:', error);
       
-      if (error.response) {
+      if (error.response && error.response.status !== 401) {
         const errorMessage = error.response.data.error || error.response.data.message || 'Server error';
-        
-        if (error.response.status === 401 || errorMessage.includes('Not authenticated')) {
-          const shouldReauth = confirm(
-            'You need to re-authenticate with Google Calendar to create events. ' +
-            'This will redirect you to Google for permission to manage your calendar. ' +
-            'Click OK to continue or Cancel to close this dialog.'
-          );
-          
-          if (shouldReauth) {
-            window.location.href = `${API_BASE_URL}/api/calendar/auth`;
-            return;
-          }
-        } else {
-          showErrorNotification(`Error creating event: ${errorMessage}`);
-        }
-      } else {
-        showErrorNotification(`Error creating event: ${error.message}`);
+        showErrorNotification(`Error creating event: ${errorMessage}`);
       }
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Notification functions
+  // Enhanced notification functions with better UX
   const showSuccessNotification = (message) => {
-    // Create a better notification
     const notification = document.createElement('div');
-    notification.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in';
+    notification.className = 'fixed top-4 right-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-2xl shadow-2xl z-50 animate-slide-in border border-green-400';
     notification.innerHTML = `
-      <div class="flex items-center space-x-2">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-        </svg>
-        <span>${message}</span>
+      <div class="flex items-center space-x-3">
+        <div class="flex-shrink-0">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <div class="flex-1">
+          <p class="font-semibold">${message}</p>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" class="flex-shrink-0 ml-4 text-green-200 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+          </svg>
+        </button>
       </div>
     `;
     document.body.appendChild(notification);
     setTimeout(() => {
-      notification.remove();
-    }, 3000);
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 5000);
   };
 
   const showErrorNotification = (message) => {
     const notification = document.createElement('div');
-    notification.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-slide-in';
+    notification.className = 'fixed top-4 right-4 bg-gradient-to-r from-red-500 to-red-600 text-white px-6 py-4 rounded-2xl shadow-2xl z-50 animate-slide-in border border-red-400 max-w-md';
     notification.innerHTML = `
-      <div class="flex items-center space-x-2">
-        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-        </svg>
-        <span>${message}</span>
+      <div class="flex items-start space-x-3">
+        <div class="flex-shrink-0 pt-0.5">
+          <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
+          </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="font-semibold text-sm leading-relaxed">${message}</p>
+        </div>
+        <button onclick="this.parentElement.parentElement.remove()" class="flex-shrink-0 text-red-200 hover:text-white transition-colors">
+          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+          </svg>
+        </button>
       </div>
     `;
     document.body.appendChild(notification);
     setTimeout(() => {
-      notification.remove();
-    }, 5000);
+      if (notification.parentNode) {
+        notification.remove();
+      }
+    }, 7000);
   };
 
   // Calendar Helper Functions
@@ -1162,7 +1300,7 @@ const Calendar = () => {
     });
   };
 
-  // Improved time formatting with proper timezone handling
+  // Enhanced time formatting with proper timezone handling
   const formatTime = (dateTimeStr, showTimezone = false) => {
     if (!dateTimeStr) return '';
     
@@ -1327,7 +1465,7 @@ const Calendar = () => {
   const selectedDateEvents = getEventsForDate(selectedDate.getDate());
   const monthStats = getMonthStats();
 
-  // Loading state with better design
+  // Enhanced loading state with token refresh indicator
   if (!authStatus) {
     return (
       <>
@@ -1342,6 +1480,12 @@ const Calendar = () => {
               </div>
               <p className="text-xl font-semibold text-gray-700 dark:text-gray-300 mb-2">Loading Calendar...</p>
               <p className="text-gray-500 dark:text-gray-400">Setting up your personalized experience</p>
+              {refreshingToken && (
+                <div className="mt-4 flex items-center justify-center space-x-2 text-orange-600">
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  <span className="text-sm font-medium">Refreshing authentication...</span>
+                </div>
+              )}
             </div>
           </div>
         </Sidebar>
@@ -1356,7 +1500,7 @@ const Calendar = () => {
         <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
           <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
             
-            {/* Enhanced Header Section */}
+            {/* Enhanced Header Section with Token Status */}
             <div className="mb-8">
               <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-2xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-orange-200/50 dark:border-slate-700/50 relative overflow-hidden">
                 {/* Animated Background Elements */}
@@ -1370,7 +1514,11 @@ const Calendar = () => {
                       <div className="p-5 bg-gradient-to-br from-orange-500 via-orange-600 to-orange-700 rounded-3xl shadow-2xl group-hover:shadow-orange-500/25 transition-all duration-300 group-hover:scale-105">
                         <CalendarIcon className="h-10 w-10 text-white" />
                       </div>
-                      <div className="absolute -top-2 -right-2 w-6 h-6 bg-gradient-to-r from-green-400 to-green-500 rounded-full border-3 border-white dark:border-slate-800 animate-pulse" />
+                      <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full border-3 border-white dark:border-slate-800 animate-pulse ${
+                        authStatus?.authenticated && authStatus?.isTokenValid 
+                          ? 'bg-gradient-to-r from-green-400 to-green-500' 
+                          : 'bg-gradient-to-r from-yellow-400 to-yellow-500'
+                      }`} />
                       <Sparkles className="absolute -bottom-1 -left-1 w-4 h-4 text-orange-400 animate-pulse" />
                     </div>
                     <div>
@@ -1386,6 +1534,31 @@ const Calendar = () => {
                           <span className="text-xs font-medium">{userTimezone}</span>
                         </div>
                       </div>
+                      {/* Token status indicator */}
+                      {authStatus?.authenticated && (
+                        <div className="flex items-center space-x-2 mt-2">
+                          <div className={`flex items-center space-x-2 px-3 py-1 rounded-full text-xs font-medium ${
+                            authStatus.isTokenValid 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' 
+                              : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                          }`}>
+                            {authStatus.isTokenValid ? (
+                              <CheckCircle className="w-3 h-3" />
+                            ) : (
+                              <AlertCircle className="w-3 h-3" />
+                            )}
+                            <span>
+                              {authStatus.isTokenValid ? 'Connected' : 'Token Refreshing'}
+                            </span>
+                          </div>
+                          {refreshingToken && (
+                            <div className="flex items-center space-x-1 text-orange-500">
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                              <span className="text-xs font-medium">Refreshing...</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1393,15 +1566,24 @@ const Calendar = () => {
                   <div className="flex items-center space-x-4">
                     <button
                       onClick={() => openEventForm()}
-                      className="group flex items-center space-x-3 bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 hover:from-orange-600 hover:via-orange-700 hover:to-orange-800 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl hover:shadow-orange-500/25 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1"
+                      disabled={!authStatus?.authenticated || refreshingToken}
+                      className="group flex items-center space-x-3 bg-gradient-to-r from-orange-500 via-orange-600 to-orange-700 hover:from-orange-600 hover:via-orange-700 hover:to-orange-800 disabled:from-orange-300 disabled:to-orange-400 text-white font-bold py-4 px-8 rounded-2xl shadow-2xl hover:shadow-orange-500/25 transition-all duration-500 transform hover:scale-105 hover:-translate-y-1 disabled:transform-none disabled:cursor-not-allowed"
                     >
                       <Plus className="h-6 w-6 group-hover:rotate-90 transition-transform duration-500" />
                       <span className="hidden sm:inline text-lg">Create Event</span>
                       <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform duration-300" />
                     </button>
                     
-                    <button className="group p-4 bg-white/80 dark:bg-slate-700/80 backdrop-blur-xl rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 transform hover:scale-105 hover:-translate-y-1">
-                      <Bell className="h-6 w-6 group-hover:animate-pulse" />
+                    <button 
+                      onClick={() => checkAuthStatus()}
+                      disabled={refreshingToken}
+                      className="group p-4 bg-white/80 dark:bg-slate-700/80 backdrop-blur-xl rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 text-gray-600 dark:text-gray-400 hover:text-orange-500 dark:hover:text-orange-400 transform hover:scale-105 hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {refreshingToken ? (
+                        <RefreshCw className="h-6 w-6 animate-spin" />
+                      ) : (
+                        <Bell className="h-6 w-6 group-hover:animate-pulse" />
+                      )}
                     </button>
                   </div>
                 </div>
@@ -1457,14 +1639,16 @@ const Calendar = () => {
                         <div className="flex items-center space-x-6">
                           <button
                             onClick={() => navigateMonth(-1)}
-                            className="group p-4 hover:bg-white dark:hover:bg-slate-700 rounded-2xl transition-all duration-300 text-gray-600 dark:text-gray-400 hover:text-orange-500 hover:shadow-xl transform hover:scale-105"
+                            disabled={refreshingToken}
+                            className="group p-4 hover:bg-white dark:hover:bg-slate-700 rounded-2xl transition-all duration-300 text-gray-600 dark:text-gray-400 hover:text-orange-500 hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <ChevronLeft className="h-6 w-6 group-hover:-translate-x-1 transition-transform duration-300" />
                           </button>
                           
                           <button
                             onClick={openMonthYearPicker}
-                            className="group flex items-center space-x-3 text-3xl font-bold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-300 hover:scale-105 transform"
+                            disabled={refreshingToken}
+                            className="group flex items-center space-x-3 text-3xl font-bold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 transition-colors duration-300 hover:scale-105 transform disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span>{months[currentDate.getMonth()]} {currentDate.getFullYear()}</span>
                             <MoreHorizontal className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity duration-300 animate-pulse" />
@@ -1472,7 +1656,8 @@ const Calendar = () => {
                           
                           <button
                             onClick={() => navigateMonth(1)}
-                            className="group p-4 hover:bg-white dark:hover:bg-slate-700 rounded-2xl transition-all duration-300 text-gray-600 dark:text-gray-400 hover:text-orange-500 hover:shadow-xl transform hover:scale-105"
+                            disabled={refreshingToken}
+                            className="group p-4 hover:bg-white dark:hover:bg-slate-700 rounded-2xl transition-all duration-300 text-gray-600 dark:text-gray-400 hover:text-orange-500 hover:shadow-xl transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <ChevronRight className="h-6 w-6 group-hover:translate-x-1 transition-transform duration-300" />
                           </button>
@@ -1484,7 +1669,8 @@ const Calendar = () => {
                             <button
                               key={mode}
                               onClick={() => setViewMode(mode)}
-                              className={`px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 capitalize ${
+                              disabled={refreshingToken}
+                              className={`px-6 py-3 rounded-xl text-sm font-bold transition-all duration-300 capitalize disabled:opacity-50 disabled:cursor-not-allowed ${
                                 viewMode === mode
                                   ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-lg transform scale-105'
                                   : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-slate-600/50'
@@ -1516,6 +1702,16 @@ const Calendar = () => {
                       <div className="grid grid-cols-7 gap-3">
                         {renderCalendarDays()}
                       </div>
+                      
+                      {/* Loading overlay for calendar */}
+                      {loading && (
+                        <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm flex items-center justify-center rounded-3xl">
+                          <div className="flex items-center space-x-3">
+                            <div className="animate-spin rounded-full h-8 w-8 border-4 border-orange-500 border-t-transparent"></div>
+                            <span className="text-gray-600 dark:text-gray-400 font-medium">Loading events...</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1898,19 +2094,25 @@ const Calendar = () => {
                         <button
                           type="button"
                           onClick={closeEventForm}
-                          className="flex-1 px-8 py-4 border-2 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-all duration-300 font-bold transform hover:scale-105"
+                          disabled={submitting}
+                          className="flex-1 px-8 py-4 border-2 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 rounded-2xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-all duration-300 font-bold transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
-                          disabled={submitting}
+                          disabled={submitting || refreshingToken}
                           className="flex-1 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-orange-300 disabled:to-orange-400 text-white rounded-2xl transition-all duration-300 flex items-center justify-center font-bold shadow-xl hover:shadow-orange-500/25 disabled:cursor-not-allowed transform hover:scale-105 hover:-translate-y-1 disabled:transform-none"
                         >
                           {submitting ? (
                             <>
                               <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent mr-3"></div>
                               Creating Event...
+                            </>
+                          ) : refreshingToken ? (
+                            <>
+                              <RefreshCw className="h-6 w-6 animate-spin mr-3" />
+                              Refreshing Token...
                             </>
                           ) : (
                             <>
