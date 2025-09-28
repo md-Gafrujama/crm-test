@@ -178,3 +178,59 @@ model qb2bLeads{
   promotion String
   createdAt DateTime @default(now())
 }
+
+// schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb" // or "postgresql", "mysql" 
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid()) @map("_id")
+  email     String   @unique
+  name      String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // OAuth tokens
+  oauthTokens OAuthToken[]
+  
+  @@map("users")
+}
+
+model OAuthToken {
+  id                    String    @id @default(cuid()) @map("_id")
+  userId                String
+  provider              String    // "google"
+  accessToken           String
+  refreshToken          String?
+  accessTokenExpiresAt  DateTime
+  refreshTokenExpiresAt DateTime?
+  scope                 String[]
+  tokenType             String    @default("Bearer")
+  idToken               String?   // Optional: for additional user info
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, provider])
+  @@map("oauth_tokens")
+}
+
+model Session {
+  id        String   @id @default(cuid()) @map("_id")
+  sessionId String   @unique
+  userId    String?
+  data      String   // JSON stringified session data
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("sessions")
+}
