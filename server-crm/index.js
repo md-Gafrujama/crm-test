@@ -77,11 +77,8 @@ import "./automate/automate.routes.js";
 import superAdmin from "./api/superAdmin/superAmin.routes.js";
 app.use("/api/superAdmin", superAdmin);
 
-// import googleCalendarRoutes from "./utilis/googleCalendar.js";
-// app.use("/api/calendar", googleCalendarRoutes);
-import calendarRoutes from './routes/calendarWithDB.js';  // Updated import
-app.use('/api/calendar', calendarRoutes);
-
+import googleCalendarRoutes from "./utilis/googleCalendar.js";
+app.use("/api/calendar", googleCalendarRoutes);
 
 import updatePassword from "./middleware/updatePassword.middleware.js";
 import jwtTokenMiddleware from "./middleware/jwtoken.middleware.js";

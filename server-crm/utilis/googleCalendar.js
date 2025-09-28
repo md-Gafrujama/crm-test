@@ -1,9 +1,7 @@
 import express from "express";
 import { google } from "googleapis";
-import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
@@ -11,119 +9,6 @@ const oauth2Client = new google.auth.OAuth2(
   process.env.REDIRECT_URL_ONE 
 );
 
-// Helper function to store tokens in database
-const storeTokens = async (tokens, userId = null) => {
-  try {
-    const expiryDate = tokens.expiry_date ? new Date(tokens.expiry_date) : null;
-    
-    const tokenData = {
-      userId,
-      accessToken: tokens.access_token,
-      refreshToken: tokens.refresh_token,
-      expiryDate,
-      scope: tokens.scope ? tokens.scope.split(' ') : [],
-      tokenType: tokens.token_type || 'Bearer'
-    };
-
-    // Delete existing tokens for this user (if userId exists) or all tokens (if no user system)
-    if (userId) {
-      await prisma.googleToken.deleteMany({ where: { userId } });
-    } else {
-      await prisma.googleToken.deleteMany({});
-    }
-
-    const savedToken = await prisma.googleToken.create({
-      data: tokenData
-    });
-
-    console.log("Tokens stored in database:", savedToken.id);
-    return savedToken;
-  } catch (error) {
-    console.error("Error storing tokens:", error);
-    throw error;
-  }
-};
-
-// Helper function to get tokens from database
-const getStoredTokens = async (userId = null) => {
-  try {
-    const tokenRecord = await prisma.googleToken.findFirst({
-      where: userId ? { userId } : {},
-      orderBy: { createdAt: 'desc' }
-    });
-
-    if (!tokenRecord) {
-      return null;
-    }
-
-    return {
-      access_token: tokenRecord.accessToken,
-      refresh_token: tokenRecord.refreshToken,
-      expiry_date: tokenRecord.expiryDate ? tokenRecord.expiryDate.getTime() : null,
-      token_type: tokenRecord.tokenType,
-      scope: tokenRecord.scope.join(' ')
-    };
-  } catch (error) {
-    console.error("Error retrieving tokens:", error);
-    return null;
-  }
-};
-
-// Helper function to refresh access token
-const refreshAccessToken = async (userId = null) => {
-  try {
-    const storedTokens = await getStoredTokens(userId);
-    
-    if (!storedTokens || !storedTokens.refresh_token) {
-      throw new Error('No refresh token available');
-    }
-
-    oauth2Client.setCredentials(storedTokens);
-    
-    const { credentials } = await oauth2Client.refreshAccessToken();
-    
-    // Update tokens in database
-    await storeTokens(credentials, userId);
-    
-    // Update oauth2Client with new tokens
-    oauth2Client.setCredentials(credentials);
-    
-    console.log("Access token refreshed successfully");
-    return credentials;
-  } catch (error) {
-    console.error("Error refreshing token:", error);
-    throw error;
-  }
-};
-
-// Helper function to ensure valid authentication
-const ensureValidAuth = async (userId = null) => {
-  try {
-    const storedTokens = await getStoredTokens(userId);
-    
-    if (!storedTokens) {
-      throw new Error('No stored tokens found');
-    }
-
-    // Check if token is expired
-    const now = new Date().getTime();
-    const expiryTime = storedTokens.expiry_date;
-    
-    if (expiryTime && now >= expiryTime) {
-      console.log("Token expired, refreshing...");
-      await refreshAccessToken(userId);
-    } else {
-      oauth2Client.setCredentials(storedTokens);
-    }
-
-    return true;
-  } catch (error) {
-    console.error("Authentication validation failed:", error);
-    throw error;
-  }
-};
-
-// Routes
 router.get("/auth", (req, res) => {
   try {
     const url = oauth2Client.generateAuthUrl({
@@ -143,46 +28,42 @@ router.get("/auth", (req, res) => {
 });
 
 router.get('/redirect', async (req, res) => {
-  try {
-    const { code } = req.query;
-    
-    if (!code) {
-      return res.status(400).json({ error: 'No authorization code received' });
+    try {
+        const { code } = req.query;
+        
+        if (!code) {
+            return res.status(400).json({ error: 'No authorization code received' });
+        }
+
+        console.log("Received code:", code);
+
+        const { tokens } = await oauth2Client.getToken(code);
+        oauth2Client.setCredentials(tokens);
+                
+        const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+        
+        const calendarsResponse = await calendar.calendarList.list();
+        const calendars = calendarsResponse.data.items;
+        
+        res.json({ 
+            success: true, 
+            message: 'Authentication successful! Calendar access verified.',
+            calendarCount: calendars.length,
+            access_token: tokens.access_token ? "Received" : "Not received",
+            has_refresh_token: !!tokens.refresh_token
+        });
+        
+    } catch (error) {
+        console.error('Token exchange error:', error);
+        res.status(500).json({ error: 'Failed to exchange code for tokens: ' + error.message });
     }
-
-    console.log("Received code:", code);
-
-    const { tokens } = await oauth2Client.getToken(code);
-    
-    // Store tokens in database
-    await storeTokens(tokens);
-    
-    // Set credentials for immediate use
-    oauth2Client.setCredentials(tokens);
-            
-    const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-    
-    const calendarsResponse = await calendar.calendarList.list();
-    const calendars = calendarsResponse.data.items;
-    
-    res.json({ 
-      success: true, 
-      message: 'Authentication successful! Tokens stored in database.',
-      calendarCount: calendars.length,
-      access_token: tokens.access_token ? "Stored" : "Not received",
-      has_refresh_token: !!tokens.refresh_token,
-      stored_in_db: true
-    });
-    
-  } catch (error) {
-    console.error('Token exchange error:', error);
-    res.status(500).json({ error: 'Failed to exchange code for tokens: ' + error.message });
-  }
 });
 
 router.get("/calendars", async (req, res) => {
   try {
-    await ensureValidAuth();
+    if (!oauth2Client.credentials) {
+      return res.status(401).json({ error: "Not authenticated. Please go to /api/calendar/auth first" });
+    }
 
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
     const response = await calendar.calendarList.list();
@@ -197,23 +78,17 @@ router.get("/calendars", async (req, res) => {
         description: cal.description
       }))
     });
-  } catch (error) {
-    console.error("Error fetching calendars:", error);
-    
-    if (error.message.includes('No stored tokens') || error.message.includes('No refresh token')) {
-      return res.status(401).json({ 
-        error: "Authentication required. Please re-authenticate.",
-        requiresAuth: true 
-      });
-    }
-    
-    res.status(500).json({ error: "Error fetching calendars: " + error.message });
+  } catch (err) {
+    console.error("Error fetching calendars:", err);
+    res.status(500).json({ error: "Error fetching calendars: " + err.message });
   }
 });
 
 router.get("/events", async (req, res) => {
   try {
-    await ensureValidAuth();
+    if (!oauth2Client.credentials) {
+      return res.status(401).json({ error: "Not authenticated. Please go to /api/calendar/auth first" });
+    }
 
     const calendarId = req.query.calendar || "primary";
     const calendar = google.calendar({ version: "v3", auth: oauth2Client });
@@ -239,23 +114,19 @@ router.get("/events", async (req, res) => {
         description: event.description
       }))
     });
-  } catch (error) {
-    console.error("Error fetching events:", error);
-    
-    if (error.message.includes('No stored tokens') || error.message.includes('No refresh token')) {
-      return res.status(401).json({ 
-        error: "Authentication required. Please re-authenticate.",
-        requiresAuth: true 
-      });
-    }
-    
-    res.status(500).json({ error: "Error fetching events: " + error.message });
+  } catch (err) {
+    console.error("Error fetching events:", err);
+    res.status(500).json({ error: "Error fetching events: " + err.message });
   }
 });
 
 router.post("/addEvent", async (req, res) => {
   try {
-    await ensureValidAuth();
+    if (!oauth2Client.credentials?.access_token) {
+      return res.status(401).json({ 
+        error: "Not authenticated. Please go to /api/calendar/auth first" 
+      });
+    }
 
     const {
       summary,
@@ -307,23 +178,20 @@ router.post("/addEvent", async (req, res) => {
       }
     });
     
-  } catch (error) {
-    console.error("Error creating event:", error);
-    
-    if (error.message.includes('No stored tokens') || error.message.includes('No refresh token')) {
-      return res.status(401).json({ 
-        error: "Authentication required. Please re-authenticate.",
-        requiresAuth: true 
-      });
-    }
-    
-    res.status(500).json({ error: "Error creating event: " + error.message });
+  } catch (err) {
+    console.error("Error creating event:", err);
+    res.status(500).json({ error: "Error creating event: " + err.message });
   }
 });
 
 router.post("/meeting", async (req, res) => {
   try {
-    await ensureValidAuth();
+    // Ensure the OAuth2 client has a valid access token
+    if (!oauth2Client.credentials?.access_token) {
+      return res.status(401).json({ 
+        error: "Not authenticated. Please go to /api/calendar/auth first" 
+      });
+    }
 
     const { summary, description, startDateTime, endDateTime, timeZone = 'UTC' } = req.body;
 
@@ -373,91 +241,24 @@ router.post("/meeting", async (req, res) => {
       hangoutLink: hangoutLink 
     });
 
-  } catch (error) {
-    console.error("Error creating meeting:", error);
-    
-    if (error.message.includes('No stored tokens') || error.message.includes('No refresh token')) {
-      return res.status(401).json({ 
-        error: "Authentication required. Please re-authenticate.",
-        requiresAuth: true 
-      });
+  } catch (err) {
+    console.error("Error creating meeting:", err);
+    if (err.response) {
+      console.error("Error response details:", err.response.data);
     }
-    
-    res.status(500).json({ error: "Error creating Google Meet link: " + error.message });
+    res.status(500).json({ error: "Error creating Google Meet link: " + err.message });
   }
 });
 
-router.get("/status", async (req, res) => {
-  try {
-    const storedTokens = await getStoredTokens();
-    const isAuthenticated = !!storedTokens;
-    
-    let tokenStatus = {
-      authenticated: isAuthenticated,
-      hasAccessToken: false,
-      hasRefreshToken: false,
-      isExpired: false,
-      storedInDatabase: isAuthenticated
-    };
 
-    if (isAuthenticated) {
-      tokenStatus.hasAccessToken = !!storedTokens.access_token;
-      tokenStatus.hasRefreshToken = !!storedTokens.refresh_token;
-      
-      if (storedTokens.expiry_date) {
-        const now = new Date().getTime();
-        tokenStatus.isExpired = now >= storedTokens.expiry_date;
-      }
-    }
 
-    res.json(tokenStatus);
-  } catch (error) {
-    console.error("Error checking status:", error);
-    res.json({
-      authenticated: false,
-      hasAccessToken: false,
-      hasRefreshToken: false,
-      isExpired: false,
-      storedInDatabase: false,
-      error: true
-    });
-  }
-});
-
-// New route to manually refresh token
-router.post("/refresh-token", async (req, res) => {
-  try {
-    const refreshedTokens = await refreshAccessToken();
-    
-    res.json({
-      success: true,
-      message: "Token refreshed successfully",
-      hasAccessToken: !!refreshedTokens.access_token,
-      hasRefreshToken: !!refreshedTokens.refresh_token
-    });
-  } catch (error) {
-    console.error("Error refreshing token:", error);
-    res.status(401).json({ 
-      error: "Failed to refresh token: " + error.message,
-      requiresAuth: true 
-    });
-  }
-});
-
-// Cleanup route for development
-router.delete("/tokens", async (req, res) => {
-  try {
-    await prisma.googleToken.deleteMany({});
-    oauth2Client.setCredentials({});
-    
-    res.json({
-      success: true,
-      message: "All tokens cleared from database"
-    });
-  } catch (error) {
-    console.error("Error clearing tokens:", error);
-    res.status(500).json({ error: "Error clearing tokens: " + error.message });
-  }
+router.get("/status", (req, res) => {
+  const isAuthenticated = !!oauth2Client.credentials;
+  res.json({
+    authenticated: isAuthenticated,
+    hasAccessToken: !!oauth2Client.credentials?.access_token,
+    hasRefreshToken: !!oauth2Client.credentials?.refresh_token
+  });
 });
 
 export default router;
