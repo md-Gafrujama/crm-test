@@ -179,58 +179,26 @@ model qb2bLeads{
   createdAt DateTime @default(now())
 }
 
-// schema.prisma
-generator client {
-  provider = "prisma-client-js"
-}
+model GoogleToken {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String?  // Optional: link to user if you have user system
+  accessToken   String
+  refreshToken  String?
+  expiryDate    DateTime?
+  scope         String[]
+  tokenType     String   @default("Bearer")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-datasource db {
-  provider = "mongodb" // or "postgresql", "mysql" 
-  url      = env("DATABASE_URL")
+  @@map("google_tokens")
 }
 
 model User {
-  id        String   @id @default(cuid()) @map("_id")
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   email     String   @unique
   name      String?
-  avatar    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  
-  // OAuth tokens
-  oauthTokens OAuthToken[]
-  
+
   @@map("users")
-}
-
-model OAuthToken {
-  id                    String    @id @default(cuid()) @map("_id")
-  userId                String
-  provider              String    // "google"
-  accessToken           String
-  refreshToken          String?
-  accessTokenExpiresAt  DateTime
-  refreshTokenExpiresAt DateTime?
-  scope                 String[]
-  tokenType             String    @default("Bearer")
-  idToken               String?   // Optional: for additional user info
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@unique([userId, provider])
-  @@map("oauth_tokens")
-}
-
-model Session {
-  id        String   @id @default(cuid()) @map("_id")
-  sessionId String   @unique
-  userId    String?
-  data      String   // JSON stringified session data
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@map("sessions")
 }
