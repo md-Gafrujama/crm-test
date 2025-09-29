@@ -252,8 +252,8 @@ const AdminAnalytics = ({ collapsed }) => {
     }
   }, [usersData]);
 
-  // Enhanced Pie Chart Data for Lead Distribution
-  const leadsPieData = {
+  // Enhanced Bar Chart Data for Lead Distribution
+  const leadsBarData = {
     labels: ["Total Leads", "Qualified Leads", "Pending Leads", "Lost Leads"],
     datasets: [
       {
@@ -265,26 +265,26 @@ const AdminAnalytics = ({ collapsed }) => {
           leadsData.lossLeads,
         ],
         backgroundColor: [
-          "rgba(139, 92, 246, 0.8)", // Purple
-          "rgba(16, 185, 129, 0.8)", // Emerald
-          "rgba(245, 158, 11, 0.8)", // Amber
-          "rgba(239, 68, 68, 0.8)", // Red
+          "#8B5CF6", // Purple - similar to your reference
+          "#10B981", // Emerald - similar to your reference  
+          "#F59E0B", // Amber - similar to your reference
+          "#EF4444", // Red - similar to your reference
         ],
         borderColor: [
-          "rgb(139, 92, 246)",
-          "rgb(16, 185, 129)",
-          "rgb(245, 158, 11)",
-          "rgb(239, 68, 68)",
+          "#8B5CF6",
+          "#10B981", 
+          "#F59E0B",
+          "#EF4444",
         ],
-        borderWidth: 3,
-        hoverOffset: 15,
-        hoverBorderWidth: 4,
+        borderWidth: 0,
+        borderRadius:0,
+        maxBarThickness: 60,
       },
     ],
   };
 
-  // Enhanced Doughnut Chart Data for User Analytics
-  const userDoughnutData = {
+  // Enhanced Bar Chart Data for User Analytics
+  const userBarData = {
     labels: [
       "Total Users",
       "Active Users",
@@ -301,26 +301,109 @@ const AdminAnalytics = ({ collapsed }) => {
           usersData.totalEmployee,
         ],
         backgroundColor: [
-          "rgba(99, 102, 241, 0.8)", // Indigo
-          "rgba(34, 197, 94, 0.8)", // Green
-          "rgba(236, 72, 153, 0.8)", // Pink
-          "rgba(234, 179, 8, 0.8)", // Yellow
+          "#6366F1", // Indigo
+          "#22C55E", // Green
+          "#EC4899", // Pink
+          "#EAB308", // Yellow
         ],
         borderColor: [
-          "rgb(99, 102, 241)",
-          "rgb(34, 197, 94)",
-          "rgb(236, 72, 153)",
-          "rgb(234, 179, 8)",
+          "#6366F1",
+          "#22C55E",
+          "#EC4899",
+          "#EAB308",
         ],
-        borderWidth: 3,
-        cutout: "65%",
-        hoverOffset: 15,
-        hoverBorderWidth: 4,
+        borderWidth: 0,
+        borderRadius: 0,
+        maxBarThickness: 60,
       },
     ],
   };
 
-  const chartOptions = {
+  const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: {
+        top: 20,
+        bottom: 20,
+        left: 20,
+        right: 20,
+      },
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        titleColor: "white",
+        bodyColor: "white",
+        borderColor: "rgba(255, 255, 255, 0.1)",
+        borderWidth: 1,
+        cornerRadius: 8,
+        padding: 10,
+        displayColors: false,
+        callbacks: {
+          label: function (context) {
+            const value = context.parsed.y;
+            return `${context.label}: ${value}`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        border: {
+          display: false,
+        },
+        ticks: {
+          font: {
+            size: 12,
+            weight: "500",
+          },
+          color: "#6B7280",
+          padding: 10,
+        },
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: "rgba(229, 231, 235, 0.8)",
+          drawBorder: false,
+          lineWidth: 1,
+        },
+        border: {
+          display: true,
+          color: "#D1D5DB",
+          width: 1,
+        },
+        ticks: {
+          font: {
+            size: 11,
+            weight: "400",
+          },
+          color: "#6B7280",
+          padding: 10,
+          stepSize: 1,
+        },
+      },
+    },
+    elements: {
+      bar: {
+        borderRadius: 4,
+        borderSkipped: false,
+      },
+    },
+    animation: {
+      duration: 800,
+      easing: "easeOutQuart",
+    },
+  };
+
+  const doughnutChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -528,7 +611,7 @@ const AdminAnalytics = ({ collapsed }) => {
                 </p>
               </div>
               <div style={{ height: "450px" }} className="relative">
-                <Pie data={leadsPieData} options={chartOptions} />
+                <Bar data={leadsBarData} options={barChartOptions} />
               </div>
             </div>
 
@@ -639,7 +722,7 @@ const AdminAnalytics = ({ collapsed }) => {
                 </p>
               </div>
               <div style={{ height: "450px" }} className="relative">
-                <Doughnut data={userDoughnutData} options={chartOptions} />
+                <Bar data={userBarData} options={barChartOptions} />
               </div>
             </div>
           </div>
