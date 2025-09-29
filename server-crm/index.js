@@ -37,6 +37,10 @@ app.use("/api/userProfile", userProfile);
 app.use("/api/forgetPass1", forgetPass1);
 app.use("/api/forgetPass2", forgetPass2);
 
+import calendar from "./api/calendar/calendar.routes.js";
+app.use("/api/events",calendar);
+
+
 import company from "./api/company/companie.routes.js";
 app.use("/api/registerComp", company);
 
@@ -64,6 +68,9 @@ import qb2b from "./api/external/qb2b.routes.js";
 app.use("/api/external/compBazar", compBaz);
 app.use("/api/external/qb2b", qb2b);
 
+import googleCalendarRoutes from "./api/googleCalendar/googleCalendar.routes.js";
+app.use("/api/calendar", googleCalendarRoutes);
+
 import exportLead from "./api/leads/exportLeads.js";
 import leadsRoutes from "./api/leads/leads.routes.js";
 app.use("/api/export", exportLead);
@@ -77,8 +84,6 @@ import "./automate/automate.routes.js";
 import superAdmin from "./api/superAdmin/superAmin.routes.js";
 app.use("/api/superAdmin", superAdmin);
 
-import googleCalendarRoutes from "./utilis/googleCalendar.js";
-app.use("/api/calendar", googleCalendarRoutes);
 
 import updatePassword from "./middleware/updatePassword.middleware.js";
 import jwtTokenMiddleware from "./middleware/jwtoken.middleware.js";

@@ -178,3 +178,17 @@ model qb2bLeads{
   promotion String
   createdAt DateTime @default(now())
 }
+
+model Calendar{
+  id String @id @default(auto()) @map("_id") @db.ObjectId
+  uid String
+  companyId String
+  eventTopic    String
+  eventDate DateTime
+  startingTime DateTime?
+  endingTime DateTime?
+  meeting String?
+  description String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
