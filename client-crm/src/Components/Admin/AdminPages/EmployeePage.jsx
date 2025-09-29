@@ -11,6 +11,28 @@ import Footer from '../common/Footer';
 import AddEmployeeForm from '../Forms/AddEmployeeForm';
 import { Search, Users, UserCheck, Building, Activity, UserX, Filter } from 'lucide-react';
 
+// Chart.js imports for Bar charts
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
 const EmployeePage = ({collapsed}) => {
   const navigate = useNavigate();
   const [employees, setemployees] = useState([]);
@@ -70,93 +92,117 @@ const EmployeePage = ({collapsed}) => {
   const inactiveEmployees = filteredEmployees.filter(emp => emp.status === 'inactive').length;
   const totalDepartments = departments.length;
 
-  // Pie chart data for the 4 main categories
-  const chartData = [
-    { name: 'Total Employees', value: totalEmployees, color: '#3B82F6', percentage: 0 },
-    { name: 'Active Employees', value: activeEmployees, color: '#10B981', percentage: 0 },
-    { name: 'Inactive Employees', value: inactiveEmployees, color: '#EF4444', percentage: 0 },
-    { name: 'Departments', value: totalDepartments, color: '#8B5CF6', percentage: 0 }
-  ];
+  // Bar chart data for employee statistics
+  const employeeBarData = {
+    labels: ['Total Employees', 'Active Employees', 'Inactive Employees', 'Departments'],
+    datasets: [
+      {
+        label: 'Employee Statistics',
+        data: [totalEmployees, activeEmployees, inactiveEmployees, totalDepartments],
+        backgroundColor: [
+          '#3B82F6', // Blue for Total Employees
+          '#10B981', // Green for Active Employees
+          '#EF4444', // Red for Inactive Employees
+          '#8B5CF6', // Purple for Departments
+        ],
+        borderColor: [
+          '#3B82F6',
+          '#10B981',
+          '#EF4444',
+          '#8B5CF6',
+        ],
+        borderWidth: 0,
+        borderRadius: 0,
+        maxBarThickness: 60,
+      },
+    ],
+  };
 
-  // Calculate total for percentage (excluding departments count for meaningful percentages)
-  const totalForPercentage = totalEmployees || 1;
-  chartData[0].percentage = totalEmployees ? 100 : 0;
-  chartData[1].percentage = totalEmployees ? ((activeEmployees / totalEmployees) * 100).toFixed(1) : 0;
-  chartData[2].percentage = totalEmployees ? ((inactiveEmployees / totalEmployees) * 100).toFixed(1) : 0;
-  chartData[3].percentage = ((totalDepartments / (totalDepartments + totalEmployees)) * 100).toFixed(1);
+  // Bar chart options matching AdminAnalytics style
+  const barChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    layout: {
+      padding: {
+        top: 20,
+        bottom: 20,
+        left: 20,
+        right: 20,
+      },
+    },
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: "rgba(0, 0, 0, 0.8)",
+        titleColor: "white",
+        bodyColor: "white",
+        borderColor: "rgba(255, 255, 255, 0.1)",
+        borderWidth: 1,
+        cornerRadius: 8,
+        padding: 10,
+        displayColors: false,
+        callbacks: {
+          label: function (context) {
+            const value = context.parsed.y;
+            return `${context.label}: ${value}`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          display: false,
+        },
+        border: {
+          display: false,
+        },
+        ticks: {
+          font: {
+            size: 12,
+            weight: "500",
+          },
+          color: "#6B7280",
+          padding: 10,
+        },
+      },
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: "rgba(229, 231, 235, 0.8)",
+          drawBorder: false,
+          lineWidth: 1,
+        },
+        border: {
+          display: true,
+          color: "#D1D5DB",
+          width: 1,
+        },
+        ticks: {
+          font: {
+            size: 11,
+            weight: "400",
+          },
+          color: "#6B7280",
+          padding: 10,
+          stepSize: 1,
+        },
+      },
+    },
+    elements: {
+      bar: {
+        borderRadius: 4,
+        borderSkipped: false,
+      },
+    },
+    animation: {
+      duration: 800,
+      easing: "easeOutQuart",
+    },
+  };
 
-  // Simple pie chart component
-const PieChart = ({ data }) => {
-  const size = 320;
-  const center = size / 2;
-  const radius = size / 2 - 30;
-  
-  let cumulativePercentage = 0;
-  
-  return (
-    <div className="flex flex-col lg:flex-row items-center justify-center gap-12">
-      <div className="relative flex-shrink-0">
-        <svg width={size} height={size} className="transform -rotate-90">
-          {data.map((item, index) => {
-            if (item.value === 0) return null;
-            
-            const percentage = item.name === 'Total Employees' ? 30 : 
-                            item.name === 'Active Employees' ? 40 :
-                            item.name === 'Inactive Employees' ? 20 : 10;
-            
-            const startAngle = (cumulativePercentage / 100) * 360;
-            const endAngle = ((cumulativePercentage + percentage) / 100) * 360;
-            
-            const x1 = center + radius * Math.cos((startAngle * Math.PI) / 180);
-            const y1 = center + radius * Math.sin((startAngle * Math.PI) / 180);
-            const x2 = center + radius * Math.cos((endAngle * Math.PI) / 180);
-            const y2 = center + radius * Math.sin((endAngle * Math.PI) / 180);
-            
-            const largeArcFlag = percentage > 50 ? 1 : 0;
-            
-            const pathData = [
-              `M ${center} ${center}`,
-              `L ${x1} ${y1}`,
-              `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-              'Z'
-            ].join(' ');
-            
-            cumulativePercentage += percentage;
-            
-            return (
-              <path
-                key={index}
-                d={pathData}
-                fill={item.color}
-                stroke="#fff"
-                strokeWidth="2"
-              />
-            );
-          })}
-        </svg>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 min-w-0">
-        {data.map((item, index) => (
-          <div key={index} className="flex items-center gap-3">
-            <div 
-              className="w-4 h-4 rounded flex-shrink-0"
-              style={{ backgroundColor: item.color }}
-            />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
-                {item.name}
-              </p>
-              <p className="text-lg font-bold text-gray-900 dark:text-white">
-                {item.value}
-              </p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
 
 
 
@@ -448,15 +494,15 @@ const PieChart = ({ data }) => {
   </>
 )}
 
-{/* Pie Chart Section */}
+{/* Bar Chart Section */}
 {filteredEmployees.length > 0 && (
   <div className="max-w-7xl mx-auto mb-6">
     <div className=" dark:bg-slate-800  border-gray-200 dark:border-slate-600 p-8">
       <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-8 text-center">
         Employee Statistics Overview
       </h2>
-      <div className="overflow-x-auto">
-        <PieChart data={chartData} />
+      <div style={{ height: "450px" }} className="relative">
+        <Bar data={employeeBarData} options={barChartOptions} />
       </div>
     </div>
   </div>

@@ -185,27 +185,29 @@ const UserAnalytics = ({ onLogout }) => {
     },
   ];
 
-  // Updated Bar Chart with #ff8633 theme
+  // Updated Bar Chart with clean modern styling
   const LeadsBarChart = () => {
     const data = {
-      labels: ['Qualified Leads', 'Pending Leads', 'Lost Leads'],
+      labels: ['Total Leads', 'Qualified Leads', 'Pending Leads', 'Lost Leads'],
       datasets: [
         {
           label: 'Number of Leads',
-          data: [leadsData.qualifiedLeads, leadsData.pendingLeads, leadsData.lossLeads],
+          data: [leadsData.totalLeads, leadsData.qualifiedLeads, leadsData.pendingLeads, leadsData.lossLeads],
           backgroundColor: [
-            '#ff8633', // Primary orange for qualified (most important)
-            'rgba(255, 134, 51, 0.7)', // Lighter orange for pending
-            'rgba(255, 134, 51, 0.4)', // Very light orange for loss
+            '#8B5CF6', // Purple for Total Leads
+            '#10B981', // Green for Qualified Leads
+            '#F59E0B', // Amber for Pending Leads
+            '#EF4444', // Red for Lost Leads
           ],
           borderColor: [
-            '#ff8633',
-            '#ff8633',
-            '#ff8633',
+            '#8B5CF6',
+            '#10B981',
+            '#F59E0B',
+            '#EF4444',
           ],
-          borderWidth: 2,
-          borderRadius: 8,
-          borderSkipped: false,
+          borderWidth: 0,
+          borderRadius: 0,
+          maxBarThickness: 60,
         },
       ],
     };
@@ -213,95 +215,99 @@ const UserAnalytics = ({ onLogout }) => {
     const options = {
       responsive: true,
       maintainAspectRatio: false,
+      layout: {
+        padding: {
+          top: 20,
+          bottom: 20,
+          left: 20,
+          right: 20,
+        },
+      },
       plugins: {
         legend: {
-          position: 'top',
-          labels: {
-            color: theme === 'dark' ? '#ffffff' : '#374151',
-            font: {
-              size: 12,
-              weight: 'bold',
-            },
-            usePointStyle: true,
-            pointStyle: 'rect',
-          },
-        },
-        title: {
-          display: true,
-          text: 'Leads Distribution Overview',
-          color: '#ff8633',
-          font: {
-            size: 20,
-            weight: 'bold',
-          },
-          padding: {
-            top: 10,
-            bottom: 30,
-          },
+          display: false,
         },
         tooltip: {
-          backgroundColor: theme === 'dark' ? '#1f2937' : '#ffffff',
-          titleColor: '#ff8633',
-          bodyColor: theme === 'dark' ? '#ffffff' : '#374151',
-          borderColor: '#ff8633',
-          borderWidth: 2,
+          backgroundColor: "rgba(0, 0, 0, 0.8)",
+          titleColor: "white",
+          bodyColor: "white",
+          borderColor: "rgba(255, 255, 255, 0.1)",
+          borderWidth: 1,
           cornerRadius: 8,
-          displayColors: true,
+          padding: 10,
+          displayColors: false,
           callbacks: {
-            label: function(context) {
-              const total = leadsData.totalLeads;
-              const percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
-              return `${context.label}: ${context.raw} (${percentage}%)`;
-            }
-          }
+            label: function (context) {
+              const value = context.parsed.y;
+              return `${context.label}: ${value}`;
+            },
+          },
         },
       },
       scales: {
-        y: {
-          beginAtZero: true,
-          grid: {
-            color: theme === 'dark' ? 'rgba(255, 134, 51, 0.1)' : 'rgba(255, 134, 51, 0.1)',
-            drawBorder: false,
-          },
-          ticks: {
-            color: theme === 'dark' ? '#ffffff' : '#374151',
-            font: {
-              size: 11,
-            },
-            stepSize: 1,
-          },
-          title: {
-            display: true,
-            text: 'Number of Leads',
-            color: '#ff8633',
-            font: {
-              size: 12,
-              weight: 'bold',
-            },
-          },
-        },
         x: {
           grid: {
             display: false,
           },
+          border: {
+            display: false,
+          },
           ticks: {
-            color: theme === 'dark' ? '#ffffff' : '#374151',
+            font: {
+              size: 12,
+              weight: "500",
+            },
+            color: "#6B7280",
+            padding: 10,
+          },
+        },
+        y: {
+          beginAtZero: true,
+          grid: {
+            color: "rgba(229, 231, 235, 0.8)",
+            drawBorder: false,
+            lineWidth: 1,
+          },
+          border: {
+            display: true,
+            color: "#D1D5DB",
+            width: 1,
+          },
+          ticks: {
             font: {
               size: 11,
-              weight: 'bold',
+              weight: "400",
             },
+            color: "#6B7280",
+            padding: 10,
+            stepSize: 1,
           },
         },
       },
+      elements: {
+        bar: {
+          borderRadius: 4,
+          borderSkipped: false,
+        },
+      },
       animation: {
-        duration: 1000,
-        easing: 'easeInOutQuart',
+        duration: 800,
+        easing: "easeOutQuart",
       },
     };
 
     return (
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border-2 border-[#ff8633] hover:shadow-xl transition-all duration-300 hover:border-[#ff8633]/80">
-        <div className="h-96">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-8">
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Leads Distribution Analysis
+            </h3>
+           
+          </div>
+        
+        </div>
+        <div style={{ height: "450px" }} className="relative">
           {leadsLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
