@@ -335,5 +335,4 @@ const calendarController = {
     });
   },
 };
-
 export default calendarController;

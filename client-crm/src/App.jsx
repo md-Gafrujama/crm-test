@@ -39,6 +39,7 @@ import AllLockedUsers from './Components/CombinedForUser&Admin/AllLockedUsers.js
 import { SearchProvider } from './contexts/SearchContext.jsx';
 import UserAnalytics from '/src/Components/User/UserPages/UserAnalytics.jsx';
 import Calendar from './Components/Admin/AdminPages/Calendar.jsx';
+import GoogleCalendarCallback from './Components/Admin/AdminPages/GoogleCalendarCallback.jsx';
 
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem("loggedIn") === "true");
@@ -138,6 +139,9 @@ function App() {
               <Route path="/user-analytics" element={<UserAnalytics />} />
               <Route path="/calendar" element={<Calendar />} />
             </Route>
+            
+            {/* Google Calendar OAuth callback - accessible without authentication */}
+            <Route path="/google-calendar-callback" element={<GoogleCalendarCallback />} />
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>
