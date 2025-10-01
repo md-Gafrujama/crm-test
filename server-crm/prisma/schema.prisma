@@ -189,6 +189,9 @@ model Calendar{
   endingTime DateTime?
   meeting String?
   description String
+  eventFor      String 
+  hangoutLink   String?
+  googleEventLink String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
