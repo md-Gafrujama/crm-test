@@ -1,22 +1,66 @@
 import { google } from "googleapis";
 import prisma from "../prisma/prismaClient.js";
 
-const oauth2Client = new google.auth.OAuth2(
-  process.env.CLIENT_ID,
-  process.env.CLIENT_SECRET,
-  process.env.REDIRECT_URL_ONE
-);
+const createOAuth2Client = () =>
+  new google.auth.OAuth2(
+    process.env.CLIENT_ID,
+    process.env.CLIENT_SECRET,
+    process.env.REDIRECT_URL_ONE,
+    process.env.REDIRECT_URL_TWO
+  );
 
 function formatDateToISO(dateTimeStr) {
   if (!dateTimeStr) throw new Error("Date string is empty");
-  let normalized = dateTimeStr.replace(" ", "T");
+
+  const normalized = dateTimeStr.replace(" ", "T");
   const isoDate = new Date(normalized);
+
   if (isNaN(isoDate.getTime())) {
     throw new Error(
       "Invalid date format, expected RFC3339 like 2025-09-29T10:00:00+05:45"
     );
   }
+
   return isoDate.toISOString();
+}
+
+async function getAuthenticatedClient(userId) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+
+  if (!user || !user.googleAccessToken || !user.googleRefreshToken) {
+    throw new Error("Google account not connected. Please authenticate.");
+  }
+
+  const oauth2Client = createOAuth2Client();
+
+  oauth2Client.setCredentials({
+    access_token: user.googleAccessToken,
+    refresh_token: user.googleRefreshToken,
+    expiry_date: user.googleExpiryDate,
+  });
+
+  const needsRefresh =
+    !user.googleExpiryDate || Date.now() >= user.googleExpiryDate - 60 * 1000;
+
+  if (needsRefresh) {
+    const { credentials } = await oauth2Client.refreshAccessToken();
+    oauth2Client.setCredentials(credentials);
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        googleAccessToken: credentials.access_token,
+        googleExpiryDate: credentials.expiry_date,
+        ...(credentials.refresh_token && {
+          googleRefreshToken: credentials.refresh_token,
+        }),
+      },
+    });
+  }
+
+  return oauth2Client;
 }
 
 const googleCalendarMiddleware = {
@@ -35,23 +79,22 @@ const googleCalendarMiddleware = {
         timeZone = "UTC",
       } = req.body;
 
-      if (!oauth2Client.credentials?.access_token) {
-        return res.status(401).json({
-          error:
-            "Google Calendar not authenticated. Please authenticate first at /api/calendar/auth",
-        });
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ error: "User not authenticated." });
       }
+
+      const oauth2Client = await getAuthenticatedClient(userId);
+      const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
       const startDate = formatDateToISO(startingTime);
       const endDate = formatDateToISO(endingTime);
 
       if (endDate <= startDate) {
-        return res.status(400).json({
-          error: "End time must be after the start time",
-        });
+        return res
+          .status(400)
+          .json({ error: "End time must be after the start time" });
       }
-
-      const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
       const event = {
         summary: eventTopic,

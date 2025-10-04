@@ -25,13 +25,16 @@ const calendarController = {
   async auth(req, res) {
     try {
       const url = oauth2Client.generateAuthUrl({
-        access_type: "offline",
-        scope: [
-          "https://www.googleapis.com/auth/calendar.readonly",
-          "https://www.googleapis.com/auth/calendar.events",
-        ],
-        prompt: "consent",
-      });
+      access_type: "offline",
+      prompt: "consent",
+      scope: [
+        "https://www.googleapis.com/auth/calendar.readonly",
+        "https://www.googleapis.com/auth/calendar.events",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "openid"
+      ],
+    });
       console.log("Generated auth URL:", url);
       res.redirect(url);
     } catch (error) {
@@ -49,26 +52,67 @@ const calendarController = {
           .json({ error: "No authorization code received" });
       }
 
-      console.log("Received code:", code);
+      console.log("Received OAuth code:", code);
 
       const { tokens } = await oauth2Client.getToken(code);
+      console.log("Tokens from Google:", tokens);
+
+      if (!tokens.access_token) {
+        return res.status(400).json({
+          error:
+            "No access token received. Check your redirect URI and scopes.",
+          tokens,
+        });
+      }
+
       oauth2Client.setCredentials(tokens);
 
-      const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-      const calendarsResponse = await calendar.calendarList.list();
-      const calendars = calendarsResponse.data.items;
+      const tokenInfo = await oauth2Client.getTokenInfo(tokens.access_token);
+      console.log("Token info verified:", tokenInfo);
 
-      res.json({
+      const oauth2 = google.oauth2({
+        auth: oauth2Client,
+        version: "v2",
+      });
+
+      const { data: userInfo } = await oauth2.userinfo.get();
+      console.log("Fetched user info:", userInfo);
+
+      if (!userInfo.email) {
+        return res.status(400).json({
+          error: "Failed to get user email from Google",
+        });
+      }
+
+      const user = await prisma.user.findUnique({
+        where: { email: userInfo.email },
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          error: `No local user found with email: ${userInfo.email}`,
+        });
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          googleAccessToken: tokens.access_token,
+          googleRefreshToken: tokens.refresh_token ?? user.googleRefreshToken,
+          googleExpiryDate: tokens.expiry_date ?? user.googleExpiryDate,
+        },
+      });
+
+      return res.json({
         success: true,
-        message: "Authentication successful! Calendar access verified.",
-        calendarCount: calendars.length,
-        access_token: tokens.access_token ? "Received" : "Not received",
-        has_refresh_token: !!tokens.refresh_token,
+        message: "Google account connected successfully",
+        userEmail: user.email,
+        hasRefreshToken: !!tokens.refresh_token,
       });
     } catch (error) {
-      console.error("Token exchange error:", error);
-      res.status(500).json({
-        error: "Failed to exchange code for tokens: " + error.message,
+      console.error("🔴 OAuth redirect error:", error.response?.data || error);
+      return res.status(500).json({
+        error: "Google OAuth failed: " + error.message,
       });
     }
   },

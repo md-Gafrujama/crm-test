@@ -33,6 +33,10 @@ model User {
   about           String?
   skills          String[]
   lockedAt        DateTime?
+  googleAccessToken  String?
+  googleRefreshToken String?
+  googleExpiryDate   Int? 
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
