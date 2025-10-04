@@ -4,7 +4,7 @@ import jwtTokenMiddleware from "../../middleware/jwtoken.middleware.js";
 
 const router = express.Router();
 
-router.get("/auth",jwtTokenMiddleware, calendarController.auth);
+router.get("/auth", calendarController.auth);
 router.get("/redirect", calendarController.redirect);
 router.get("/calendars",jwtTokenMiddleware, calendarController.getCalendars);
 router.get("/events",jwtTokenMiddleware, calendarController.getEvents);

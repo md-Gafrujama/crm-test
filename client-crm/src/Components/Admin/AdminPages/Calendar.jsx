@@ -21,14 +21,17 @@ const Calendar = () => {
   const [loading, setLoading] = useState(false);
   const [showEventForm, setShowEventForm] = useState(false);
   const [eventForm, setEventForm] = useState({
-    eventTopic: '',
+    summary: '',
     description: '',
-    eventDate: '',
-    startingTime: '',
-    endingTime: '',
-    meeting: false
+    startDateTime: '',
+    endDateTime: '',
+    eventPurpose: 'MEETING',
+    meetingType: 'ONLINE',
+    requireMeeting: false
   });
   const [submitting, setSubmitting] = useState(false);
+  const [isGoogleAuthenticated, setIsGoogleAuthenticated] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
   const [tempDate, setTempDate] = useState(new Date());
   const months = [
@@ -38,15 +41,17 @@ const Calendar = () => {
 
   const daysOfWeek = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-  // Fetch events on component mount
+  // Check Google Calendar authentication status on component mount
   useEffect(() => {
-    fetchEvents();
+    checkGoogleAuthStatus();
   }, []);
 
-  // Fetch events when date changes
+  // Fetch events when authenticated or date changes
   useEffect(() => {
-    fetchEvents();
-  }, [currentDate]);
+    if (isGoogleAuthenticated) {
+      fetchEvents();
+    }
+  }, [isGoogleAuthenticated, currentDate]);
 
   const validateToken = (token) => {
     if (!token) {
@@ -99,41 +104,82 @@ const Calendar = () => {
     };
   };
 
+  const checkGoogleAuthStatus = async () => {
+    setAuthLoading(true);
+    try {
+      const headers = getAuthHeaders();
+      const response = await axios.get(`${API_BASE_URL}/api/calendar/status`, { headers });
+      console.log('Google auth status:', response.data);
+      
+      if (response.data && response.data.authenticated) {
+        setIsGoogleAuthenticated(true);
+      } else {
+        setIsGoogleAuthenticated(false);
+      }
+    } catch (error) {
+      console.error('Error checking Google auth status:', error);
+      setIsGoogleAuthenticated(false);
+      if (error.response?.status === 401) {
+        handleAuthError();
+      }
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const initiateGoogleAuth = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        handleAuthError();
+        return;
+      }
+      
+      // Navigate directly to the auth endpoint with token in URL
+      window.location.href = `${API_BASE_URL}/api/calendar/auth?authToken=${encodeURIComponent(token)}`;
+    } catch (error) {
+      console.error('Error initiating Google auth:', error);
+      if (error.message.includes('token')) {
+        handleAuthError();
+      }
+    }
+  };
+
   const fetchEvents = async () => {
     setLoading(true);
     try {
       const headers = getAuthHeaders();
-      console.log('Fetching events with headers:', headers);
+      console.log('Fetching Google Calendar events with headers:', headers);
       
-      const response = await axios.get(`${API_BASE_URL}/api/events/getAllEvents`, { headers });
-      console.log('Events response:', response.data);
+      const response = await axios.get(`${API_BASE_URL}/api/calendar/events`, { headers });
+      console.log('Google Calendar events response:', response.data);
       
       if (response.data && response.data.success) {
-        const events = response.data.data.map(event => ({
+        const events = response.data.events.map(event => ({
           id: event.id,
-          summary: event.eventTopic,
-          description: event.description,
+          summary: event.summary || 'No Title',
+          description: event.description || '',
           start: {
-            dateTime: event.startingTime,
-            date: event.eventDate
+            dateTime: event.start,
+            date: event.start ? new Date(event.start).toISOString().split('T')[0] : null
           },
           end: {
-            dateTime: event.endingTime
+            dateTime: event.end
           },
-          source: 'local'
+          source: 'google'
         }));
         setEvents(events);
       } else {
         setEvents([]);
       }
     } catch (error) {
-      console.error('Fetch events error:', error);
+      console.error('Fetch Google Calendar events error:', error);
       if (error.response) {
         console.error('Error response:', error.response.data);
         console.error('Error status:', error.response.status);
       }
       if (error.response?.status === 401) {
-        handleAuthError();
+        setIsGoogleAuthenticated(false);
         return;
       }
       setEvents([]);
@@ -152,37 +198,36 @@ const Calendar = () => {
 
   const resetEventForm = () => {
     setEventForm({
-      eventTopic: '',
+      summary: '',
       description: '',
-      eventDate: '',
-      startingTime: '',
-      endingTime: '',
-      meeting: false
+      startDateTime: '',
+      endDateTime: '',
+      eventPurpose: 'MEETING',
+      meetingType: 'ONLINE',
+      requireMeeting: false
     });
   };
 
   const openEventForm = (date = null) => {
     if (date) {
       const dateStr = date.toISOString().split('T')[0];
-      const startDateTime = dateStr + 'T09:00';
-      const endDateTime = dateStr + 'T10:00';
+      const startDateTime = dateStr + 'T09:00:00';
+      const endDateTime = dateStr + 'T10:00:00';
       setEventForm(prev => ({
         ...prev,
-        eventDate: dateStr,
-        startingTime: startDateTime,
-        endingTime: endDateTime
+        startDateTime: startDateTime,
+        endDateTime: endDateTime
       }));
     } else {
       // Set default values for today
       const today = new Date();
       const dateStr = today.toISOString().split('T')[0];
-      const startDateTime = dateStr + 'T09:00';
-      const endDateTime = dateStr + 'T10:00';
+      const startDateTime = dateStr + 'T09:00:00';
+      const endDateTime = dateStr + 'T10:00:00';
       setEventForm(prev => ({
         ...prev,
-        eventDate: dateStr,
-        startingTime: startDateTime,
-        endingTime: endDateTime
+        startDateTime: startDateTime,
+        endDateTime: endDateTime
       }));
     }
     setShowEventForm(true);
@@ -197,35 +242,37 @@ const Calendar = () => {
     try {
       const headers = getAuthHeaders();
       
-      // Ensure proper date formatting
-      const startDate = new Date(eventData.startingTime);
-      const endDate = new Date(eventData.endingTime);
+      // Ensure proper date formatting for Google Calendar API
+      const startDate = new Date(eventData.startDateTime);
+      const endDate = new Date(eventData.endDateTime);
       
       if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
         throw new Error('Invalid date format. Please check your start and end times.');
       }
       
-      const localEventData = {
-        eventTopic: eventData.eventTopic,
-        eventDate: eventData.eventDate, // YYYY-MM-DD format
-        startingTime: startDate.toISOString(), // Full ISO string for backend
-        endingTime: endDate.toISOString(), // Full ISO string for backend
+      const googleEventData = {
+        summary: eventData.summary,
         description: eventData.description || '',
-        meeting: eventData.meeting || false
+        startDateTime: startDate.toISOString(),
+        endDateTime: endDate.toISOString(),
+        eventPurpose: eventData.eventPurpose || 'MEETING',
+        meetingType: eventData.meetingType || 'ONLINE',
+        requireMeeting: eventData.requireMeeting || false,
+        timeZone: 'UTC'
       };
       
-      console.log('Creating event with data:', localEventData);
+      console.log('Creating Google Calendar event with data:', googleEventData);
       console.log('Using headers:', headers);
       
-      const response = await axios.post(`${API_BASE_URL}/api/events/postAnEvent`, localEventData, { headers });
-      console.log('Create event response:', response.data);
+      const response = await axios.post(`${API_BASE_URL}/api/calendar/createEvent`, googleEventData, { headers });
+      console.log('Create Google Calendar event response:', response.data);
       
-      // Check if local event creation was successful
-      if (!response.data || !response.data.id) {
-        throw new Error(response.data?.message || 'Failed to create event');
+      // Check if Google Calendar event creation was successful
+      if (!response.data || !response.data.success) {
+        throw new Error(response.data?.error || 'Failed to create event');
       }
       
-      return { success: true, message: 'Event created successfully' };
+      return { success: true, message: response.data.message || 'Event created successfully' };
     } catch (error) {
       if (error.response) {
         const serverError = error.response.data.error || error.response.data.message || 'Server error';
@@ -243,8 +290,8 @@ const Calendar = () => {
   const testAuthentication = async () => {
     try {
       const headers = getAuthHeaders();
-      const response = await axios.get(`${API_BASE_URL}/api/events/getAllEvents`, { headers });
-      return true;
+      const response = await axios.get(`${API_BASE_URL}/api/calendar/status`, { headers });
+      return response.data && response.data.authenticated;
     } catch (error) {
       return false;
     }
@@ -270,25 +317,26 @@ const Calendar = () => {
       }
       
       // Validate required fields
-      if (!eventForm.eventTopic || !eventForm.startingTime || !eventForm.endingTime) {
-        alert('Please fill in all required fields (Event Topic, Start Time, End Time)');
+      if (!eventForm.summary || !eventForm.startDateTime || !eventForm.endDateTime) {
+        alert('Please fill in all required fields (Summary, Start Time, End Time)');
         return;
       }
 
-      // Extract date from startingTime if eventDate is not set
-      let eventDate = eventForm.eventDate;
-      if (!eventDate && eventForm.startingTime) {
-        eventDate = eventForm.startingTime.split('T')[0];
+      // Check if Google Calendar is authenticated
+      if (!isGoogleAuthenticated) {
+        alert('Please authenticate with Google Calendar first');
+        return;
       }
 
-      // Prepare event data to match the local calendar API format
+      // Prepare event data to match the Google Calendar API format
       const eventData = {
-        eventTopic: eventForm.eventTopic,
+        summary: eventForm.summary,
         description: eventForm.description || '',
-        eventDate: eventDate,
-        startingTime: eventForm.startingTime,
-        endingTime: eventForm.endingTime,
-        meeting: eventForm.meeting
+        startDateTime: eventForm.startDateTime,
+        endDateTime: eventForm.endDateTime,
+        eventPurpose: eventForm.eventPurpose,
+        meetingType: eventForm.meetingType,
+        requireMeeting: eventForm.requireMeeting
       };
 
       const result = await createEvent(eventData);
@@ -511,17 +559,47 @@ const Calendar = () => {
       <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} onCollapsedChange={handleSidebarCollapsedChange}>
         <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8 bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg border border-gray-100 dark:border-slate-700">
-        <div className="flex items-center space-x-4">
-          <div className="p-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg">
-            <CalendarIcon className="h-8 w-8 text-white" />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <div className="p-4 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl shadow-lg">
+              <CalendarIcon className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
+                Google Calendar
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                View and manage your Google Calendar events
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-1">
-              Calendar
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              View and manage your schedule 
-            </p>
+          
+          {/* Google Calendar Authentication Status */}
+          <div className="flex items-center space-x-3">
+            {authLoading ? (
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-orange-500"></div>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Checking...</span>
+              </div>
+            ) : isGoogleAuthenticated ? (
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                <span className="text-sm font-medium text-green-600 dark:text-green-400">Connected</span>
+              </div>
+            ) : (
+              <div className="flex items-center space-x-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                  <span className="text-sm font-medium text-red-600 dark:text-red-400">Not Connected</span>
+                </div>
+                <button
+                  onClick={initiateGoogleAuth}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors"
+                >
+                  Connect Google Calendar
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -577,19 +655,28 @@ const Calendar = () => {
               
               {/* Add Event Button */}
               <div className="p-4 border-t border-gray-200 dark:border-slate-700">
-                <button
-                  onClick={() => openEventForm()}
-                  className="w-full flex items-center justify-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span>Add Event</span>
-                </button>
+                {isGoogleAuthenticated ? (
+                  <button
+                    onClick={() => openEventForm()}
+                    className="w-full flex items-center justify-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add Event</span>
+                  </button>
+                ) : (
+                  <div className="text-center">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 py-2">
+                      Connect Google Calendar to add events
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Events sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Events and Stats Side by Side */}
+          <div className="lg:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-6">
+            {/* Events Section */}
             <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-6 border border-gray-100 dark:border-slate-700">
               <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
                 Events for {selectedDate.toLocaleDateString('en-US', { 
@@ -599,32 +686,47 @@ const Calendar = () => {
                 })}
               </h3>
 
-              {loading ? (
+              {!isGoogleAuthenticated ? (
+                <div className="text-center py-8">
+                  <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Connect Google Calendar to view events
+                  </p>
+                </div>
+              ) : loading ? (
                 <div className="flex items-center justify-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
                 </div>
               ) : selectedDateEvents.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-4 max-h-96 overflow-y-auto">
                   {selectedDateEvents.map((event, index) => (
                     <div
                       key={event.id || index}
-                      className="p-4 border border-gray-200 dark:border-slate-600 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                      className="group relative p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-slate-700 dark:to-slate-600 border-l-4 border-orange-500 rounded-xl hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
                     >
-                      <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                        {event.summary || 'Untitled Event'}
-                      </h4>
-                      {event.start?.dateTime && (
-                        <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 mb-1">
-                          <Clock className="h-4 w-4 mr-2" />
-                          {formatTime(event.start.dateTime)}
-                          {event.end?.dateTime && ` - ${formatTime(event.end.dateTime)}`}
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+                            {event.summary || 'Untitled Event'}
+                          </h4>
+                          {event.start?.dateTime && (
+                            <div className="flex items-center text-sm text-orange-700 dark:text-orange-300 mb-2 font-medium">
+                              <Clock className="h-4 w-4 mr-2" />
+                              {formatTime(event.start.dateTime)}
+                              {event.end?.dateTime && ` - ${formatTime(event.end.dateTime)}`}
+                            </div>
+                          )}
+                          {event.description && (
+                            <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">
+                              {event.description}
+                            </p>
+                          )}
                         </div>
-                      )}
-                      {event.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                          {event.description}
-                        </p>
-                      )}
+                        <div className="ml-3">
+                          <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
+                        </div>
+                      </div>
+                      <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
                     </div>
                   ))}
                 </div>
@@ -638,26 +740,116 @@ const Calendar = () => {
               )}
             </div>
 
-            {/* Quick stats */}
-            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-6 border border-gray-100 dark:border-slate-700">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-                This Month
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-2xl">
-                  <span className="text-gray-600 dark:text-gray-400 font-medium">Total Events</span>
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                    {events.length}
-                  </span>
+            {/* Enhanced Monthly Stats */}
+            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-6 border border-gray-100 dark:border-slate-700 overflow-hidden">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  This Month
+                </h3>
+                <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                  {months[currentDate.getMonth()]} {currentDate.getFullYear()}
                 </div>
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-700 rounded-2xl">
-                  <span className="text-gray-600 dark:text-gray-400 font-medium">Days with Events</span>
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {new Set(events.map(event => {
-                    const eventDate = event.start?.dateTime ? new Date(event.start.dateTime).toISOString().split('T')[0] : event.start?.date;
-                    return eventDate;
-                  })).size}
-                  </span>
+              </div>
+              <div className="space-y-4">
+                {/* Total Events Card */}
+                <div className="relative p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl border border-blue-200 dark:border-blue-700/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-blue-700 dark:text-blue-300 font-semibold text-sm">Total Events</span>
+                      <div className="text-2xl font-bold text-blue-900 dark:text-blue-100 mt-1">
+                        {events.filter(event => {
+                          if (!event.start?.dateTime && !event.start?.date) return false;
+                          const eventDate = new Date(event.start?.dateTime || event.start?.date);
+                          return eventDate.getMonth() === currentDate.getMonth() && 
+                                 eventDate.getFullYear() === currentDate.getFullYear();
+                        }).length}
+                      </div>
+                    </div>
+                    <div className="p-2 bg-blue-500 rounded-lg">
+                      <CalendarIcon className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Days with Events Card */}
+                <div className="relative p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl border border-green-200 dark:border-green-700/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-green-700 dark:text-green-300 font-semibold text-sm">Active Days</span>
+                      <div className="text-2xl font-bold text-green-900 dark:text-green-100 mt-1">
+                        {new Set(events.filter(event => {
+                          if (!event.start?.dateTime && !event.start?.date) return false;
+                          const eventDate = new Date(event.start?.dateTime || event.start?.date);
+                          return eventDate.getMonth() === currentDate.getMonth() && 
+                                 eventDate.getFullYear() === currentDate.getFullYear();
+                        }).map(event => {
+                          const eventDate = event.start?.dateTime ? new Date(event.start.dateTime).toISOString().split('T')[0] : event.start?.date;
+                          return eventDate;
+                        })).size}
+                      </div>
+                    </div>
+                    <div className="p-2 bg-green-500 rounded-lg">
+                      <Clock className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Current Month Events Card */}
+                <div className="relative p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl border border-purple-200 dark:border-purple-700/50">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-purple-700 dark:text-purple-300 font-semibold text-sm">
+                        {currentDate.getMonth() === new Date().getMonth() && 
+                         currentDate.getFullYear() === new Date().getFullYear() ? 'This Week' : 'Month Events'}
+                      </span>
+                      <div className="text-2xl font-bold text-purple-900 dark:text-purple-100 mt-1">
+                        {currentDate.getMonth() === new Date().getMonth() && 
+                         currentDate.getFullYear() === new Date().getFullYear() ? 
+                          events.filter(event => {
+                            if (!event.start?.dateTime) return false;
+                            const eventDate = new Date(event.start.dateTime);
+                            const today = new Date();
+                            const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+                            return eventDate >= today && eventDate <= weekFromNow;
+                          }).length :
+                          events.filter(event => {
+                            if (!event.start?.dateTime && !event.start?.date) return false;
+                            const eventDate = new Date(event.start?.dateTime || event.start?.date);
+                            return eventDate.getMonth() === currentDate.getMonth() && 
+                                   eventDate.getFullYear() === currentDate.getFullYear();
+                          }).length
+                        }
+                      </div>
+                    </div>
+                    <div className="p-2 bg-purple-500 rounded-lg">
+                      <MapPin className="h-5 w-5 text-white" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Progress Bar */}
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Month Progress</span>
+                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                      {currentDate.getMonth() === new Date().getMonth() && 
+                       currentDate.getFullYear() === new Date().getFullYear() ? 
+                        `${Math.round((new Date().getDate() / getDaysInMonth(currentDate)) * 100)}%` : 
+                        '100%'
+                      }
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
+                    <div 
+                      className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full transition-all duration-500"
+                      style={{ 
+                        width: currentDate.getMonth() === new Date().getMonth() && 
+                               currentDate.getFullYear() === new Date().getFullYear() ? 
+                          `${(new Date().getDate() / getDaysInMonth(currentDate)) * 100}%` : 
+                          '100%'
+                      }}
+                    ></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -765,17 +957,17 @@ const Calendar = () => {
               </div>
 
               <form onSubmit={handleSubmitEvent} className="space-y-4">
-                {/* Event Topic */}
+                {/* Event Summary */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Event Topic *
+                    Event Summary *
                   </label>
                   <input
                     type="text"
-                    value={eventForm.eventTopic}
-                    onChange={(e) => handleEventFormChange('eventTopic', e.target.value)}
+                    value={eventForm.summary}
+                    onChange={(e) => handleEventFormChange('summary', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
-                    placeholder="Enter event topic"
+                    placeholder="Enter event summary"
                     required
                   />
                 </div>
@@ -794,59 +986,81 @@ const Calendar = () => {
                   />
                 </div>
 
-                {/* Event Date */}
+                {/* Event Purpose */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Event Date *
+                    Event Purpose *
                   </label>
-                  <input
-                    type="date"
-                    value={eventForm.eventDate}
-                    onChange={(e) => handleEventFormChange('eventDate', e.target.value)}
+                  <select
+                    value={eventForm.eventPurpose}
+                    onChange={(e) => handleEventFormChange('eventPurpose', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
                     required
-                  />
+                  >
+                    <option value="MEETING">Meeting</option>
+                    <option value="TRAINING">Training</option>
+                    <option value="WEBINAR">Webinar</option>
+                    <option value="WORKSHOP">Workshop</option>
+                    <option value="OTHER">Other</option>
+                  </select>
                 </div>
-
-                {/* Starting Time */}
+            
+              
+                {/* Start Date & Time */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Starting Time *
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={eventForm.startingTime}
-                    onChange={(e) => handleEventFormChange('startingTime', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
-                    required
-                  />
-                </div>
-
-                {/* Ending Time */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Ending Time *
+                    Start Date & Time *
                   </label>
                   <input
                     type="datetime-local"
-                    value={eventForm.endingTime}
-                    onChange={(e) => handleEventFormChange('endingTime', e.target.value)}
+                    value={eventForm.startDateTime}
+                    onChange={(e) => handleEventFormChange('startDateTime', e.target.value)}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
                     required
                   />
                 </div>
 
-                {/* Meeting Option */}
+                {/* End Date & Time */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    End Date & Time *
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={eventForm.endDateTime}
+                    onChange={(e) => handleEventFormChange('endDateTime', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
+                    required
+                  />
+                </div>
+
+                {/* Meeting Type */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Meeting Type
+                  </label>
+                  <select
+                    value={eventForm.meetingType}
+                    onChange={(e) => handleEventFormChange('meetingType', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent dark:bg-slate-700 dark:text-white"
+                  >
+                    <option value="ONLINE">Online Meeting</option>
+                    <option value="OFFLINE">In-Person Meeting</option>
+                    <option value="HYBRID">Hybrid Meeting</option>
+                  </select>
+                </div>
+
+                {/* Require Google Meet */}
                 <div className="flex items-center space-x-3">
                   <input
                     type="checkbox"
-                    id="meeting"
-                    checked={eventForm.meeting}
-                    onChange={(e) => handleEventFormChange('meeting', e.target.checked)}
+                    id="requireMeeting"
+                    checked={eventForm.requireMeeting}
+                    onChange={(e) => handleEventFormChange('requireMeeting', e.target.checked)}
                     className="w-4 h-4 text-orange-600 bg-gray-100 border-gray-300 rounded focus:ring-orange-500 dark:focus:ring-orange-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                   />
-                  <label htmlFor="meeting" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                    This is a meeting
+                  <label htmlFor="requireMeeting" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Create Google Meet link
                   </label>
                 </div>
 

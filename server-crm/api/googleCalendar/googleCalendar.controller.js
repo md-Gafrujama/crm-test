@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import prisma from "../../prisma/prismaClient.js";
+import jwt from "jsonwebtoken";
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
@@ -24,17 +25,38 @@ function formatDateToISO(dateTimeStr) {
 const calendarController = {
   async auth(req, res) {
     try {
+      // Check if token is provided in query parameter (for OAuth flow)
+      const tokenFromQuery = req.query.authToken;
+      
+      if (tokenFromQuery) {
+        try {
+          // Verify the JWT token
+          const decoded = jwt.verify(tokenFromQuery, process.env.JWT_SECRET);
+          console.log("Decoded JWT:", decoded);
+          
+          // Store user info for the OAuth callback
+          req.session = req.session || {};
+          req.session.userId = decoded.uid;
+          req.session.userEmail = decoded.email;
+        } catch (jwtError) {
+          console.error("JWT verification failed:", jwtError);
+          return res.status(401).json({ error: "Invalid authentication token" });
+        }
+      } else if (!req.user) {
+        return res.status(401).json({ error: "Missing or invalid authorization header" });
+      }
+      
       const url = oauth2Client.generateAuthUrl({
-      access_type: "offline",
-      prompt: "consent",
-      scope: [
-        "https://www.googleapis.com/auth/calendar.readonly",
-        "https://www.googleapis.com/auth/calendar.events",
-        "https://www.googleapis.com/auth/userinfo.email",
-        "https://www.googleapis.com/auth/userinfo.profile",
-        "openid"
-      ],
-    });
+        access_type: "offline",
+        prompt: "consent",
+        scope: [
+          "https://www.googleapis.com/auth/calendar.readonly",
+          "https://www.googleapis.com/auth/calendar.events",
+          "https://www.googleapis.com/auth/userinfo.email",
+          "https://www.googleapis.com/auth/userinfo.profile",
+          "openid"
+        ],
+      });
       console.log("Generated auth URL:", url);
       res.redirect(url);
     } catch (error) {
@@ -157,10 +179,16 @@ const calendarController = {
       const calendarId = req.query.calendar || "primary";
       const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
+      // Get events for the next 3 months to ensure we get all events
+      const timeMin = new Date();
+      const timeMax = new Date();
+      timeMax.setMonth(timeMax.getMonth() + 3);
+
       const response = await calendar.events.list({
         calendarId,
-        timeMin: new Date().toISOString(),
-        maxResults: 10,
+        timeMin: timeMin.toISOString(),
+        timeMax: timeMax.toISOString(),
+        maxResults: 250, // Increased limit to get more events
         singleEvents: true,
         orderBy: "startTime",
       });
