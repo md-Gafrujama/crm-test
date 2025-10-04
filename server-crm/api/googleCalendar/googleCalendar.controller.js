@@ -69,9 +69,8 @@ const calendarController = {
     try {
       const { code } = req.query;
       if (!code) {
-        return res
-          .status(400)
-          .json({ error: "No authorization code received" });
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        return res.redirect(`${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent('No authorization code received')}`);
       }
 
       console.log("Received OAuth code:", code);
@@ -80,11 +79,8 @@ const calendarController = {
       console.log("Tokens from Google:", tokens);
 
       if (!tokens.access_token) {
-        return res.status(400).json({
-          error:
-            "No access token received. Check your redirect URI and scopes.",
-          tokens,
-        });
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        return res.redirect(`${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent('No access token received. Check your redirect URI and scopes.')}`);
       }
 
       oauth2Client.setCredentials(tokens);
@@ -101,9 +97,8 @@ const calendarController = {
       console.log("Fetched user info:", userInfo);
 
       if (!userInfo.email) {
-        return res.status(400).json({
-          error: "Failed to get user email from Google",
-        });
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        return res.redirect(`${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent('Failed to get user email from Google')}`);
       }
 
       const user = await prisma.user.findUnique({
@@ -111,9 +106,8 @@ const calendarController = {
       });
 
       if (!user) {
-        return res.status(404).json({
-          error: `No local user found with email: ${userInfo.email}`,
-        });
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        return res.redirect(`${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent(`No local user found with email: ${userInfo.email}`)}`);
       }
 
       await prisma.user.update({
@@ -125,17 +119,14 @@ const calendarController = {
         },
       });
 
-      return res.json({
-        success: true,
-        message: "Google account connected successfully",
-        userEmail: user.email,
-        hasRefreshToken: !!tokens.refresh_token,
-      });
+      // Redirect to the Calendar page after successful authentication
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/admin/calendar?auth=success&message=Google account connected successfully`);
     } catch (error) {
       console.error("🔴 OAuth redirect error:", error.response?.data || error);
-      return res.status(500).json({
-        error: "Google OAuth failed: " + error.message,
-      });
+      // Redirect to calendar page with error message
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      return res.redirect(`${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent('Google OAuth failed: ' + error.message)}`);
     }
   },
 
