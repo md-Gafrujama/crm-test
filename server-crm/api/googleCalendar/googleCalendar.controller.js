@@ -1,6 +1,7 @@
 import { google } from "googleapis";
 import prisma from "../../prisma/prismaClient.js";
 import jwt from "jsonwebtoken";
+import { ObjectId } from "bson";
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.CLIENT_ID,
@@ -25,27 +26,28 @@ function formatDateToISO(dateTimeStr) {
 const calendarController = {
   async auth(req, res) {
     try {
-      // Check if token is provided in query parameter (for OAuth flow)
       const tokenFromQuery = req.query.authToken;
-      
+
       if (tokenFromQuery) {
         try {
-          // Verify the JWT token
           const decoded = jwt.verify(tokenFromQuery, process.env.JWT_SECRET);
           console.log("Decoded JWT:", decoded);
-          
-          // Store user info for the OAuth callback
+
           req.session = req.session || {};
           req.session.userId = decoded.uid;
           req.session.userEmail = decoded.email;
         } catch (jwtError) {
           console.error("JWT verification failed:", jwtError);
-          return res.status(401).json({ error: "Invalid authentication token" });
+          return res
+            .status(401)
+            .json({ error: "Invalid authentication token" });
         }
       } else if (!req.user) {
-        return res.status(401).json({ error: "Missing or invalid authorization header" });
+        return res
+          .status(401)
+          .json({ error: "Missing or invalid authorization header" });
       }
-      
+
       const url = oauth2Client.generateAuthUrl({
         access_type: "offline",
         prompt: "consent",
@@ -54,7 +56,7 @@ const calendarController = {
           "https://www.googleapis.com/auth/calendar.events",
           "https://www.googleapis.com/auth/userinfo.email",
           "https://www.googleapis.com/auth/userinfo.profile",
-          "openid"
+          "openid",
         ],
       });
       console.log("Generated auth URL:", url);
@@ -69,8 +71,12 @@ const calendarController = {
     try {
       const { code } = req.query;
       if (!code) {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        return res.redirect(`${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent('No authorization code received')}`);
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+        return res.redirect(
+          `${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent(
+            "No authorization code received"
+          )}`
+        );
       }
 
       console.log("Received OAuth code:", code);
@@ -79,8 +85,12 @@ const calendarController = {
       console.log("Tokens from Google:", tokens);
 
       if (!tokens.access_token) {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        return res.redirect(`${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent('No access token received. Check your redirect URI and scopes.')}`);
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+        return res.redirect(
+          `${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent(
+            "No access token received. Check your redirect URI and scopes."
+          )}`
+        );
       }
 
       oauth2Client.setCredentials(tokens);
@@ -97,8 +107,12 @@ const calendarController = {
       console.log("Fetched user info:", userInfo);
 
       if (!userInfo.email) {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        return res.redirect(`${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent('Failed to get user email from Google')}`);
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+        return res.redirect(
+          `${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent(
+            "Failed to get user email from Google"
+          )}`
+        );
       }
 
       const user = await prisma.user.findUnique({
@@ -106,8 +120,12 @@ const calendarController = {
       });
 
       if (!user) {
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-        return res.redirect(`${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent(`No local user found with email: ${userInfo.email}`)}`);
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+        return res.redirect(
+          `${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent(
+            `No local user found with email: ${userInfo.email}`
+          )}`
+        );
       }
 
       await prisma.user.update({
@@ -119,14 +137,18 @@ const calendarController = {
         },
       });
 
-      // Redirect to the Calendar page after successful authentication
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      return res.redirect(`${frontendUrl}/admin/calendar?auth=success&message=Google account connected successfully`);
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+      return res.redirect(
+        `${frontendUrl}/admin/calendar?auth=success&message=Google account connected successfully`
+      );
     } catch (error) {
-      console.error("🔴 OAuth redirect error:", error.response?.data || error);
-      // Redirect to calendar page with error message
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-      return res.redirect(`${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent('Google OAuth failed: ' + error.message)}`);
+      console.error("OAuth redirect error:", error.response?.data || error);
+      const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+      return res.redirect(
+        `${frontendUrl}/admin/calendar?auth=error&message=${encodeURIComponent(
+          "Google OAuth failed: " + error.message
+        )}`
+      );
     }
   },
 
@@ -161,16 +183,13 @@ const calendarController = {
 
   async getEvents(req, res) {
     try {
-      if (!oauth2Client.credentials?.access_token) {
+      if (!oauth2Client.credentials?.access_token)
         return res.status(401).json({
-          error: "Not authenticated. Please go to /api/calendar/auth first",
+          error: "Not authenticated. Please go to /api/calendar/auth first.",
         });
-      }
 
-      const calendarId = req.query.calendar || "primary";
+      const calendarId = "primary";
       const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-
-      // Get events for the next 3 months to ensure we get all events
       const timeMin = new Date();
       const timeMax = new Date();
       timeMax.setMonth(timeMax.getMonth() + 3);
@@ -179,20 +198,27 @@ const calendarController = {
         calendarId,
         timeMin: timeMin.toISOString(),
         timeMax: timeMax.toISOString(),
-        maxResults: 250, // Increased limit to get more events
+        maxResults: 250,
         singleEvents: true,
         orderBy: "startTime",
       });
 
-      const events = response.data.items || [];
-
-      const formattedEvents = events.map((event) => ({
-        id: event.id,
-        summary: event.summary || "No Title",
-        start: event.start?.dateTime || event.start?.date,
-        end: event.end?.dateTime || event.end?.date,
-        description: event.description || "",
-      }));
+      const events = response.data.items;
+      const formattedEvents = events.map((event) => {
+        const hangoutLink =
+          event.conferenceData?.entryPoints?.find(
+            (entry) => entry.entryPointType === "video"
+          )?.uri || null;
+        return {
+          id: event.id,
+          googleEventId: event.id,
+          summary: event.summary || "No Title",
+          start: event.start?.dateTime || event.start?.date,
+          end: event.end?.dateTime || event.end?.date,
+          description: event.description,
+          hangoutLink,
+        };
+      });
 
       res.json({
         success: true,
@@ -200,8 +226,10 @@ const calendarController = {
         events: formattedEvents,
       });
     } catch (err) {
-      console.error("Error fetching events:", err);
-      res.status(500).json({ error: "Error fetching events: " + err.message });
+      console.error("Error fetching events", err);
+      res
+        .status(500)
+        .json({ error: "Error fetching events", message: err.message });
     }
   },
 
@@ -233,6 +261,7 @@ const calendarController = {
 
         const events = (eventsResponse.data.items || []).map((event) => ({
           id: event.id,
+          googleEventId: event.id,
           summary: event.summary || "No Title",
           start: event.start?.dateTime || event.start?.date,
           end: event.end?.dateTime || event.end?.date,
@@ -247,6 +276,7 @@ const calendarController = {
           events,
         });
       }
+
       let dbWhereCondition = {};
 
       if (req.user.userType === "admin") {
@@ -269,6 +299,7 @@ const calendarController = {
 
       const formattedDbEvents = dbEvents.map((event) => ({
         id: event.id,
+        googleEventId: event.googleEventId,
         topic: event.eventTopic,
         description: event.description,
         start: event.startTime,
@@ -276,6 +307,7 @@ const calendarController = {
         eventDate: event.eventDate,
         eventPurpose: event.eventPurpose,
         meetingType: event.meetingType,
+        googleEventLink: event.googleEventLink,
       }));
 
       res.json({
@@ -292,161 +324,100 @@ const calendarController = {
     }
   },
 
-  async addEvent(req, res) {
+  async createMeeting(req, res) {
     try {
-      if (!oauth2Client.credentials?.access_token) {
+      if (!oauth2Client.credentials?.access_token)
         return res.status(401).json({
-          error: "Not authenticated. Please go to /api/calendar/auth first",
+          error: "Not authenticated. Please go to /api/calendar/auth first.",
         });
-      }
 
       const {
         summary,
         description,
         startDateTime,
         endDateTime,
-        calendarId = "primary",
         timeZone = "UTC",
-        meetingType,
         eventPurpose,
+        calendarId = "primary",
       } = req.body;
-
-      if (!summary || !startDateTime || !endDateTime || !eventPurpose) {
+      if (!summary || !startDateTime || !endDateTime || !eventPurpose)
         return res.status(400).json({
           error:
-            "Missing required fields: summary, startDateTime, endDateTime, and eventPurpose are required",
+            "Missing required fields: summary, startDateTime, endDateTime, eventPurpose",
         });
-      }
-
-      const validMeetingTypes = ["IN_PERSON", "ONLINE", "HYBRID", "OFFLINE"];
-      const validEventPurposes = [
-        "MEETING",
-        "TRAINING",
-        "WORKSHOP",
-        "WEBINAR",
-        "OTHER",
-      ];
-
-      if (meetingType && !validMeetingTypes.includes(meetingType)) {
-        return res.status(400).json({
-          error: `Invalid meetingType. Must be one of: ${validMeetingTypes.join(
-            ", "
-          )}`,
-        });
-      }
-
-      if (!validEventPurposes.includes(eventPurpose)) {
-        return res.status(400).json({
-          error: `Invalid eventPurpose. Must be one of: ${validEventPurposes.join(
-            ", "
-          )}`,
-        });
-      }
 
       const startDate = formatDateToISO(startDateTime);
       const endDate = formatDateToISO(endDateTime);
-
-      if (endDate <= startDate) {
-        return res.status(400).json({
-          error: "End time must be after the start time",
-        });
-      }
+      if (endDate <= startDate)
+        return res
+          .status(400)
+          .json({ error: "End time must be after the start time." });
 
       const calendar = google.calendar({ version: "v3", auth: oauth2Client });
-
       const event = {
         summary,
-        description: description || "",
-        start: {
-          dateTime: startDate,
-          timeZone,
-        },
-        end: {
-          dateTime: endDate,
-          timeZone,
+        description: description || "Online Meeting",
+        start: { dateTime: startDate, timeZone },
+        end: { dateTime: endDate, timeZone },
+        conferenceData: {
+          createRequest: {
+            requestId: Date.now().toString(),
+            conferenceSolutionKey: { type: "hangoutsMeet" },
+          },
         },
       };
 
       const response = await calendar.events.insert({
-        calendarId,
+        calendarId: calendarId,
         resource: event,
+        conferenceDataVersion: 1,
       });
 
-      console.log("Event created on Google Calendar:", response.data.id);
+      const googleEventId = response.data.id;
+      const googleEventLink = response.data.htmlLink;
+      const hangoutLink = response.data.hangoutLink;
 
-      try {
-        const { uid, companyId, id: createdBy } = req.user;
+      const { uid, companyId } = req.user;
+      const createdBy = uid;
 
-        await prisma.Calendar.create({
-          data: {
-            uid,
-            companyId,
-            eventTopic: summary,
-            eventDate: new Date(startDate),
-            startTime: new Date(startDate),
-            endTime: new Date(endDate),
-            meetingType: meetingType || null,
-            description: description || "",
-            eventPurpose,
-            hangoutLink: response.data.hangoutLink || null,
-            googleEventLink: response.data.htmlLink || null,
-            createdBy,
-            updatedBy: createdBy,
-          },
-        });
-      } catch (dbError) {
-        console.error("Failed to save event to DB:", dbError);
-      }
-
-      res.json({
-        success: true,
-        message: "Event created successfully",
-        event: {
-          id: response.data.id,
-          summary: response.data.summary,
-          start: response.data.start,
-          end: response.data.end,
-          htmlLink: response.data.htmlLink,
-          hangoutLink: response.data.hangoutLink,
-        },
-      });
-    } catch (err) {
-      console.error("Error creating event:", err);
-      if (err.response) console.error("Error details:", err.response.data);
-      res.status(500).json({ error: "Error creating event: " + err.message });
-    }
-  },
-
-  async createMeeting(req, res) {
-    try {
-      const { uid, companyId, id: createdBy } = req.user;
-      console.log("User info:", { uid, companyId, createdBy });
-
-      const savedMeeting = await prisma.Calendar.create({
+      const dbEvent = await prisma.calendar.create({
         data: {
           uid,
           companyId,
-          eventTopic: summary || "Google Meet Meeting",
+          eventTopic: summary,
           eventDate: new Date(startDate),
           startTime: new Date(startDate),
           endTime: new Date(endDate),
           meetingType: "ONLINE",
-          description: description || "Google Meet event",
-          eventPurpose: "MEETING",
+          description: description || "",
+          eventPurpose,
           hangoutLink,
-          googleEventLink: response.data.htmlLink || null,
+          googleEventId: googleEventId,
+          googleEventLink,
+          calendarId: calendarId,
           createdBy,
           updatedBy: createdBy,
         },
       });
 
-      console.log("Meeting saved in DB:", savedMeeting);
-    } catch (dbError) {
-      console.error(
-        "❌ Failed to save meeting in DB:",
-        dbError.message || dbError
-      );
-      if (dbError.meta) console.error("Prisma error meta:", dbError.meta);
+      res.json({
+        success: true,
+        message: "Meeting created successfully with Google Meet link",
+        meeting: {
+          id: dbEvent.id,
+          googleEventId: googleEventId,
+          summary: response.data.summary,
+          start: response.data.start,
+          end: response.data.end,
+          htmlLink: googleEventLink,
+          hangoutLink,
+        },
+      });
+    } catch (err) {
+      console.error("Error creating meeting", err);
+      res
+        .status(500)
+        .json({ error: "Error creating meeting", message: err.message });
     }
   },
 
@@ -544,7 +515,7 @@ const calendarController = {
       const { uid, companyId } = req.user;
       const createdBy = uid;
 
-      await prisma.Calendar.create({
+      await prisma.calendar.create({
         data: {
           uid,
           companyId,
@@ -582,6 +553,168 @@ const calendarController = {
       res.status(500).json({
         error: "Error creating event: " + err.message,
       });
+    }
+  },
+
+  async editEvent(req, res) {
+    try {
+      if (!oauth2Client.credentials?.access_token)
+        return res.status(401).json({ error: "Not authenticated" });
+
+      const eventId = req.params.eventId;
+      const {
+        summary,
+        description,
+        startDateTime,
+        endDateTime,
+        timeZone = "UTC",
+        meetingType,
+        eventPurpose,
+      } = req.body;
+      if (!eventId)
+        return res
+          .status(400)
+          .json({ error: "Missing required field eventId" });
+
+      const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+      const updatedEvent = {};
+      if (summary) updatedEvent.summary = summary;
+      if (description !== undefined) updatedEvent.description = description;
+      if (startDateTime && endDateTime) {
+        const startDate = formatDateToISO(startDateTime);
+        const endDate = formatDateToISO(endDateTime);
+        if (endDate <= startDate)
+          return res
+            .status(400)
+            .json({ error: "End time must be after the start time" });
+        updatedEvent.start = { dateTime: startDate, timeZone };
+        updatedEvent.end = { dateTime: endDate, timeZone };
+      } else if (startDateTime || endDateTime) {
+        return res.status(400).json({
+          error:
+            "Both startDateTime and endDateTime must be provided together.",
+        });
+      }
+
+      const dbRecord = await prisma.calendar.findFirst({
+        where: { googleEventId: eventId },
+      });
+      const calendarId = dbRecord?.calendarId || "primary";
+
+      const response = await calendar.events.patch({
+        calendarId,
+        eventId,
+        resource: updatedEvent,
+      });
+
+      const updateData = {
+        updatedBy: req.user.uid,
+        updatedAt: new Date(),
+        ...(summary && { eventTopic: summary }),
+        ...(description !== undefined && { description }),
+        ...(startDateTime && {
+          startTime: new Date(startDateTime),
+          eventDate: new Date(startDateTime),
+        }),
+        ...(endDateTime && { endTime: new Date(endDateTime) }),
+        ...(meetingType && { meetingType }),
+        ...(eventPurpose && { eventPurpose }),
+      };
+
+      await prisma.calendar.updateMany({
+        where: { googleEventId: eventId },
+        data: updateData,
+      });
+
+      res.json({
+        success: true,
+        message: "Event updated successfully",
+        updatedEvent: {
+          id: response.data.id,
+          summary: response.data.summary,
+          start: response.data.start,
+          end: response.data.end,
+          htmlLink: response.data.htmlLink,
+        },
+      });
+    } catch (err) {
+      console.error("Error updating event", err);
+      if (err.response?.data) {
+        console.error("Google API error details", err.response.data);
+      }
+      res
+        .status(500)
+        .json({ error: "Error updating event", message: err.message });
+    }
+  },
+
+  async deleteEvent(req, res) {
+    try {
+      if (!oauth2Client.credentials?.access_token)
+        return res.status(401).json({ error: "Not authenticated" });
+
+      const eventIdParam = req.params.eventId;
+      if (!eventIdParam)
+        return res
+          .status(400)
+          .json({ error: "Missing required field eventId" });
+
+      const isMongoId = ObjectId.isValid(eventIdParam);
+
+      const dbRecord = await prisma.calendar.findFirst({
+        where: isMongoId
+          ? { OR: [{ id: eventIdParam }, { googleEventId: eventIdParam }] }
+          : { googleEventId: eventIdParam },
+      });
+
+      if (!dbRecord)
+        return res
+          .status(404)
+          .json({ error: "Event not found in local database" });
+
+      const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+
+      if (dbRecord.googleEventId) {
+        const calendarId = dbRecord.calendarId || "primary";
+        try {
+          await calendar.events.get({
+            calendarId,
+            eventId: dbRecord.googleEventId,
+          });
+          await calendar.events.delete({
+            calendarId,
+            eventId: dbRecord.googleEventId,
+          });
+          console.log(`Deleted Google event: ${dbRecord.googleEventId}`);
+        } catch (googleErr) {
+          if (googleErr.code === 404) {
+            console.warn(
+              `Google event already deleted: ${dbRecord.googleEventId}`
+            );
+          } else {
+            console.error("Failed to delete Google event:", googleErr.message);
+            return res.status(502).json({
+              error: "Failed to delete event from Google Calendar",
+              message: googleErr.message,
+            });
+          }
+        }
+      }
+
+      await prisma.calendar.delete({
+        where: { id: dbRecord.id },
+      });
+
+      res.json({
+        success: true,
+        message:
+          "Event deleted successfully from Google Calendar (if existed) and local DB",
+      });
+    } catch (err) {
+      console.error("Error deleting event:", err);
+      res
+        .status(500)
+        .json({ error: "Error deleting event", message: err.message });
     }
   },
 

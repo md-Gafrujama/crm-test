@@ -187,14 +187,15 @@ model Calendar {
   id               String    @id @default(auto()) @map("_id") @db.ObjectId
   uid              String    
   companyId        String    @db.ObjectId
+  googleEventId    String? 
   eventTopic       String
   eventDate        DateTime
   startTime        DateTime?
   endTime          DateTime?
-  meetingType      MeetingType?    
+  meetingType      MeetingType?   
   description      String?
   eventPurpose     EventPurpose
-  hangoutLink      String?    
+  hangoutLink      String?      
   googleEventLink  String?    
   createdBy        String?    @db.ObjectId
   createdAt        DateTime   @default(now())
