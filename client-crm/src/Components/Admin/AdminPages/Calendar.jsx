@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Plus, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, Clock, MapPin, Plus, X, Edit, Trash2 } from 'lucide-react';
 import { useTheme } from '../../../hooks/use-theme';
 import axios from 'axios';
 import { API_BASE_URL } from '../../../config/api';
@@ -30,6 +30,8 @@ const Calendar = () => {
     requireMeeting: false
   });
   const [submitting, setSubmitting] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(null);
+  const [deletingEvent, setDeletingEvent] = useState(null);
   const [isGoogleAuthenticated, setIsGoogleAuthenticated] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
   const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
@@ -206,6 +208,61 @@ const Calendar = () => {
       meetingType: 'ONLINE',
       requireMeeting: false
     });
+    setEditingEvent(null);
+  };
+
+  // API functions for edit and delete (replace with your own endpoints)
+  const editEvent = async (eventId, eventData) => {
+    try {
+      const headers = getAuthHeaders();
+      // Replace this URL with your actual edit endpoint
+      const response = await axios.put(`${API_BASE_URL}/api/calendar/editEvent/${eventId}`, eventData, { headers });
+      return { success: true, message: 'Event updated successfully' };
+    } catch (error) {
+      console.error('Edit event error:', error);
+      throw new Error('Failed to edit event');
+    }
+  };
+
+  const deleteEvent = async (eventId) => {
+    try {
+      const headers = getAuthHeaders();
+      // Replace this URL with your actual delete endpoint
+      const response = await axios.delete(`${API_BASE_URL}/api/calendar/deleteEvent/${eventId}`, { headers });
+      return { success: true, message: 'Event deleted successfully' };
+    } catch (error) {
+      console.error('Delete event error:', error);
+      throw new Error('Failed to delete event');
+    }
+  };
+
+  const handleEditEvent = (event) => {
+    setEditingEvent(event);
+    setEventForm({
+      summary: event.summary || '',
+      description: event.description || '',
+      startDateTime: event.start?.dateTime ? new Date(event.start.dateTime).toISOString().slice(0, 16) : '',
+      endDateTime: event.end?.dateTime ? new Date(event.end.dateTime).toISOString().slice(0, 16) : '',
+      eventPurpose: event.eventPurpose || 'MEETING',
+      meetingType: event.meetingType || 'ONLINE',
+      requireMeeting: event.requireMeeting || false
+    });
+    setShowEventForm(true);
+  };
+
+  const handleDeleteEvent = async (event) => {
+    if (window.confirm(`Are you sure you want to delete "${event.summary}"?`)) {
+      setDeletingEvent(event.id);
+      try {
+        await deleteEvent(event.id);
+        alert('Event deleted successfully!');
+        fetchEvents(); // Refresh events list
+      } catch (error) {
+        alert('Failed to delete event: ' + error.message);
+      } finally {
+        setDeletingEvent(null);
+      }
+    }
   };
 
   const openEventForm = (date = null) => {
@@ -339,16 +396,31 @@ const Calendar = () => {
         requireMeeting: eventForm.requireMeeting
       };
 
-      const result = await createEvent(eventData);
-      
-      if (result && result.success) {
-        alert('Event created successfully!');
-        closeEventForm();
-        fetchEvents(); // Refresh events list
+      let result;
+      if (editingEvent) {
+        // Edit existing event
+        result = await editEvent(editingEvent.id, eventData);
+        if (result && result.success) {
+          alert('Event updated successfully!');
+          closeEventForm();
+          fetchEvents(); // Refresh events list
+        } else {
+          console.error('Event update failed:', result);
+          const errorMsg = result?.message || result?.error || 'Unknown error occurred';
+          alert(`Failed to update event: ${errorMsg}`);
+        }
       } else {
-        console.error('Event creation failed:', result);
-        const errorMsg = result?.message || result?.error || 'Unknown error occurred';
-        alert(`Failed to create event: ${errorMsg}`);
+        // Create new event
+        result = await createEvent(eventData);
+        if (result && result.success) {
+          alert('Event created successfully!');
+          closeEventForm();
+          fetchEvents(); // Refresh events list
+        } else {
+          console.error('Event creation failed:', result);
+          const errorMsg = result?.message || result?.error || 'Unknown error occurred';
+          alert(`Failed to create event: ${errorMsg}`);
+        }
       }
     } catch (error) {
       if (error.response) {
@@ -551,7 +623,16 @@ const Calendar = () => {
     return days;
   };
 
-  const selectedDateEvents = getEventsForDate(selectedDate.getDate());
+  const getEventsForSelectedDate = (date) => {
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    return events.filter(event => {
+      if (!event.start) return false;
+      const eventDate = event.start.dateTime ? new Date(event.start.dateTime).toISOString().split('T')[0] : event.start.date;
+      return eventDate === dateStr;
+    });
+  };
+
+  const selectedDateEvents = getEventsForSelectedDate(selectedDate);
 
   return (
     <>
@@ -605,10 +686,87 @@ const Calendar = () => {
       </div>
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Monthly Stats Section - Top */}
+      <div className="mb-6">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-6 border border-gray-100 dark:border-slate-700">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+              This Month Overview
+            </h3>
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+              {months[currentDate.getMonth()]} {currentDate.getFullYear()}
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Total Events Card */}
+            <div className="relative p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl border border-blue-200 dark:border-blue-700/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-blue-700 dark:text-blue-300 font-semibold text-sm">Total Events</span>
+                  <div className="text-2xl font-bold text-blue-900 dark:text-blue-100 mt-1">
+                    {events.filter(event => {
+                      if (!event.start?.dateTime && !event.start?.date) return false;
+                      const eventDate = new Date(event.start?.dateTime || event.start?.date);
+                      return eventDate.getMonth() === currentDate.getMonth() && 
+                             eventDate.getFullYear() === currentDate.getFullYear();
+                    }).length}
+                  </div>
+                </div>
+                <div className="p-2 bg-blue-500 rounded-lg">
+                  <CalendarIcon className="h-5 w-5 text-white" />
+                </div>
+              </div>
+            </div>
+
+            {/* Days with Events Card */}
+            <div className="relative p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl border border-green-200 dark:border-green-700/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-green-700 dark:text-green-300 font-semibold text-sm">Active Days</span>
+                  <div className="text-2xl font-bold text-green-900 dark:text-green-100 mt-1">
+                    {new Set(events.filter(event => {
+                      if (!event.start?.dateTime && !event.start?.date) return false;
+                      const eventDate = new Date(event.start?.dateTime || event.start?.date);
+                      return eventDate.getMonth() === currentDate.getMonth() && 
+                             eventDate.getFullYear() === currentDate.getFullYear();
+                    }).map(event => {
+                      const eventDate = event.start?.dateTime ? new Date(event.start.dateTime).toISOString().split('T')[0] : event.start?.date;
+                      return eventDate;
+                    })).size}
+                  </div>
+                </div>
+                <div className="p-2 bg-green-500 rounded-lg">
+                  <Clock className="h-5 w-5 text-white" />
+                </div>
+              </div>
+            </div>
+
+            {/* Progress Card */}
+            <div className="relative p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl border border-purple-200 dark:border-purple-700/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-purple-700 dark:text-purple-300 font-semibold text-sm">Month Progress</span>
+                  <div className="text-2xl font-bold text-purple-900 dark:text-purple-100 mt-1">
+                    {currentDate.getMonth() === new Date().getMonth() && 
+                     currentDate.getFullYear() === new Date().getFullYear() ? 
+                      `${Math.round((new Date().getDate() / getDaysInMonth(currentDate)) * 100)}%` : 
+                      '100%'
+                    }
+                  </div>
+                </div>
+                <div className="p-2 bg-purple-500 rounded-lg">
+                  <MapPin className="h-5 w-5 text-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Compact Calendar */}
-          <div className="lg:col-span-2">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700 max-w-md mx-auto">
+          <div className="lg:col-span-1">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-200 dark:border-slate-700">
               {/* Compact Calendar Header */}
               <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
                 <button
@@ -674,183 +832,147 @@ const Calendar = () => {
             </div>
           </div>
 
-          {/* Events and Stats Side by Side */}
-          <div className="lg:col-span-2 grid grid-cols-1 xl:grid-cols-2 gap-6">
-            {/* Events Section */}
-            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-6 border border-gray-100 dark:border-slate-700">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+          {/* Events Section */}
+          <div className="lg:col-span-1">
+            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-6 border border-gray-100 dark:border-slate-700 h-[400px] flex flex-col">
+              <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6 flex-shrink-0">
                 Events for {selectedDate.toLocaleDateString('en-US', { 
                   month: 'long', 
                   day: 'numeric',
                   year: 'numeric'
                 })}
               </h3>
-
-              {!isGoogleAuthenticated ? (
-                <div className="text-center py-8">
-                  <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">
-                    Connect Google Calendar to view events
-                  </p>
-                </div>
-              ) : loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
-                </div>
-              ) : selectedDateEvents.length > 0 ? (
-                <div className="space-y-4 max-h-96 overflow-y-auto">
-                  {selectedDateEvents.map((event, index) => (
-                    <div
-                      key={event.id || index}
-                      className="group relative p-4 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-slate-700 dark:to-slate-600 border-l-4 border-orange-500 rounded-xl hover:shadow-lg transition-all duration-200 hover:scale-[1.02]"
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                            {event.summary || 'Untitled Event'}
-                          </h4>
-                          {event.start?.dateTime && (
-                            <div className="flex items-center text-sm text-orange-700 dark:text-orange-300 mb-2 font-medium">
-                              <Clock className="h-4 w-4 mr-2" />
-                              {formatTime(event.start.dateTime)}
-                              {event.end?.dateTime && ` - ${formatTime(event.end.dateTime)}`}
-                            </div>
-                          )}
-                          {event.description && (
-                            <p className="text-sm text-gray-700 dark:text-gray-300 mt-2 leading-relaxed">
-                              {event.description}
-                            </p>
-                          )}
-                        </div>
-                        <div className="ml-3">
-                          <div className="w-3 h-3 bg-orange-500 rounded-full animate-pulse"></div>
-                        </div>
-                      </div>
-                      <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-transparent rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-500 dark:text-gray-400">
-                    No events scheduled for this day
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Enhanced Monthly Stats */}
-            <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-xl p-6 border border-gray-100 dark:border-slate-700 overflow-hidden">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  This Month
-                </h3>
-                <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">
-                  {months[currentDate.getMonth()]} {currentDate.getFullYear()}
-                </div>
+              {/* Debug info - remove this after testing */}
+              <div className="text-xs text-gray-500 mb-4 flex-shrink-0">
+                Debug: Total events: {events.length}, Selected date events: {selectedDateEvents.length}
               </div>
-              <div className="space-y-4">
-                {/* Total Events Card */}
-                <div className="relative p-4 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-2xl border border-blue-200 dark:border-blue-700/50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-blue-700 dark:text-blue-300 font-semibold text-sm">Total Events</span>
-                      <div className="text-2xl font-bold text-blue-900 dark:text-blue-100 mt-1">
-                        {events.filter(event => {
-                          if (!event.start?.dateTime && !event.start?.date) return false;
-                          const eventDate = new Date(event.start?.dateTime || event.start?.date);
-                          return eventDate.getMonth() === currentDate.getMonth() && 
-                                 eventDate.getFullYear() === currentDate.getFullYear();
-                        }).length}
-                      </div>
-                    </div>
-                    <div className="p-2 bg-blue-500 rounded-lg">
-                      <CalendarIcon className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                </div>
 
-                {/* Days with Events Card */}
-                <div className="relative p-4 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-2xl border border-green-200 dark:border-green-700/50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-green-700 dark:text-green-300 font-semibold text-sm">Active Days</span>
-                      <div className="text-2xl font-bold text-green-900 dark:text-green-100 mt-1">
-                        {new Set(events.filter(event => {
-                          if (!event.start?.dateTime && !event.start?.date) return false;
-                          const eventDate = new Date(event.start?.dateTime || event.start?.date);
-                          return eventDate.getMonth() === currentDate.getMonth() && 
-                                 eventDate.getFullYear() === currentDate.getFullYear();
-                        }).map(event => {
-                          const eventDate = event.start?.dateTime ? new Date(event.start.dateTime).toISOString().split('T')[0] : event.start?.date;
-                          return eventDate;
-                        })).size}
-                      </div>
-                    </div>
-                    <div className="p-2 bg-green-500 rounded-lg">
-                      <Clock className="h-5 w-5 text-white" />
+              <div className="flex-1 flex flex-col min-h-0">
+                {!isGoogleAuthenticated ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                      <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 dark:text-gray-400">
+                        Connect Google Calendar to view events
+                      </p>
                     </div>
                   </div>
-                </div>
-
-                {/* Current Month Events Card */}
-                <div className="relative p-4 bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-2xl border border-purple-200 dark:border-purple-700/50">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-purple-700 dark:text-purple-300 font-semibold text-sm">
-                        {currentDate.getMonth() === new Date().getMonth() && 
-                         currentDate.getFullYear() === new Date().getFullYear() ? 'This Week' : 'Month Events'}
-                      </span>
-                      <div className="text-2xl font-bold text-purple-900 dark:text-purple-100 mt-1">
-                        {currentDate.getMonth() === new Date().getMonth() && 
-                         currentDate.getFullYear() === new Date().getFullYear() ? 
-                          events.filter(event => {
-                            if (!event.start?.dateTime) return false;
-                            const eventDate = new Date(event.start.dateTime);
-                            const today = new Date();
-                            const weekFromNow = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-                            return eventDate >= today && eventDate <= weekFromNow;
-                          }).length :
-                          events.filter(event => {
-                            if (!event.start?.dateTime && !event.start?.date) return false;
-                            const eventDate = new Date(event.start?.dateTime || event.start?.date);
-                            return eventDate.getMonth() === currentDate.getMonth() && 
-                                   eventDate.getFullYear() === currentDate.getFullYear();
-                          }).length
-                        }
-                      </div>
+                ) : loading ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500"></div>
+                  </div>
+                ) : selectedDateEvents.length > 0 ? (
+                  <div className="flex-1 overflow-y-auto overflow-x-hidden pr-2">
+                    <div className="space-y-4">
+                      {selectedDateEvents.map((event, index) => (
+                        <div
+                          key={event.id || index}
+                          className="relative p-6 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-slate-700 dark:to-slate-600 border-l-4 border-orange-500 rounded-xl hover:shadow-lg transition-all duration-200 min-h-[140px] flex-shrink-0"
+                        >
+                          <div className="flex flex-col space-y-4">
+                            {/* Event Title and Actions */}
+                            <div className="flex items-start justify-between gap-4">
+                              <h4 className="font-bold text-lg text-gray-900 dark:text-white leading-tight flex-1 min-w-0">
+                                {event.summary || 'Untitled Event'}
+                              </h4>
+                              <div className="flex items-center space-x-2 flex-shrink-0">
+                                <button
+                                  onClick={() => handleEditEvent(event)}
+                                  className="p-2 text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                  title="Edit Event"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteEvent(event)}
+                                  disabled={deletingEvent === event.id}
+                                  className="p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                  title="Delete Event"
+                                >
+                                  {deletingEvent === event.id ? (
+                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
+                                  ) : (
+                                    <Trash2 className="h-4 w-4" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {/* Event Time */}
+                            {event.start?.dateTime && (
+                              <div className="flex items-center text-orange-700 dark:text-orange-300 font-medium">
+                                <Clock className="h-5 w-5 mr-3 flex-shrink-0" />
+                                <span className="text-base flex-1">
+                                  {formatTime(event.start.dateTime)}
+                                  {event.end?.dateTime && ` - ${formatTime(event.end.dateTime)}`}
+                                </span>
+                              </div>
+                            )}
+                            
+                            {/* Event Description */}
+                            {event.description && (
+                              <div>
+                                <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                                  {event.description}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {/* Google Meet Link
+                            {(event.hangoutLink || event.conferenceData?.entryPoints?.[0]?.uri || event.requireMeeting) && (
+                              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center space-x-2">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                                      Google Meet
+                                    </span>
+                                  </div>
+                                  {(event.hangoutLink || event.conferenceData?.entryPoints?.[0]?.uri) && (
+                                    <a
+                                      href={event.hangoutLink || event.conferenceData?.entryPoints?.[0]?.uri}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors"
+                                    >
+                                      Join Meeting
+                                    </a>
+                                  )}
+                                </div>
+                                {(event.hangoutLink || event.conferenceData?.entryPoints?.[0]?.uri) && (
+                                  <div className="mt-2">
+                                    <p className="text-xs text-blue-600 dark:text-blue-400 break-all">
+                                      {event.hangoutLink || event.conferenceData?.entryPoints?.[0]?.uri}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )} */}
+                            
+                            {/* Status Indicator */}
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                                <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                                  Active Event
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div className="p-2 bg-purple-500 rounded-lg">
-                      <MapPin className="h-5 w-5 text-white" />
+                  </div>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                      <CalendarIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                      <p className="text-gray-500 dark:text-gray-400">
+                        No events scheduled for this day
+                      </p>
                     </div>
                   </div>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="mt-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Month Progress</span>
-                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                      {currentDate.getMonth() === new Date().getMonth() && 
-                       currentDate.getFullYear() === new Date().getFullYear() ? 
-                        `${Math.round((new Date().getDate() / getDaysInMonth(currentDate)) * 100)}%` : 
-                        '100%'
-                      }
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-2">
-                    <div 
-                      className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full transition-all duration-500"
-                      style={{ 
-                        width: currentDate.getMonth() === new Date().getMonth() && 
-                               currentDate.getFullYear() === new Date().getFullYear() ? 
-                          `${(new Date().getDate() / getDaysInMonth(currentDate)) * 100}%` : 
-                          '100%'
-                      }}
-                    ></div>
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -946,7 +1068,7 @@ const Calendar = () => {
             <div className="p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Add New Event
+                  {editingEvent ? 'Edit Event' : 'Add New Event'}
                 </h3>
                 <button
                   onClick={closeEventForm}
@@ -1084,7 +1206,7 @@ const Calendar = () => {
                         Creating...
                       </>
                     ) : (
-                      'Create Event'
+                      editingEvent ? 'Update Event' : 'Create Event'
                     )}
                   </button>
                 </div>
