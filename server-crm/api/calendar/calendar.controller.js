@@ -240,6 +240,8 @@ const calendar = {
           endingTime: true,
           description: true,
           meeting: true,
+          hangoutLink: true,
+          googleEventLink: true,
         },
       };
 

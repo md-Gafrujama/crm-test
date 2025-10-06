@@ -67,14 +67,13 @@ const googleCalendarMiddleware = {
   async createEvent(req, res, next) {
     try {
       const {
-        eventTopic,
-        startingTime,
-        endingTime,
+        summary,
+        startDateTime,
+        endDateTime,
         description,
-        eventFor,
-        companyId,
-        uid,
-        withMeet = false,
+        eventPurpose,
+        meetingType,
+        requireMeeting = false,
         calendarId = "primary",
         timeZone = "UTC",
       } = req.body;
@@ -87,8 +86,8 @@ const googleCalendarMiddleware = {
       const oauth2Client = await getAuthenticatedClient(userId);
       const calendar = google.calendar({ version: "v3", auth: oauth2Client });
 
-      const startDate = formatDateToISO(startingTime);
-      const endDate = formatDateToISO(endingTime);
+      const startDate = formatDateToISO(startDateTime);
+      const endDate = formatDateToISO(endDateTime);
 
       if (endDate <= startDate) {
         return res
@@ -97,7 +96,7 @@ const googleCalendarMiddleware = {
       }
 
       const event = {
-        summary: eventTopic,
+        summary: summary,
         description: description || "",
         start: {
           dateTime: startDate,
@@ -109,7 +108,7 @@ const googleCalendarMiddleware = {
         },
       };
 
-      if (withMeet) {
+      if (requireMeeting) {
         event.conferenceData = {
           createRequest: {
             requestId: `${Date.now()}`,
@@ -121,19 +120,21 @@ const googleCalendarMiddleware = {
       const response = await calendar.events.insert({
         calendarId,
         resource: event,
-        conferenceDataVersion: withMeet ? 1 : 0,
+        conferenceDataVersion: requireMeeting ? 1 : 0,
       });
 
+      const { uid, companyId } = req.user;
       const eventData = {
         uid,
         companyId,
-        eventTopic,
+        eventTopic: summary,
         description,
         eventDate: new Date(startDate),
         startingTime: new Date(startDate),
         endingTime: new Date(endDate),
-        eventFor,
-        meeting: withMeet ? "with-meet" : "without-meet",
+        eventPurpose,
+        meetingType: requireMeeting ? "ONLINE" : meetingType || null,
+        meeting: requireMeeting,
         hangoutLink: response.data.hangoutLink || null,
         googleEventLink: response.data.htmlLink || null,
       };
@@ -146,6 +147,8 @@ const googleCalendarMiddleware = {
         ...eventData,
         id: savedEvent.id,
         eventCreated: true,
+        hangoutLink: response.data.hangoutLink || null,
+        googleEventLink: response.data.htmlLink || null,
       };
 
       next();

@@ -153,24 +153,57 @@ const Calendar = () => {
       const headers = getAuthHeaders();
       console.log('Fetching Google Calendar events with headers:', headers);
       
-      const response = await axios.get(`${API_BASE_URL}/api/calendar/events`, { headers });
+      const response = await axios.get(`${API_BASE_URL}/api/calendar/getAll`, { headers });
       console.log('Google Calendar events response:', response.data);
       
       if (response.data && response.data.success) {
-        const events = response.data.events.map(event => ({
-          id: event.id,
-          summary: event.summary || 'No Title',
-          description: event.description || '',
-          start: {
-            dateTime: event.start,
-            date: event.start ? new Date(event.start).toISOString().split('T')[0] : null
-          },
-          end: {
-            dateTime: event.end
-          },
-          source: 'google'
-        }));
-        setEvents(events);
+        let allEvents = [];
+        
+        // Process Google Calendar events
+        if (response.data.googleCalendars) {
+          response.data.googleCalendars.forEach(calendar => {
+            if (calendar.events) {
+              const googleEvents = calendar.events.map(event => ({
+                id: event.googleEventId || event.id,
+                summary: event.summary || 'No Title',
+                description: event.description || '',
+                start: {
+                  dateTime: event.start,
+                  date: event.start ? new Date(event.start).toISOString().split('T')[0] : null
+                },
+                end: {
+                  dateTime: event.end
+                },
+                hangoutLink: event.hangoutLink,
+                conferenceData: event.conferenceData,
+                source: 'google'
+              }));
+              allEvents = [...allEvents, ...googleEvents];
+            }
+          });
+        }
+        
+        // Process local calendar events
+        if (response.data.localCalendarEvents) {
+          const localEvents = response.data.localCalendarEvents.map(event => ({
+            id: event.id,
+            summary: event.topic || 'No Title',
+            description: event.description || '',
+            start: {
+              dateTime: event.start,
+              date: event.start ? new Date(event.start).toISOString().split('T')[0] : null
+            },
+            end: {
+              dateTime: event.end
+            },
+            hangoutLink: event.hangoutLink,
+            googleEventLink: event.googleEventLink,
+            source: 'local'
+          }));
+          allEvents = [...allEvents, ...localEvents];
+        }
+        
+        setEvents(allEvents);
       } else {
         setEvents([]);
       }
@@ -918,36 +951,32 @@ const Calendar = () => {
                               </div>
                             )}
                             
-                            {/* Google Meet Link
-                            {(event.hangoutLink || event.conferenceData?.entryPoints?.[0]?.uri || event.requireMeeting) && (
+                            {/* Google Meet Link */}
+                            {(event.hangoutLink || event.googleEventLink || event.conferenceData?.entryPoints?.[0]?.uri) && (
                               <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                     <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                                      Google Meet
+                                      Google Calendar Event
                                     </span>
                                   </div>
-                                  {(event.hangoutLink || event.conferenceData?.entryPoints?.[0]?.uri) && (
-                                    <a
-                                      href={event.hangoutLink || event.conferenceData?.entryPoints?.[0]?.uri}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors"
-                                    >
-                                      Join Meeting
-                                    </a>
-                                  )}
+                                  <a
+                                    href={event.hangoutLink || event.googleEventLink || event.conferenceData?.entryPoints?.[0]?.uri}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors"
+                                  >
+                                    Open Event
+                                  </a>
                                 </div>
-                                {(event.hangoutLink || event.conferenceData?.entryPoints?.[0]?.uri) && (
-                                  <div className="mt-2">
-                                    <p className="text-xs text-blue-600 dark:text-blue-400 break-all">
-                                      {event.hangoutLink || event.conferenceData?.entryPoints?.[0]?.uri}
-                                    </p>
-                                  </div>
-                                )}
+                                <div className="mt-2">
+                                  <p className="text-xs text-blue-600 dark:text-blue-400 break-all">
+                                    {event.hangoutLink || event.googleEventLink || event.conferenceData?.entryPoints?.[0]?.uri}
+                                  </p>
+                                </div>
                               </div>
-                            )} */}
+                            )}
                             
                             {/* Status Indicator */}
                             <div className="flex items-center justify-between">
