@@ -625,6 +625,67 @@ const calendarController = {
           : { googleEventId: eventId },
       });
 
+      // If no database record found, this might be a Google-only event
+      if (!dbRecord && !isMongoId) {
+        // Try to edit directly in Google Calendar (Google-only event)
+        const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+        
+        try {
+          // Check if the event exists in Google Calendar
+          await calendar.events.get({
+            calendarId: "primary",
+            eventId: eventId,
+          });
+
+          // Prepare the update data for Google Calendar
+          const updatedEvent = {};
+          if (summary) updatedEvent.summary = summary;
+          if (description !== undefined) updatedEvent.description = description;
+
+          if (startDateTime && endDateTime) {
+            const startDate = formatDateToISO(startDateTime);
+            const endDate = formatDateToISO(endDateTime);
+            if (endDate <= startDate) {
+              return res
+                .status(400)
+                .json({ error: "End time must be after the start time" });
+            }
+            updatedEvent.start = { dateTime: startDate, timeZone };
+            updatedEvent.end = { dateTime: endDate, timeZone };
+          } else if (startDateTime || endDateTime) {
+            return res.status(400).json({
+              error: "Both startDateTime and endDateTime must be provided together.",
+            });
+          }
+
+          // Update the Google Calendar event
+          const googleResponse = await calendar.events.patch({
+            calendarId: "primary",
+            eventId: eventId,
+            resource: updatedEvent,
+          });
+
+          return res.json({
+            success: true,
+            message: "Google-only event updated successfully",
+            updatedEvent: {
+              dbId: null,
+              googleEventId: googleResponse.data.id,
+              summary: googleResponse.data.summary,
+              start: googleResponse.data.start,
+              end: googleResponse.data.end,
+              htmlLink: googleResponse.data.htmlLink,
+            },
+          });
+        } catch (googleErr) {
+          console.error("Error updating Google-only event:", googleErr);
+          return res.status(404).json({
+            error: "Event not found in Google Calendar",
+            message: googleErr.message,
+          });
+        }
+      }
+
       if (!dbRecord) {
         return res
           .status(404)
@@ -731,6 +792,41 @@ const calendarController = {
           ? { OR: [{ id: eventIdParam }, { googleEventId: eventIdParam }] }
           : { googleEventId: eventIdParam },
       });
+
+      
+      if (!dbRecord && !isMongoId) {
+        
+        const calendar = google.calendar({ version: "v3", auth: oauth2Client });
+        
+        try {
+          // Check if the event exists in Google Calendar
+          await calendar.events.get({
+            calendarId: "primary",
+            eventId: eventIdParam,
+          });
+
+          // Delete from Google Calendar
+          await calendar.events.delete({
+            calendarId: "primary",
+            eventId: eventIdParam,
+          });
+
+          return res.json({
+            success: true,
+            message: "Google-only event deleted successfully",
+            deleted: {
+              dbId: null,
+              googleEventId: eventIdParam,
+            },
+          });
+        } catch (googleErr) {
+          console.error("Error deleting Google-only event:", googleErr);
+          return res.status(404).json({
+            error: "Event not found in Google Calendar",
+            message: googleErr.message,
+          });
+        }
+      }
 
       if (!dbRecord) {
         return res

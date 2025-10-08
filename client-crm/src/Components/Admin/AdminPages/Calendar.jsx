@@ -57,33 +57,27 @@ const Calendar = () => {
 
   const validateToken = (token) => {
     if (!token) {
-      console.log('No token provided');
       return false;
     }
     
     try {
       const parts = token.split('.');
       if (parts.length !== 3) {
-        console.log('Invalid token format');
         return false;
       }
       
       const payload = JSON.parse(atob(parts[1]));
-      console.log('Token payload:', payload);
       
       if (!payload.uid || !payload.role) {
-        console.log('Token missing uid or role');
         return false;
       }
       
       if (payload.exp && payload.exp < Date.now() / 1000) {
-        console.log('Token expired');
         return false;
       }
       
       return true;
     } catch (error) {
-      console.log('Token validation error:', error);
       return false;
     }
   };
@@ -111,7 +105,6 @@ const Calendar = () => {
     try {
       const headers = getAuthHeaders();
       const response = await axios.get(`${API_BASE_URL}/api/calendar/status`, { headers });
-      console.log('Google auth status:', response.data);
       
       if (response.data && response.data.authenticated) {
         setIsGoogleAuthenticated(true);
@@ -151,28 +144,36 @@ const Calendar = () => {
     setLoading(true);
     try {
       const headers = getAuthHeaders();
-      console.log('Fetching Google Calendar events with headers:', headers);
       
       const response = await axios.get(`${API_BASE_URL}/api/calendar/events`, { headers });
-      console.log('Google Calendar events response:', response.data);
       
       if (response.data && response.data.success) {
-        const events = response.data.events.map(event => ({
-          id: event.id,
-          summary: event.summary || 'No Title',
-          description: event.description || '',
-          start: {
-            dateTime: event.start,
-            date: event.start ? new Date(event.start).toISOString().split('T')[0] : null
-          },
-          end: {
-            dateTime: event.end
-          },
-          hangoutLink: event.hangoutLink,
-          googleEventLink: event.googleEventLink,
-          conferenceData: event.conferenceData,
-          source: 'google'
-        }));
+        
+        const events = response.data.events.map((event, index) => {
+          
+          const mappedEvent = {
+            id: event.dbId || event.googleEventId, // Use dbId if available, otherwise googleEventId
+            dbId: event.dbId,
+            googleEventId: event.googleEventId,
+            summary: event.summary || 'No Title',
+            description: event.description || '',
+            start: {
+              dateTime: event.start,
+              date: event.start ? new Date(event.start).toISOString().split('T')[0] : null
+            },
+            end: {
+              dateTime: event.end
+            },
+            hangoutLink: event.hangoutLink,
+            googleEventLink: event.googleEventLink,
+            conferenceData: event.conferenceData,
+            source: event.source || 'google'
+          };
+          
+          
+          return mappedEvent;
+        });
+        
         setEvents(events);
       } else {
         setEvents([]);
@@ -218,24 +219,52 @@ const Calendar = () => {
   const editEvent = async (eventId, eventData) => {
     try {
       const headers = getAuthHeaders();
-      // Replace this URL with your actual edit endpoint
+      
       const response = await axios.put(`${API_BASE_URL}/api/calendar/editEvent/${eventId}`, eventData, { headers });
-      return { success: true, message: 'Event updated successfully' };
+      
+      // Check if the response indicates success
+      if (response.data && response.data.success) {
+        return { 
+          success: true, 
+          message: response.data.message || 'Event updated successfully',
+          updatedEvent: response.data.updatedEvent
+        };
+      } else {
+        throw new Error(response.data?.error || 'Server did not confirm update');
+      }
     } catch (error) {
       console.error('Edit event error:', error);
-      throw new Error('Failed to edit event');
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        throw new Error(error.response.data?.error || error.response.data?.message || `Server error: ${error.response.status}`);
+      }
+      throw new Error(error.message || 'Failed to edit event');
     }
   };
 
   const deleteEvent = async (eventId) => {
     try {
       const headers = getAuthHeaders();
-      // Replace this URL with your actual delete endpoint
+      
       const response = await axios.delete(`${API_BASE_URL}/api/calendar/deleteEvent/${eventId}`, { headers });
-      return { success: true, message: 'Event deleted successfully' };
+      
+      // Check if the response indicates success
+      if (response.data && response.data.success) {
+        return { 
+          success: true, 
+          message: response.data.message || 'Event deleted successfully',
+          deleted: response.data.deleted
+        };
+      } else {
+        throw new Error(response.data?.error || 'Server did not confirm deletion');
+      }
     } catch (error) {
       console.error('Delete event error:', error);
-      throw new Error('Failed to delete event');
+      if (error.response) {
+        console.error('Error response:', error.response.data);
+        throw new Error(error.response.data?.error || error.response.data?.message || `Server error: ${error.response.status}`);
+      }
+      throw new Error(error.message || 'Failed to delete event');
     }
   };
 
@@ -255,11 +284,25 @@ const Calendar = () => {
 
   const handleDeleteEvent = async (event) => {
     if (window.confirm(`Are you sure you want to delete "${event.summary}"?`)) {
-      setDeletingEvent(event.id);
+      
+      
+      const eventId = event.dbId || event.googleEventId;
+      
+      if (!eventId) {
+        alert('Cannot delete event: No valid ID found');
+        return;
+      }
+      
+      setDeletingEvent(eventId);
       try {
-        await deleteEvent(event.id);
-        alert('Event deleted successfully!');
-        fetchEvents(); // Refresh events list
+        const result = await deleteEvent(eventId);
+        
+        if (result && result.success) {
+          alert(result.message || 'Event deleted successfully!');
+          fetchEvents(); // Refresh events list
+        } else {
+          alert('Failed to delete event: Server did not confirm deletion');
+        }
       } catch (error) {
         alert('Failed to delete event: ' + error.message);
       } finally {
@@ -321,11 +364,8 @@ const Calendar = () => {
         timeZone: 'UTC'
       };
       
-      console.log('Creating Google Calendar event with data:', googleEventData);
-      console.log('Using headers:', headers);
       
       const response = await axios.post(`${API_BASE_URL}/api/calendar/createEvent`, googleEventData, { headers });
-      console.log('Create Google Calendar event response:', response.data);
       
       // Check if Google Calendar event creation was successful
       if (!response.data || !response.data.success) {
@@ -388,21 +428,33 @@ const Calendar = () => {
         return;
       }
 
+      // Convert datetime-local format to proper ISO string
+      const startDateTime = eventForm.startDateTime ? new Date(eventForm.startDateTime).toISOString() : null;
+      const endDateTime = eventForm.endDateTime ? new Date(eventForm.endDateTime).toISOString() : null;
+      
       // Prepare event data to match the Google Calendar API format
       const eventData = {
         summary: eventForm.summary,
         description: eventForm.description || '',
-        startDateTime: eventForm.startDateTime,
-        endDateTime: eventForm.endDateTime,
+        startDateTime: startDateTime,
+        endDateTime: endDateTime,
         eventPurpose: eventForm.eventPurpose,
         meetingType: eventForm.meetingType,
         requireMeeting: eventForm.requireMeeting
       };
+      
+
 
       let result;
       if (editingEvent) {
-        // Edit existing event
-        result = await editEvent(editingEvent.id, eventData);
+        // Edit existing event - use dbId if available, otherwise googleEventId
+        const eventId = editingEvent.dbId || editingEvent.googleEventId;
+        
+        if (!eventId) {
+          alert('Cannot edit event: No valid ID found');
+          return;
+        }
+        result = await editEvent(eventId, eventData);
         if (result && result.success) {
           alert('Event updated successfully!');
           closeEventForm();
@@ -443,9 +495,6 @@ const Calendar = () => {
         handleAuthError();
         return;
       } else {
-        // Log the full error object for debugging
-        console.error('Full error object:', error);
-        console.error('Error keys:', Object.keys(error));
         
         let errorMessage = 'Unknown error occurred';
         if (error.message) {
@@ -888,11 +937,11 @@ const Calendar = () => {
                                 </button>
                                 <button
                                   onClick={() => handleDeleteEvent(event)}
-                                  disabled={deletingEvent === event.id}
+                                  disabled={deletingEvent === (event.dbId || event.googleEventId)}
                                   className="p-1.5 sm:p-2 text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 touch-manipulation"
                                   title="Delete Event"
                                 >
-                                  {deletingEvent === event.id ? (
+                                  {deletingEvent === (event.dbId || event.googleEventId) ? (
                                     <div className="animate-spin rounded-full h-3.5 w-3.5 sm:h-4 sm:w-4 border-b-2 border-red-600"></div>
                                   ) : (
                                     <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
