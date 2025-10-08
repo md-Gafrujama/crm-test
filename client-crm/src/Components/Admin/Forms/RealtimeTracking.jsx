@@ -162,7 +162,7 @@ const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
   return (
     <>
       <Header toggleSidebar={toggleSidebar} />
-      <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} onCollapsedChange={setCollapsed}>
+      {/* <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} onCollapsedChange={setCollapsed}> */}
         <div className="w-full h-full">
               {/* Header Section */}
               <div className="mb-8">
@@ -522,7 +522,7 @@ const { isSidebarOpen, toggleSidebar, closeSidebar } = useSidebar();
               </div>
             </div>
         </div>
-      </Sidebar>
+      {/* </Sidebar> */}
     </>
   );
 };

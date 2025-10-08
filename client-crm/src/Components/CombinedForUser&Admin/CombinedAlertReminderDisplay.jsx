@@ -19,7 +19,7 @@ const { isSidebarOpenUser, toggleSidebarUser, closeSidebarUser } = useSidebarUse
  <Header onToggleSidebar={toggleSidebar} />
   <Sidebar isOpen={isSidebarOpen} onClose={closeSidebar} >
    <AlertsAndReminderDisplay />
-  </Sidebar>
+   </Sidebar>
   <Footer/>
   </>
 )}

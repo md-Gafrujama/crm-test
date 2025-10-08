@@ -42,16 +42,73 @@ const UserReport = ({ collapsed, onLogout }) => {
         // Handle different response structures
         const userData = Array.isArray(userResponse.data) ? userResponse.data : userResponse.data.data || [];
         
+        console.log('=== USER MATCHING DEBUG ===');
+        console.log('Stored userId:', storedUserId, 'Type:', typeof storedUserId);
+        console.log('API Response structure:', userResponse.data);
+        console.log('Extracted userData:', userData);
+        console.log('Available user IDs:', userData.map(u => ({id: u.id, type: typeof u.id})));
+        
         // Try different ID matching strategies (string vs number)
-        const matchedUser = userData.find(user => 
+        let matchedUser = userData.find(user => 
           user.id === storedUserId || 
           user.id === parseInt(storedUserId) || 
           user.id.toString() === storedUserId
         );
         
+        // If still no match, try matching with _id field (MongoDB)
         if (!matchedUser) {
-          console.error('User matching failed. Stored ID:', storedUserId, 'Available users:', userData.map(u => ({id: u.id, type: typeof u.id})));
-          throw new Error('User data mismatch');
+          matchedUser = userData.find(user => 
+            user._id === storedUserId || 
+            user._id === parseInt(storedUserId) || 
+            user._id?.toString() === storedUserId
+          );
+        }
+        
+        // If still no match, try matching with uid field
+        if (!matchedUser) {
+          matchedUser = userData.find(user => 
+            user.uid === storedUserId || 
+            user.uid === parseInt(storedUserId) || 
+            user.uid?.toString() === storedUserId
+          );
+        }
+        
+        console.log('Matched user:', matchedUser);
+        
+        if (!matchedUser) {
+          console.error('User matching failed after all attempts');
+          console.error('Stored ID:', storedUserId, 'Type:', typeof storedUserId);
+          console.error('Available users:', userData.map(u => ({
+            id: u.id, 
+            _id: u._id, 
+            uid: u.uid,
+            email: u.email,
+            username: u.username
+          })));
+          
+          // Try to extract user info from token as fallback
+          try {
+            const tokenPayload = JSON.parse(atob(token.split('.')[1]));
+            console.log('Token payload:', tokenPayload);
+            
+            // Create a fallback user object from token
+            const fallbackUser = {
+              id: tokenPayload.uid || storedUserId,
+              uid: tokenPayload.uid,
+              email: tokenPayload.email,
+              username: tokenPayload.username,
+              role: tokenPayload.role,
+              // Add fallback values
+              name: tokenPayload.username || 'Unknown User',
+              companyId: tokenPayload.companyId
+            };
+            
+            console.log('Using fallback user from token:', fallbackUser);
+            matchedUser = fallbackUser;
+          } catch (tokenError) {
+            console.error('Failed to parse token for fallback user:', tokenError);
+            throw new Error('User data mismatch - no matching user found and token parsing failed');
+          }
         }
         
         setCurrentUser(matchedUser);
@@ -117,6 +174,7 @@ const UserReport = ({ collapsed, onLogout }) => {
   }
 
   // Add null check for currentUser
+  console.log(currentUser)
   if (!currentUser) {
     return (
       <>
