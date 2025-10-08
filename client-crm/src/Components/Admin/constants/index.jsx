@@ -78,12 +78,12 @@ export const navbarLinks = [
             {
                 label: "Alerts And Remainder",
                 icon: BellPlus,
-                path: "/add-alerts-and-reminder",
+                path: "/all-alerts-reminders",
             },
             {
                 label: "Reports",
                 icon: FileText,
-                path: "/reports",
+                path: "/user-report",
             },
         ],
     },

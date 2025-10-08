@@ -40,7 +40,7 @@ import { SearchProvider } from './contexts/SearchContext.jsx';
 import UserAnalytics from '/src/Components/User/UserPages/UserAnalytics.jsx';
 import Calendar from './Components/Admin/AdminPages/Calendar.jsx';
 import GoogleCalendarCallback from './Components/Admin/AdminPages/GoogleCalendarCallback.jsx';
-
+// import UserReport from './Components/User/UserPages/UserReport.jsx';
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem("loggedIn") === "true");
   const [userType, setUserType] = useState(localStorage.getItem("userType"));
@@ -128,7 +128,7 @@ function App() {
               <Route path="/user-settings" element={<UserSettings />} />
               <Route path="/user-dashboard" element={<UserDashboard />} />
               <Route path="/realtime-tracking" element={<CombinedRealtimeTracking />} />
-              <Route path="/user-report" element={<UserReport />} />
+              <Route path="/user-report" element={<UserReport/>} />
               <Route path="/analytics" element={<AdminAnalytics />} />
               <Route path="/locked-users" element={<Lockedusers />} />
               <Route path="/all-alerts-reminders" element={<CombinedAlertReminderDisplay />} />
@@ -138,6 +138,7 @@ function App() {
               <Route path="/all-locked-users" element={<AllLockedUsers />} />
               <Route path="/user-analytics" element={<UserAnalytics />} />
               <Route path="/calendar" element={<Calendar />} />
+              
             </Route>
             
             {/* Google Calendar OAuth callback - accessible without authentication */}
