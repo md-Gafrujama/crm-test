@@ -37,8 +37,8 @@ app.use("/api/userProfile", userProfile);
 app.use("/api/forgetPass1", forgetPass1);
 app.use("/api/forgetPass2", forgetPass2);
 
-import calendar from "./api/calendar/calendar.routes.js";
-app.use("/api/events",calendar);
+// import calendar from "./api/calendar/calendar.routes.js";
+// app.use("/api/events",calendar);
 
 
 import company from "./api/company/companie.routes.js";
