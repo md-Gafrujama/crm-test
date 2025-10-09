@@ -1,4 +1,4 @@
-import { ChartColumn, Building2,LayoutDashboard, FileText,Radar,BellPlus,FilePlus,NotepadText, Package, PackagePlus, Settings, ShoppingBag, UserCheck, UserPlus, Users, Calendar } from "lucide-react";
+import { ChartColumn, Building2,LayoutDashboard, FileText,Radar,BellPlus,FilePlus,NotepadText, Package, PackagePlus, Settings, ShoppingBag, UserCheck, UserPlus, Users, Calendar, CreditCard, Shield,KeyRound  } from "lucide-react";
 
 
 export const navbarLinks = [
@@ -25,21 +25,21 @@ export const navbarLinks = [
     {
         title: "Customers",
         links: [
-            {
-                label: "All users",
-                icon: Users,
-                path: "/users",
-            },
+            // {
+            //     label: "All users",
+            //     icon: Users,
+            //     path: "/users",
+            // },
              {
                 label: "Employee Management",
                 icon: UserPlus,
                 path: "/employee-page",
             },
-             {
-                label: "Locked users",
-                icon: UserPlus,
-                path: "/locked-users",
-            },
+            //  {
+            //     label: "Locked users",
+            //     icon: UserPlus,
+            //     path: "/locked-users",
+            // },
             {
                 label: "Leads Activity",
                 icon: UserCheck,
@@ -89,11 +89,37 @@ export const navbarLinks = [
     },
     {
         title: "Settings",
+        icon: Settings,
         links: [
+            // {
+            //     label: "Settings",
+            //     icon: Settings,
+            //     path: "/settings",
+            // },
             {
-                label: "Settings",
-                icon: Settings,
-                path: "/settings",
+                label: "Locked users",
+                icon: UserPlus,
+                path: "/locked-users",
+            }
+            , {
+                label: "All users",
+                icon: Users,
+                path: "/users",
+            }
+            , {
+                label: "Update Password",
+                icon: KeyRound ,
+                path: "/updatePass",
+            }
+            , {
+                label: "Payment Subscription",
+                icon: CreditCard,
+                path: "/payment",
+            }
+            , {
+                label: "Data & Security",
+                icon: Shield,
+                path: "/data_security",
             }
         ],
     },
