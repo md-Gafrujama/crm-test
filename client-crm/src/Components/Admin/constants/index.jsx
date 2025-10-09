@@ -40,6 +40,11 @@ export const navbarLinks = [
             //     icon: UserPlus,
             //     path: "/locked-users",
             // },
+            ,  {
+                label: "Alerts And Remainder",
+                icon: BellPlus,
+                path: "/all-alerts-reminders",
+            },
             {
                 label: "Leads Activity",
                 icon: UserCheck,
@@ -75,16 +80,16 @@ export const navbarLinks = [
                 icon: Radar,
                 path: "/job-portal",
             },
-            {
-                label: "Alerts And Remainder",
-                icon: BellPlus,
-                path: "/all-alerts-reminders",
-            },
-            {
-                label: "Reports",
-                icon: FileText,
-                path: "/user-report",
-            },
+            // {
+            //     label: "Alerts And Remainder",
+            //     icon: BellPlus,
+            //     path: "/all-alerts-reminders",
+            // },
+            // {
+            //     label: "Reports",
+            //     icon: FileText,
+            //     path: "/user-report",
+            // },
         ],
     },
     {
@@ -96,6 +101,11 @@ export const navbarLinks = [
             //     icon: Settings,
             //     path: "/settings",
             // },
+            ,  {
+                label: "Reports",
+                icon: FileText,
+                path: "/user-report",
+            },
             {
                 label: "Locked users",
                 icon: UserPlus,
