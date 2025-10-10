@@ -60,6 +60,9 @@ const AdminAnalytics = ({ collapsed }) => {
   // State for user stats cards
   const [additionalStats, setAdditionalStats] = useState([]);
 
+  // Site Traffic: average time per page
+  const [avgTimePages, setAvgTimePages] = useState([]);
+
   // Fetch both APIs data
   useEffect(() => {
     const fetchAnalyticsData = async () => {
@@ -102,6 +105,24 @@ const AdminAnalytics = ({ collapsed }) => {
             pendingLeads: leadsResponse.data.pendingLeads || 0,
             lossLeads: leadsResponse.data.lossLeads || 0,
           });
+        }
+
+        // Fetch average time per page for Site Traffic section
+        try {
+          const avgRes = await axios.get(
+            `${API_BASE_URL}/api/analytics/page-time/averages`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          if (avgRes?.data?.data) {
+            setAvgTimePages(
+              Array.isArray(avgRes.data.data) ? avgRes.data.data : []
+            );
+          }
+        } catch (e) {
+          console.warn(
+            "Site Traffic API:",
+            e?.response?.data?.message || e.message
+          );
         }
       } catch (error) {
         console.error("Failed to fetch analytics data:", error);
@@ -265,19 +286,14 @@ const AdminAnalytics = ({ collapsed }) => {
           leadsData.lossLeads,
         ],
         backgroundColor: [
-          "#8B5CF6", // Purple - similar to your reference
-          "#10B981", // Emerald - similar to your reference  
-          "#F59E0B", // Amber - similar to your reference
-          "#EF4444", // Red - similar to your reference
+          "#8B5CF6", // Purple
+          "#10B981", // Emerald
+          "#F59E0B", // Amber
+          "#EF4444", // Red
         ],
-        borderColor: [
-          "#8B5CF6",
-          "#10B981", 
-          "#F59E0B",
-          "#EF4444",
-        ],
+        borderColor: ["#8B5CF6", "#10B981", "#F59E0B", "#EF4444"],
         borderWidth: 0,
-        borderRadius:0,
+        borderRadius: 0,
         maxBarThickness: 60,
       },
     ],
@@ -285,12 +301,7 @@ const AdminAnalytics = ({ collapsed }) => {
 
   // Enhanced Bar Chart Data for User Analytics
   const userBarData = {
-    labels: [
-      "Total Users",
-      "Active Users",
-      "Conversion Rate",
-      "Total Employees",
-    ],
+    labels: ["Total Users", "Active Users", "Conversion Rate", "Total Employees"],
     datasets: [
       {
         label: "User Analytics",
@@ -300,18 +311,26 @@ const AdminAnalytics = ({ collapsed }) => {
           usersData.conversionRateFromActive,
           usersData.totalEmployee,
         ],
-        backgroundColor: [
-          "#6366F1", // Indigo
-          "#22C55E", // Green
-          "#EC4899", // Pink
-          "#EAB308", // Yellow
-        ],
-        borderColor: [
-          "#6366F1",
-          "#22C55E",
-          "#EC4899",
-          "#EAB308",
-        ],
+        backgroundColor: ["#6366F1", "#22C55E", "#EC4899", "#EAB308"],
+        borderColor: ["#6366F1", "#22C55E", "#EC4899", "#EAB308"],
+        borderWidth: 0,
+        borderRadius: 0,
+        maxBarThickness: 60,
+      },
+    ],
+  };
+
+  // Site Traffic - Average time per page chart data (seconds)
+  const avgTimeBarData = {
+    labels: avgTimePages.map((d) => d.page.replace(/^\//, "") || "Home"),
+    datasets: [
+      {
+        label: "Avg Time (seconds)",
+        data: avgTimePages.map((d) =>
+          Number((d.averageMs / 1000).toFixed(1))
+        ),
+        backgroundColor: "#0EA5E9",
+        borderColor: "#0284C7",
         borderWidth: 0,
         borderRadius: 0,
         maxBarThickness: 60,
@@ -323,17 +342,10 @@ const AdminAnalytics = ({ collapsed }) => {
     responsive: true,
     maintainAspectRatio: false,
     layout: {
-      padding: {
-        top: 20,
-        bottom: 20,
-        left: 20,
-        right: 20,
-      },
+      padding: { top: 20, bottom: 20, left: 20, right: 20 },
     },
     plugins: {
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
       tooltip: {
         backgroundColor: "rgba(0, 0, 0, 0.8)",
         titleColor: "white",
@@ -353,17 +365,10 @@ const AdminAnalytics = ({ collapsed }) => {
     },
     scales: {
       x: {
-        grid: {
-          display: false,
-        },
-        border: {
-          display: false,
-        },
+        grid: { display: false },
+        border: { display: false },
         ticks: {
-          font: {
-            size: 12,
-            weight: "500",
-          },
+          font: { size: 12, weight: "500" },
           color: "#6B7280",
           padding: 10,
         },
@@ -375,32 +380,17 @@ const AdminAnalytics = ({ collapsed }) => {
           drawBorder: false,
           lineWidth: 1,
         },
-        border: {
-          display: true,
-          color: "#D1D5DB",
-          width: 1,
-        },
+        border: { display: true, color: "#D1D5DB", width: 1 },
         ticks: {
-          font: {
-            size: 11,
-            weight: "400",
-          },
+          font: { size: 11, weight: "400" },
           color: "#6B7280",
           padding: 10,
           stepSize: 1,
         },
       },
     },
-    elements: {
-      bar: {
-        borderRadius: 4,
-        borderSkipped: false,
-      },
-    },
-    animation: {
-      duration: 800,
-      easing: "easeOutQuart",
-    },
+    elements: { bar: { borderRadius: 4, borderSkipped: false } },
+    animation: { duration: 800, easing: "easeOutQuart" },
   };
 
   const doughnutChartOptions = {
@@ -411,10 +401,7 @@ const AdminAnalytics = ({ collapsed }) => {
         position: "bottom",
         labels: {
           padding: 25,
-          font: {
-            size: 13,
-            weight: "bold",
-          },
+          font: { size: 13, weight: "bold" },
           usePointStyle: true,
           pointStyle: "circle",
         },
@@ -432,11 +419,9 @@ const AdminAnalytics = ({ collapsed }) => {
           label: function (context) {
             const label = context.label || "";
             const value = context.parsed;
-
             if (label.includes("Conversion Rate")) {
               return `${label}: ${value.toFixed(1)}%`;
             }
-
             return `${label}: ${value}`;
           },
         },
@@ -457,12 +442,10 @@ const AdminAnalytics = ({ collapsed }) => {
         <div className="text-center space-y-4">
           <div className="relative">
             <div className="animate-spin h-16 w-16 border-4 border-transparent bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"></div>
-
             <div
               className="h-16 w-16 border-4 border-transparent bg-gradient-to-r from-purple-500 to-pink-500 rounded-full absolute top-0 left-0"
               style={{ animation: "spin 1s linear reverse infinite" }}
             ></div>
-
             <div className="absolute top-2 left-2 animate-spin h-12 w-12 border-4 border-white rounded-full"></div>
           </div>
 
@@ -595,7 +578,7 @@ const AdminAnalytics = ({ collapsed }) => {
               ))}
             </div>
 
-            {/* Enhanced Chart for Leads - Pie Chart */}
+            {/* Lead Distribution */}
             <div className="">
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-3 mb-4">
@@ -615,7 +598,7 @@ const AdminAnalytics = ({ collapsed }) => {
               </div>
             </div>
 
-            {/* Next 4 Stats Cards - Users Data */}
+            {/* Users Data Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
               {additionalStats.map((stat, index) => (
                 <div
@@ -706,7 +689,7 @@ const AdminAnalytics = ({ collapsed }) => {
               ))}
             </div>
 
-            {/* Enhanced Doughnut Chart for User Analytics */}
+            {/* User Analytics Overview */}
             <div className="">
               <div className="mb-8 text-center">
                 <div className="inline-flex items-center gap-3 mb-4">
@@ -725,6 +708,28 @@ const AdminAnalytics = ({ collapsed }) => {
                 <Bar data={userBarData} options={barChartOptions} />
               </div>
             </div>
+
+            {/* SITE TRAFFIC SECTION - Average Time Per Page */}
+            {avgTimePages.length > 0 && (
+              <div className="">
+                <div className="mb-8 text-center">
+                  <div className="inline-flex items-center gap-3 mb-4">
+                    <div className="w-3 h-3 bg-gradient-to-r from-sky-500 to-blue-500 rounded-full animate-pulse"></div>
+                    <h3 className="text-2xl font-bold bg-gradient-to-r from-sky-600 to-blue-600 bg-clip-text text-transparent">
+                      Site Traffic - Average Time Spent Per Page
+                    </h3>
+                    <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-sky-500 rounded-full animate-pulse"></div>
+                  </div>
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    User engagement metrics showing average time spent on each
+                    page
+                  </p>
+                </div>
+                <div style={{ height: "450px" }} className="relative">
+                  <Bar data={avgTimeBarData} options={barChartOptions} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </Sidebar>
