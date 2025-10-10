@@ -43,6 +43,7 @@ import GoogleCalendarCallback from './Components/Admin/AdminPages/GoogleCalendar
 import PaymentSubscription from './Components/Admin/AdminPages/PaymentSubscription.jsx';
 import DataSecurity from './Components/Admin/AdminPages/DataSecurity.jsx';
 // import UserReport from './Components/User/UserPages/UserReport.jsx';
+import PageTimeTracker from './Components/Tracking/PageTimeTracker.jsx';
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem("loggedIn") === "true");
   const [userType, setUserType] = useState(localStorage.getItem("userType"));
@@ -73,6 +74,8 @@ function App() {
     <SearchProvider>
       <ThemeProvider storageKey="theme">
         <Router>
+          {/* Tracks time on each route for analytics */}
+          <PageTimeTracker />
           <ToastContainer
             position="top-center"
             autoClose={3000}
