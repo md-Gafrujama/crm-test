@@ -16,12 +16,26 @@ export const Sidebar = ({ isOpen, onClose, children, onCollapsedChange }) => {
   const { theme } = useTheme();
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [expandedSections, setExpandedSections] = useState(
-    navbarLinks.reduce((acc, section) => {
-      acc[section.title] = true;
-      return acc;
-    }, {})
-  );
+
+ const [expandedSections, setExpandedSections] = useState(() => {
+
+  const saved = localStorage.getItem("expandedSections");
+  if (saved) {
+    return JSON.parse(saved);
+  }
+
+ 
+  return navbarLinks.reduce((acc, section) => {
+    acc[section.title] = false;
+    return acc;
+  }, {});
+});
+
+useEffect(() => {
+  localStorage.setItem("expandedSections", JSON.stringify(expandedSections));
+}, [expandedSections]);
+
+
 
   // Track mobile state
   useEffect(() => {
@@ -34,17 +48,7 @@ export const Sidebar = ({ isOpen, onClose, children, onCollapsedChange }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Auto-expand all sections when sidebar is expanded
-  useEffect(() => {
-    if (!collapsed) {
-      setExpandedSections(
-        navbarLinks.reduce((acc, section) => {
-          acc[section.title] = true;
-          return acc;
-        }, {})
-      );
-    }
-  }, [collapsed]);
+
 
   // Close mobile sidebar when window is resized to desktop size
   useEffect(() => {
@@ -101,9 +105,8 @@ export const Sidebar = ({ isOpen, onClose, children, onCollapsedChange }) => {
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed z-50 flex w-64 flex-col border-r bg-white shadow-lg transition-all duration-300 ease-in-out dark:border-slate-700 dark:bg-slate-900",
+          "fixed z-50 flex w-72 flex-col bg-white shadow-xl transition-all duration-300 ease-in-out dark:bg-slate-900 border-r border-gray-100 dark:border-slate-800",
           isMobile ? "h-screen top-0" : "h-[calc(100vh-4rem)] top-16",
-          theme === "dark" ? "border-slate-900" : "border-slate-200",
           collapsed && "md:w-20",
           isOpen ? "left-0" : "-left-full",
           "md:left-0" 
@@ -113,47 +116,47 @@ export const Sidebar = ({ isOpen, onClose, children, onCollapsedChange }) => {
       >
         {/* Mobile Header with Close Button */}
         {isMobile && (
-          <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-slate-700">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">
-              Menu
+          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50 dark:border-slate-800 bg-gradient-to-r from-orange-50 to-red-50 dark:from-slate-800 dark:to-slate-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Navigation
             </h2>
             <button
               onClick={onClose}
-              className="rounded-lg p-2 transition-colors hover:bg-gray-100 dark:hover:bg-slate-700"
+              className="rounded-full p-2 transition-all duration-200 hover:bg-white hover:shadow-md dark:hover:bg-slate-600"
               aria-label="Close sidebar"
             >
-              <X className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+              <X className="h-5 w-5 text-gray-500 dark:text-gray-300" />
             </button>
           </div>
         )}
 
         {/* Desktop Collapse/Expand Button */}
         {!isMobile && (
-          <div className="flex items-center p-1 border-b border-gray-200 dark:border-slate-700">
+          <div className="flex items-center px-6 py-4 border-b border-gray-50 dark:border-slate-800 bg-gradient-to-r from-gray-50 to-orange-50 dark:from-slate-800 dark:to-slate-700">
             {!collapsed && (
-              <h2 className="text-xl font-bold text-gray-800 dark:text-white flex-grow px-3">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white flex-grow">
                 Menu
               </h2>
             )}
             <button
               onClick={toggleCollapse}
               className={cn(
-                "rounded-lg p-2 transition-colors hover:bg-gray-100 dark:hover:bg-slate-700",
+                "rounded-full p-2.5 transition-all duration-200 hover:bg-white hover:shadow-lg dark:hover:bg-slate-600 bg-white/50 dark:bg-slate-600/50",
                 collapsed ? "mx-auto" : ""
               )}
               aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             >
               {collapsed ? (
-                <ChevronsRight className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                <ChevronsRight className="h-4 w-4 text-gray-600 dark:text-gray-300" />
               ) : (
-                <ChevronsLeft className="h-5 w-5 text-gray-600 dark:text-gray-300" />
+                <ChevronsLeft className="h-4 w-4 text-gray-600 dark:text-gray-300" />
               )}
             </button>
           </div>
         )}
 
         {/* Navigation Links */}
-        <div className="flex flex-1 flex-col gap-y-2 overflow-y-auto overflow-x-hidden px-3 py-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 dark:scrollbar-thumb-slate-600 dark:scrollbar-track-slate-800">
+        <div className="flex flex-1 flex-col overflow-y-auto overflow-x-hidden px-4 py-6 space-y-6 scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent dark:scrollbar-thumb-slate-600 hover:scrollbar-thumb-gray-300 dark:hover:scrollbar-thumb-slate-500">
           {navbarLinks.map((navbarLink) => (
             <nav
               key={navbarLink.title}
@@ -162,7 +165,7 @@ export const Sidebar = ({ isOpen, onClose, children, onCollapsedChange }) => {
               {/* Group Title with Toggle - Always show on mobile, conditional on desktop */}
               {(isMobile || !collapsed) && (
                 <div
-                  className="flex items-center justify-between mb-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors"
+                  className="flex items-center justify-between mb-3 cursor-pointer px-3 py-2 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 dark:hover:from-slate-700 dark:hover:to-slate-600 transition-all duration-200 group"
                   onClick={() => toggleSection(navbarLink.title)}
                   role="button"
                   tabIndex={0}
@@ -175,14 +178,14 @@ export const Sidebar = ({ isOpen, onClose, children, onCollapsedChange }) => {
                   aria-expanded={expandedSections[navbarLink.title]}
                   aria-controls={`section-${navbarLink.title}`}
                 >
-                  <p className="text-left text-xs font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 group-hover:text-orange-700 dark:group-hover:text-orange-400 transition-colors">
                     {navbarLink.title}
-                  </p>
-                  <div className="transition-transform">
+                  </h3>
+                  <div className="transition-all duration-200 group-hover:scale-110">
                     {expandedSections[navbarLink.title] ? (
-                      <ChevronUp className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                      <ChevronUp className="h-4 w-4 text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400" />
                     ) : (
-                      <ChevronDown className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                      <ChevronDown className="h-4 w-4 text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400" />
                     )}
                   </div>
                 </div>
@@ -190,20 +193,20 @@ export const Sidebar = ({ isOpen, onClose, children, onCollapsedChange }) => {
 
               {/* Links - Show when expanded or on mobile */}
               {(isMobile || collapsed || expandedSections[navbarLink.title]) && (
-                <div className="space-y-1" id={`section-${navbarLink.title}`}>
+                <div className="space-y-2 ml-2" id={`section-${navbarLink.title}`}>
                   {navbarLink.links.map((link) => (
                     <NavLink
                       key={link.label}
                       to={link.path}
                       className={({ isActive }) =>
                         cn(
-                          "group flex items-center rounded-lg px-3 py-3 transition-all duration-200 relative",
-                          "hover:bg-orange-500 hover:text-white dark:hover:bg-orange-600",
+                          "group flex items-center rounded-xl px-4 py-3 transition-all duration-200 relative border border-transparent",
+                          "hover:bg-orange-500 hover:text-white hover:shadow-lg hover:scale-[1.02]",
                           "focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 dark:focus:ring-offset-slate-900",
                           isActive
-                            ? "bg-orange-100 font-medium text-orange-600 dark:bg-slate-800 dark:text-orange-400"
-                            : "text-gray-700 dark:text-gray-300",
-                          collapsed && !isMobile && "justify-center px-2"
+                            ? "bg-orange-100 font-medium text-orange-600 dark:bg-slate-800 dark:text-orange-400 shadow-lg"
+                            : "text-gray-600 dark:text-gray-300 hover:text-white",
+                          collapsed && !isMobile && "justify-center px-3"
                         )
                       }
                       onClick={() => {
@@ -215,21 +218,19 @@ export const Sidebar = ({ isOpen, onClose, children, onCollapsedChange }) => {
                       aria-label={link.label}
                     >
                       <link.icon
-                        size={20}
-                        className={cn(
-                          "flex-shrink-0 transition-colors",
-                          collapsed ? "group-hover:text-white" : ""
-                        )}
+                        size={18}
+                        className="flex-shrink-0 transition-all duration-200"
                       />
                       {(isMobile || !collapsed) && (
-                        <span className="ml-3 whitespace-nowrap transition-opacity duration-200">
+                        <span className="ml-3 whitespace-nowrap transition-all duration-200 font-medium">
                           {link.label}
                         </span>
                       )}
 
                       {collapsed && !isMobile && (
-                        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-900 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap pointer-events-none z-50">
+                        <div className="absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none z-50 shadow-lg">
                           {link.label}
+                          <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-gray-900 rotate-45"></div>
                         </div>
                       )}
                     </NavLink>
@@ -246,8 +247,8 @@ export const Sidebar = ({ isOpen, onClose, children, onCollapsedChange }) => {
       {/* Main Content */}
       <main
         className={cn(
-          "transition-all duration-300 min-h-screen pt-16 bg-slate-100 dark:bg-slate-900",
-          collapsed ? "md:ml-20" : "md:ml-64",
+          "transition-all duration-300 min-h-screen pt-16 bg-gray-50 dark:bg-slate-900",
+          collapsed ? "md:ml-20" : "md:ml-72",
           "ml-0"
         )}
       >

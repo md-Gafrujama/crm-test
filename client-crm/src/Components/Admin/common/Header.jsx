@@ -306,14 +306,16 @@ export const Header = ({ onToggleSidebar }) => {
         localStorage.removeItem("token");
         localStorage.removeItem("companyName");
         localStorage.removeItem("companyImage");
+        
         setIsLoggedIn(false);
         setUserType(null);
         navigate('/login', { replace: true });
         window.location.reload();
     };
 
-    return (
-        <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between bg-white/90 px-6 shadow-sm backdrop-blur-md transition-colors dark:bg-slate-900/90">
+    return (   
+             <header className="fixed top-0 left-0 right-0 z-50 flex h-16 items-center justify-between bg-white px-6 shadow-lg border-b border-gray-200 dark:border-slate-700 transition-colors dark:bg-slate-900">
+
             <div className="flex items-center gap-4">
                 <button
                     onClick={onToggleSidebar}
