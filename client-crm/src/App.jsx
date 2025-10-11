@@ -15,7 +15,7 @@ import AllUsers from './Components/Admin/AdminPages/AllUsers.jsx';
 import EditUser from './Components/Admin/Forms/EditUser.jsx';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import LeadsActivity from './Components/Admin/Leads/LeadsActivity.jsx';
+import LeadsActivity from './Components/Admin/Leads/LeadsActivity/LeadsActivity.jsx';
 import Quoreb2b from './Components/Admin/ExternalData/Quoreb2b.jsx';
 import Comparebazar from './Components/Admin/ExternalData/Comparebazar.jsx';
 import ContactQuore from './Components/Admin/Forms/ContactQuore.jsx';

@@ -306,7 +306,7 @@ export const Header = ({ onToggleSidebar }) => {
         localStorage.removeItem("token");
         localStorage.removeItem("companyName");
         localStorage.removeItem("companyImage");
-        
+        localStorage.removeItem("expandedSections");
         setIsLoggedIn(false);
         setUserType(null);
         navigate('/login', { replace: true });
