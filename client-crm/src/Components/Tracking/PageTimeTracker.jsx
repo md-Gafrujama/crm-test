@@ -17,7 +17,7 @@ export default function PageTimeTracker() {
     const prevPath = pathRef.current;
 
     const token = localStorage.getItem("token");
-    if (token && prevPath) {
+    if (token && prevPath && durationMs >= 1000) {
       axios.post(
         `${API_BASE_URL}/api/analytics/page-time`,
         { page: prevPath, durationMs },
@@ -28,7 +28,6 @@ export default function PageTimeTracker() {
     // Reset for new path
     startRef.current = now;
     pathRef.current = location.pathname;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
   useEffect(() => {
@@ -38,14 +37,35 @@ export default function PageTimeTracker() {
       const durationMs = now - startRef.current;
       const prevPath = pathRef.current;
       const token = localStorage.getItem("token");
-      
-      if (token && prevPath) {
-        navigator.sendBeacon?.(
-          `${API_BASE_URL}/api/analytics/page-time`,
-          new Blob([
-            JSON.stringify({ page: prevPath, durationMs })
-          ], { type: 'application/json' })
-        );
+
+      if (prevPath && durationMs >= 100) {
+        const url = `${API_BASE_URL}/api/analytics/page-time`;
+        const payload = JSON.stringify({ page: prevPath, durationMs });
+        // Prefer authenticated fetch with keepalive to ensure JWT is sent
+        if (typeof fetch === 'function') {
+          try {
+            fetch(url, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: payload,
+              keepalive: true,
+            }).catch(() => {});
+          } catch {
+            // Fallback to sendBeacon (no auth headers possible)
+            navigator.sendBeacon?.(
+              url,
+              new Blob([payload], { type: 'application/json' })
+            );
+          }
+        } else {
+          navigator.sendBeacon?.(
+            url,
+            new Blob([payload], { type: 'application/json' })
+          );
+        }
       }
     };
   }, []);

@@ -219,3 +219,22 @@ enum EventPurpose {
   WEBINAR
   OTHER
 }
+
+model PageTimeEvent {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+
+  companyId  String   @db.ObjectId
+  userId     String?  @db.ObjectId
+
+  page       String
+  durationMs Int
+  deviceType String?
+  ip         String?
+  userAgent  String?
+  timestamp  DateTime @default(now())
+
+  @@index([companyId, timestamp])
+  @@index([companyId, userId, timestamp])
+  @@index([companyId, deviceType, timestamp])
+  @@index([companyId, page, timestamp])
+}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import Footer from "../common/Footer";
@@ -56,12 +56,28 @@ const AdminAnalytics = ({ collapsed }) => {
 
   // State for lead stats cards
   const [stats, setStats] = useState([]);
-
   // State for user stats cards
   const [additionalStats, setAdditionalStats] = useState([]);
 
   // Site Traffic: average time per page
   const [avgTimePages, setAvgTimePages] = useState([]);
+  // Users for per-user site traffic filtering
+  const [allUsers, setAllUsers] = useState([]);
+  const [userSearch, setUserSearch] = useState("");
+  const [selectedUser, setSelectedUser] = useState(null); // { id, name }
+  // Recent page-time events (to show device type and IP)
+  const [recentEvents, setRecentEvents] = useState([]);
+
+  // Map userId -> display name for quick lookup in events table
+  const userNameById = useMemo(() => {
+    const map = new Map();
+    (allUsers || []).forEach((u) => {
+      const fullName = `${u.firstName || ""} ${u.lastName || ""}`.trim();
+      const display = fullName || u.username || u.email || u.id;
+      if (u.id) map.set(u.id, display);
+    });
+    return map;
+  }, [allUsers]);
 
   // Fetch both APIs data
   useEffect(() => {
@@ -91,10 +107,8 @@ const AdminAnalytics = ({ collapsed }) => {
             totalUser: userResponse.data.totalUser || 0,
             activeUser: userResponse.data.activeUser || 0,
             totalEmployee: userResponse.data.totalEmployee || 0,
-            conversionRateFromActive:
-              userResponse.data.conversionRateFromActive || 0,
-            conversionRateFromTotal:
-              userResponse.data.conversionRateFromTotal || 0,
+            conversionRateFromActive: userResponse.data.conversionRateFromActive || 0,
+            conversionRateFromTotal: userResponse.data.conversionRateFromTotal || 0,
           });
         }
 
@@ -108,28 +122,27 @@ const AdminAnalytics = ({ collapsed }) => {
         }
 
         // Fetch average time per page for Site Traffic section
+        await fetchAvgTimePerPage(token, selectedUser?.id);
+        // Fetch recent events (device & IP)
+        await fetchRecentEvents(token, selectedUser?.id);
+
+        // Fetch all users for search dropdown (admin-only API)
         try {
-          const avgRes = await axios.get(
-            `${API_BASE_URL}/api/analytics/page-time/averages`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (avgRes?.data?.data) {
-            setAvgTimePages(
-              Array.isArray(avgRes.data.data) ? avgRes.data.data : []
-            );
-          }
+          const usersRes = await axios.get(`${API_BASE_URL}/api/allUser`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const list = Array.isArray(usersRes.data)
+            ? usersRes.data
+            : usersRes.data?.users || [];
+          setAllUsers(list);
         } catch (e) {
-          console.warn(
-            "Site Traffic API:",
-            e?.response?.data?.message || e.message
-          );
+          console.warn("Users list API:", e?.response?.data?.message || e.message);
+          setAllUsers([]);
         }
       } catch (error) {
         console.error("Failed to fetch analytics data:", error);
         toast.error(
-          error.response?.data?.message ||
-            error.message ||
-            "Failed to load analytics data",
+          error.response?.data?.message || error.message || "Failed to load analytics data",
           {
             position: "top-right",
             autoClose: 5000,
@@ -143,7 +156,50 @@ const AdminAnalytics = ({ collapsed }) => {
     };
 
     fetchAnalyticsData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Helper to fetch averages with optional userId
+  const fetchAvgTimePerPage = async (token, userId) => {
+    try {
+      const url = new URL(`${API_BASE_URL}/api/analytics/page-time/averages`);
+      if (userId) url.searchParams.set("userId", userId);
+      const avgRes = await axios.get(url.toString(), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (avgRes?.data?.data) {
+        setAvgTimePages(Array.isArray(avgRes.data.data) ? avgRes.data.data : []);
+      }
+    } catch (e) {
+      console.warn("Site Traffic API:", e?.response?.data?.message || e.message);
+      setAvgTimePages([]);
+    }
+  };
+
+  // Helper to fetch recent events with optional userId
+  const fetchRecentEvents = async (token, userId) => {
+    try {
+      const url = new URL(`${API_BASE_URL}/api/analytics/page-time/events`);
+      url.searchParams.set("limit", "10");
+      if (userId) url.searchParams.set("userId", userId);
+      const res = await axios.get(url.toString(), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const list = Array.isArray(res?.data?.data) ? res.data.data : [];
+      setRecentEvents(list);
+    } catch (e) {
+      console.warn("Site Events API:", e?.response?.data?.message || e.message);
+      setRecentEvents([]);
+    }
+  };
+
+  // Refetch averages when selected user changes
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+    fetchAvgTimePerPage(token, selectedUser?.id);
+    fetchRecentEvents(token, selectedUser?.id);
+  }, [selectedUser]);
 
   // Update stats with real leads data
   useEffect(() => {
@@ -709,9 +765,8 @@ const AdminAnalytics = ({ collapsed }) => {
               </div>
             </div>
 
-            {/* SITE TRAFFIC SECTION - Average Time Per Page */}
-            {avgTimePages.length > 0 && (
-              <div className="">
+            {/* SITE TRAFFIC SECTION - Average Time Per Page with user search */}
+            <div className="">
                 <div className="mb-8 text-center">
                   <div className="inline-flex items-center gap-3 mb-4">
                     <div className="w-3 h-3 bg-gradient-to-r from-sky-500 to-blue-500 rounded-full animate-pulse"></div>
@@ -725,17 +780,134 @@ const AdminAnalytics = ({ collapsed }) => {
                     page
                   </p>
                 </div>
-                <div style={{ height: "450px" }} className="relative">
-                  <Bar data={avgTimeBarData} options={barChartOptions} />
+
+                {/* User search and selection */}
+                <div className="max-w-3xl mx-auto mb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={userSearch}
+                      onChange={(e) => setUserSearch(e.target.value)}
+                      placeholder="Search user by name, email, or username"
+                      className="w-full pl-4 pr-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500 dark:bg-gray-800 dark:text-white"
+                    />
+                    {/* Suggestions */}
+                    {userSearch.trim() && (
+                      <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-md shadow-lg max-h-56 overflow-auto text-left">
+                        {allUsers
+                          .filter((u) => {
+                            const q = userSearch.toLowerCase().trim();
+                            return [
+                              u.firstName,
+                              u.lastName,
+                              u.email,
+                              u.username,
+                            ]
+                              .filter(Boolean)
+                              .some((v) => v.toString().toLowerCase().includes(q));
+                          })
+                          .slice(0, 10)
+                          .map((u) => (
+                            <button
+                              key={u.id}
+                              className="w-full px-3 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-left"
+                              onClick={() => {
+                                setSelectedUser({
+                                  id: u.id,
+                                  name: `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.username || u.email,
+                                });
+                                setUserSearch("");
+                              }}
+                            >
+                              {(u.firstName || u.lastName) ? `${u.firstName || ''} ${u.lastName || ''}`.trim() : (u.username || u.email)}
+                            </button>
+                          ))}
+                        {allUsers.length === 0 && (
+                          <div className="px-3 py-2 text-sm text-gray-500">No users</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="text-sm text-gray-700 dark:text-gray-300">
+                      <span className="font-semibold">Selected:</span>{" "}
+                      {selectedUser?.name ? selectedUser.name : "All users"}
+                    </div>
+                    {selectedUser && (
+                      <button
+                        onClick={() => setSelectedUser(null)}
+                        className="px-3 py-2 text-xs rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                 </div>
+
+                {avgTimePages.length > 0 ? (
+                  <div style={{ height: "450px" }} className="relative">
+                    <Bar data={avgTimeBarData} options={barChartOptions} />
+                  </div>
+                ) : (
+                  <div className="text-center text-sm text-gray-500 dark:text-gray-400 mb-8">
+                    No data to display for the current selection.
+                  </div>
+                )}
+            </div>
+
+            {/* RECENT EVENTS - shows device type and IP */}
+            <div className="mt-10">
+              <div className="mb-6 text-center">
+                <div className="inline-flex items-center gap-3 mb-3">
+                  <div className="w-3 h-3 bg-gradient-to-r from-fuchsia-500 to-violet-500 rounded-full animate-pulse"></div>
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-fuchsia-600 to-violet-600 bg-clip-text text-transparent">
+                    Recent Page Events (Device & IP)
+                  </h3>
+                  <div className="w-3 h-3 bg-gradient-to-r from-violet-500 to-fuchsia-500 rounded-full animate-pulse"></div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 text-lg">
+                  Latest 100 events for {selectedUser?.name ? selectedUser.name : "all users"}
+                </p>
               </div>
-            )}
+
+              <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700">
+                <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+                  <thead className="bg-gray-50 dark:bg-gray-800/60">
+                    <tr>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Time</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">User ID</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Page</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Duration (s)</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">Device</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 dark:text-gray-300">IP</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800 bg-white dark:bg-gray-900">
+                    {recentEvents.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">No recent events.</td>
+                      </tr>
+                    )}
+                    {recentEvents.map((ev) => (
+                      <tr key={ev.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/60">
+                        <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{new Date(ev.timestamp).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{(ev.userId && userNameById.get(ev.userId)) || "-"}</td>
+                        <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{ev.page}</td>
+                        <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{(ev.durationMs / 1000).toFixed(1)}</td>
+                        <td className="px-4 py-3 text-gray-800 dark:text-gray-200 capitalize">{ev.deviceType || "desktop"}</td>
+                        <td className="px-4 py-3 text-gray-800 dark:text-gray-200">{ev.ip || "-"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
         </div>
       </Sidebar>
       <Footer />
 
-      {/* Custom CSS for animations */}
       <style jsx>{`
         @keyframes slideInUp {
           from {
@@ -753,9 +925,3 @@ const AdminAnalytics = ({ collapsed }) => {
 };
 
 export default AdminAnalytics;
-
-
-
-
-
-
