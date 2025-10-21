@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import LandingPage from './Components/Landing/LandingPage.jsx';
 import Login from './Pages/login.jsx';
 import SuperAdminRegister from './Pages/superadmin.jsx';
 import Dashboard from './Components/Admin/AdminPages/dashboard/Dashboard.jsx';
@@ -98,7 +99,7 @@ function App() {
                   <Navigate to="/user-dashboard" replace />
                 )
               ) : (
-                <Navigate to="/login" replace />
+                <LandingPage />
               )
             } />
 
