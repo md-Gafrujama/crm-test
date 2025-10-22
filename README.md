@@ -138,10 +138,16 @@ crm-test/
 │   │   │   │   ├── CombinedRealtimeTracking.jsx
 │   │   │   │   └── StatusHistoryPopup.jsx
 │   │   │   ├── common/                   # Global Components
-│   │   │   │   ├── Footer.jsx
-│   │   │   │   └── Navbar.jsx
+│   │   │   │   ├── Footer.jsx            # 🆕 Updated with footer page links
+│   │   │   │   └── Navbar.jsx            # 🆕 Updated with navigation
+│   │   │   ├── FooterPages/              # 🆕 Footer Navigation Pages
+│   │   │   │   ├── AboutUs.jsx           # 🆕 About Us page
+│   │   │   │   ├── Contact.jsx           # 🆕 Contact page
+│   │   │   │   ├── Pricing.jsx           # 🆕 Pricing page
+│   │   │   │   ├── PrivacyPolicy.jsx     # 🆕 Privacy Policy page
+│   │   │   │   └── TermsOfService.jsx    # 🆕 Terms of Service page
 │   │   │   ├── Landing/                  # Landing Page
-│   │   │   │   └── LandingPage.jsx
+│   │   │   │   └── LandingPage.jsx       # 🆕 Fixed navbar/footer
 │   │   │   ├── SuperAdmin/               # Super Admin Components
 │   │   │   │   ├── common/
 │   │   │   │   │   ├── Footer.jsx
@@ -188,7 +194,7 @@ crm-test/
 │   │   ├── utils/                        # Utilities
 │   │   │   └── cn.js
 │   │   ├── App.css                       # Global Styles
-│   │   ├── App.jsx                       # 🆕 Updated with GA4 routes
+│   │   ├── App.jsx                       # 🆕 Updated with GA4 & footer page routes
 │   │   ├── index.css                     # Base Styles
 │   │   └── main.jsx                      # App Entry Point
 │   ├── .env                             # Environment Variables
@@ -605,25 +611,56 @@ model company {
 
 ### Common Issues & Solutions
 
-1. **OAuth Redirect Mismatch**
+1. **Google OAuth Verification Error (Error 403: access_denied)**
+   ```
+   Error: "smartCRMCalendar has not completed the Google verification process"
+   Solution: Add your email as a test user in Google Cloud Console OAuth consent screen
+   ```
+   **Quick Fix Steps:**
+   - Go to Google Cloud Console → APIs & Services → OAuth consent screen
+   - Scroll to "Test users" section → Click "+ ADD USERS"
+   - Add your email: `smartcrmmarketing786@gmail.com`
+   - Click "SAVE" and try OAuth flow again
+   
+   **Alternative:** Click "PUBLISH APP" to make it available to all users
+
+2. **OAuth Redirect Mismatch**
    ```
    Error: redirect_uri_mismatch
    Solution: Ensure redirect URI in Google Console matches exactly
    ```
 
-2. **No Analytics Data**
+3. **No Analytics Data**
    ```
    Issue: Empty charts/metrics
    Solution: Verify GA4 Property ID and data availability
    ```
 
-3. **Socket Connection Failed**
+4. **Socket Connection Failed**
    ```
    Issue: Real-time updates not working
    Solution: Check CORS settings and Socket.io configuration
    ```
 
-4. **Token Expired**
+5. **Cannot GET /google-analytics-callback**
+   ```
+   Issue: Server doesn't have route for OAuth callback
+   Solution: Ensure server has callback route at /google-analytics-callback
+   ```
+
+6. **Shows "Connect Google Analytics" after connection**
+   ```
+   Issue: Component not detecting existing connection
+   Solution: Check if companyId is stored in localStorage and API returns proper status
+   ```
+
+7. **Socket shows "company-null"**
+   ```
+   Issue: Socket tries to join room before companyId is loaded
+   Solution: Socket now waits for companyId before joining company room
+   ```
+
+8. **Token Expired**
    ```
    Issue: Authentication errors
    Solution: System auto-refreshes, or reconnect manually

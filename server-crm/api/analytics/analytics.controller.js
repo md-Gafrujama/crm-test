@@ -17,16 +17,21 @@ export const getGoogleAuthUrl = async (req, res) => {
 export const handleOAuthCallback = async (req, res) => {
   try {
     const { code, companyId, propertyId } = req.body;
+    console.log('OAuth callback received:', { code: !!code, companyId, propertyId });
 
     if (!code || !companyId || !propertyId) {
+      console.log('Missing parameters:', { code: !!code, companyId, propertyId });
       return res.status(400).json({ error: 'Missing required parameters' });
     }
 
     // Exchange code for tokens
+    console.log('Exchanging code for tokens...');
     const tokens = await googleAnalyticsService.getTokens(code);
+    console.log('Tokens received:', { access_token: !!tokens.access_token, refresh_token: !!tokens.refresh_token });
 
     // Store tokens in database
-    await prisma.company.update({
+    console.log('Updating company in database...');
+    const updatedCompany = await prisma.company.update({
       where: { id: companyId },
       data: {
         gaPropertyId: propertyId,
@@ -35,9 +40,11 @@ export const handleOAuthCallback = async (req, res) => {
         gaTokenExpiry: tokens.expiry_date ? new Date(tokens.expiry_date) : null
       }
     });
-
+    
+    console.log('Company updated successfully:', { id: updatedCompany.id, hasGA: !!updatedCompany.gaPropertyId });
     res.json({ success: true, message: 'Google Analytics connected successfully' });
   } catch (error) {
+    console.error('OAuth callback error:', error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -59,7 +66,11 @@ export const getAnalyticsData = async (req, res) => {
       }
     });
 
-    if (!company || !company.gaPropertyId || !company.gaAccessToken) {
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+    
+    if (!company.gaPropertyId || !company.gaAccessToken) {
       return res.status(404).json({ error: 'Google Analytics not configured for this company' });
     }
 
@@ -91,7 +102,11 @@ export const getAnalyticsSummary = async (req, res) => {
       }
     });
 
-    if (!company || !company.gaPropertyId || !company.gaAccessToken) {
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+    
+    if (!company.gaPropertyId || !company.gaAccessToken) {
       return res.status(404).json({ error: 'Google Analytics not configured' });
     }
 

@@ -9,6 +9,7 @@ import { API_BASE_URL } from "../../../config/api";
 import { Package, ShoppingCart, Activity, TrendingUp } from "lucide-react";
 import { User, Users, MessageSquare, Users2 } from "lucide-react";
 import GoogleAnalyticsDashboard from "../../Analytics/GoogleAnalyticsDashboard";
+import { getCompanyIdFromToken } from "../../../utils/auth";
 
 // Chart.js imports for Pie and Doughnut charts
 import {
@@ -918,7 +919,7 @@ const AdminAnalytics = ({ collapsed }) => {
                   Real-time website analytics and user behavior insights
                 </p>
               </div>
-              <GoogleAnalyticsDashboard companyId={localStorage.getItem('companyId')} />
+              <GoogleAnalyticsDashboard companyId={getCompanyIdFromToken()} />
             </div>
 
           </div>

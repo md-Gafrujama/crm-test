@@ -9,14 +9,14 @@ const Footer = () => {
   const footerLinks = {
     Product: [
       { name: 'Features', href: '#features' },
-      { name: 'Pricing', href: '#pricing' },
+      { name: 'Pricing', href: '/pricing' },
       { name: 'Security', href: '#security' },
       { name: 'Integrations', href: '#integrations' }
     ],
     Company: [
-      { name: 'About Us', href: '#about' },
+      { name: 'About Us', href: '/about' },
       { name: 'Careers', href: '#careers' },
-      { name: 'Contact', href: '#contact' },
+      { name: 'Contact', href: '/contact' },
       { name: 'Blog', href: '#blog' }
     ],
     Support: [
@@ -26,8 +26,8 @@ const Footer = () => {
       { name: 'Status', href: '#status' }
     ],
     Legal: [
-      { name: 'Privacy Policy', href: '#privacy' },
-      { name: 'Terms of Service', href: '#terms' },
+      { name: 'Privacy Policy', href: '/privacy' },
+      { name: 'Terms of Service', href: '/terms' },
       { name: 'Cookie Policy', href: '#cookies' },
       { name: 'GDPR', href: '#gdpr' }
     ]

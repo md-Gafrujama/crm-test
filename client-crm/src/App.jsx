@@ -46,6 +46,11 @@ import PaymentSubscription from './Components/Admin/AdminPages/PaymentSubscripti
 import DataSecurity from './Components/Admin/AdminPages/DataSecurity.jsx';
 // import UserReport from './Components/User/UserPages/UserReport.jsx';
 import PageTimeTracker from './Components/Tracking/PageTimeTracker.jsx';
+import AboutUs from './Components/FooterPages/AboutUs.jsx';
+import Contact from './Components/FooterPages/Contact.jsx';
+import Pricing from './Components/FooterPages/Pricing.jsx';
+import PrivacyPolicy from './Components/FooterPages/PrivacyPolicy.jsx';
+import TermsOfService from './Components/FooterPages/TermsOfService.jsx';
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(localStorage.getItem("loggedIn") === "true");
   const [userType, setUserType] = useState(localStorage.getItem("userType"));
@@ -103,6 +108,13 @@ function App() {
                 <LandingPage />
               )
             } />
+
+            {/* Footer Pages - accessible to all */}
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
 
             {!isLoggedIn && (
               <>

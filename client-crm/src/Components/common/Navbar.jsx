@@ -18,8 +18,9 @@ const Navbar = () => {
   const navItems = [
     { name: 'Home', path: '/', icon: Home },
     { name: 'Features', path: '#features', icon: BarChart3 },
-    { name: 'About', path: '#about', icon: Users },
-    { name: 'Contact', path: '#contact', icon: Settings }
+    { name: 'About', path: '/about', icon: Users },
+    { name: 'Pricing', path: '/pricing', icon: Settings },
+    { name: 'Contact', path: '/contact', icon: Settings }
   ];
 
   const isActive = (path) => {

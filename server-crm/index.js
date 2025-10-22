@@ -57,8 +57,12 @@ app.use("/api/registerComp", company);
 
 import adminAnalytics from "./api/admin/analytics.routes.js";
 import gaAnalytics from "./api/analytics/analytics.routes.js";
+import { handleGoogleAnalyticsCallback } from "./api/analytics/callback.controller.js";
 app.use("/api/analytics", adminAnalytics);
 app.use("/api/ga", gaAnalytics);
+
+// Google Analytics OAuth callback route
+app.get("/google-analytics-callback", handleGoogleAnalyticsCallback);
 
 import allUser from "./api/customer/allUsers.routes.js";
 import recentActivities from "./api/customer/recentActivities.api.js";
