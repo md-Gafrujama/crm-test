@@ -8,6 +8,7 @@ import { cn } from "../../../utils/cn";
 import { API_BASE_URL } from "../../../config/api";
 import { Package, ShoppingCart, Activity, TrendingUp } from "lucide-react";
 import { User, Users, MessageSquare, Users2 } from "lucide-react";
+import GoogleAnalyticsDashboard from "../../Analytics/GoogleAnalyticsDashboard";
 
 // Chart.js imports for Pie and Doughnut charts
 import {
@@ -901,6 +902,23 @@ const AdminAnalytics = ({ collapsed }) => {
                   </tbody>
                 </table>
               </div>
+            </div>
+
+            {/* Google Analytics Integration */}
+            <div className="mt-10">
+              <div className="mb-8 text-center">
+                <div className="inline-flex items-center gap-3 mb-4">
+                  <div className="w-3 h-3 bg-gradient-to-r from-blue-500 to-green-500 rounded-full animate-pulse"></div>
+                  <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
+                    Google Analytics Integration
+                  </h3>
+                  <div className="w-3 h-3 bg-gradient-to-r from-green-500 to-blue-500 rounded-full animate-pulse"></div>
+                </div>
+                <p className="text-gray-600 dark:text-gray-400 text-lg">
+                  Real-time website analytics and user behavior insights
+                </p>
+              </div>
+              <GoogleAnalyticsDashboard companyId={localStorage.getItem('companyId')} />
             </div>
 
           </div>

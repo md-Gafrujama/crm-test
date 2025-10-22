@@ -110,6 +110,12 @@ model company {
   profileImage   String
   subscription   Boolean @default(false)
 
+  // Google Analytics Integration
+  gaPropertyId   String?
+  gaAccessToken  String?
+  gaRefreshToken String?
+  gaTokenExpiry  DateTime?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   

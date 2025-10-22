@@ -41,6 +41,7 @@ import { SearchProvider } from './contexts/SearchContext.jsx';
 import UserAnalytics from '/src/Components/User/UserPages/UserAnalytics.jsx';
 import Calendar from './Components/Admin/AdminPages/Calendar/Calendar.jsx';
 import GoogleCalendarCallback from './Components/Admin/AdminPages/GoogleCalendarCallback.jsx';
+import GoogleAnalyticsCallback from './Components/Analytics/GoogleAnalyticsCallback.jsx';
 import PaymentSubscription from './Components/Admin/AdminPages/PaymentSubscription.jsx';
 import DataSecurity from './Components/Admin/AdminPages/DataSecurity.jsx';
 // import UserReport from './Components/User/UserPages/UserReport.jsx';
@@ -152,6 +153,8 @@ function App() {
             
             {/* Google Calendar OAuth callback - accessible without authentication */}
             <Route path="/google-calendar-callback" element={<GoogleCalendarCallback />} />
+            {/* Google Analytics OAuth callback - accessible without authentication */}
+            <Route path="/google-analytics-callback" element={<GoogleAnalyticsCallback />} />
             {/* Fallback */}
             <Route path="*" element={<Navigate to="/" />} />
           </Routes>

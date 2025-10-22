@@ -2,10 +2,21 @@ import express from "express";
 import "dotenv/config";
 import cors from "cors";
 import jwt from "jsonwebtoken";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import connectDB from "./prisma/dbConnect.js";
 import compression from "compression";
+import analyticsScheduler from "./utilis/analyticsScheduler.js";
 
 const app = express();
+const server = createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: ['https://crm-test-eyrb.vercel.app', "http://localhost:5173"],
+    credentials: true
+  }
+});
+
 app.use(compression());
 
 app.use(cors({
@@ -45,7 +56,9 @@ import company from "./api/company/companie.routes.js";
 app.use("/api/registerComp", company);
 
 import adminAnalytics from "./api/admin/analytics.routes.js";
+import gaAnalytics from "./api/analytics/analytics.routes.js";
 app.use("/api/analytics", adminAnalytics);
+app.use("/api/ga", gaAnalytics);
 
 import allUser from "./api/customer/allUsers.routes.js";
 import recentActivities from "./api/customer/recentActivities.api.js";
@@ -99,10 +112,32 @@ app.get("/", (req, res) => {
   res.send("Welcome to index page");
 });
 
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('Client connected:', socket.id);
+
+  // Join company-specific room
+  socket.on('join-company', (companyId) => {
+    socket.join(`company-${companyId}`);
+    console.log(`Socket ${socket.id} joined company-${companyId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
+
+// Make io available globally for analytics updates
+app.set('io', io);
+
 const port = process.env.PORT || 3333;
 
-app.listen(port, () => {
+server.listen(port, () => {
   console.log(`Server is running on port ${port}`);
+  
+  // Start analytics scheduler for real-time updates
+  analyticsScheduler.start();
 });
 
 export default app;
+export { io };
