@@ -59,6 +59,8 @@ app.use("/api/ga", gaAnalytics);
 
 // Google Analytics OAuth callback route
 app.get("/google-analytics-callback", handleGoogleAnalyticsCallback);
+import analyticsRoutes from "./api/otherGoogleApp/otherGoogle.router.js";
+app.use("/api/analytics", analyticsRoutes);
 
 import allUser from "./api/customer/allUsers.routes.js";
 import recentActivities from "./api/customer/recentActivities.api.js";
