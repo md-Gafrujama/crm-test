@@ -15,6 +15,7 @@ import {
 import io from 'socket.io-client';
 import axios from 'axios';
 import { getCompanyIdFromToken, getCompanyIdFromAPI } from '../../utils/auth';
+import AddAnalytics from './addAnalytics';
 
 ChartJS.register(
   CategoryScale,
@@ -288,6 +289,7 @@ const GoogleAnalyticsDashboard = ({ companyId: propCompanyId }) => {
         <h3 className="text-xl font-semibold mb-4">Google Analytics Integration</h3>
         <p className="text-gray-600 mb-6">Connect your Google Analytics account to view detailed insights</p>
         <div className="space-y-4">
+          <AddAnalytics />
           <button
             onClick={connectGoogleAnalytics}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"

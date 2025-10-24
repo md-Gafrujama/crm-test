@@ -10,6 +10,7 @@ import { Package, ShoppingCart, Activity, TrendingUp } from "lucide-react";
 import { User, Users, MessageSquare, Users2 } from "lucide-react";
 import GoogleAnalyticsDashboard from "../../Analytics/GoogleAnalyticsDashboard";
 import { getCompanyIdFromToken } from "../../../utils/auth";
+// import AddAnalytics from "../../Analytics/addAnalytics";
 
 // Chart.js imports for Pie and Doughnut charts
 import {
@@ -527,7 +528,7 @@ const AdminAnalytics = ({ collapsed }) => {
       </div>
     );
   }
-
+  
   return (
     <>
       <Header onToggleSidebar={toggleSidebar} />
@@ -536,6 +537,8 @@ const AdminAnalytics = ({ collapsed }) => {
           <div className="space-y-8 p-6">
             {/* Analytics Header */}
             <div className="text-center space-y-3 mb-8">
+            
+
               <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
                 Analytics Dashboard
               </h1>

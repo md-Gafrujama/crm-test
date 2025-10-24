@@ -116,6 +116,9 @@ model company {
   gaRefreshToken String?
   gaTokenExpiry  DateTime?
 
+  // Add keyFile field for storing JSON key file (optional)
+  keyFile        Json?
+
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   
