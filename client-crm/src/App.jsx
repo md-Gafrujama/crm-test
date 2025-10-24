@@ -30,7 +30,7 @@ import UserSettings from './Components/User/UserPages/UserSettings.jsx';
 import UserDashboard from './Components/User/UserPages/UserDashboard.jsx';
 import CombinedRealtimeTracking from './Components/CombinedForUser&Admin/CombinedRealtimeTracking.jsx';
 import UserReport from './Components/User/UserPages/UserReport.jsx';
-import AdminAnalytics from './Components/Admin/AdminPages/AdminAnalytics.jsx';
+import AdminAnalytics from './Components/Admin/AdminPages/AdminAnalytic/AdminAnalytics.jsx';
 import Lockedusers from './Components/Admin/AdminPages/Lockedusers.jsx';
 import CombinedAlertReminderDisplay from './Components/CombinedForUser&Admin/CombinedAlertReminderDisplay.jsx';
 import AllActivities from './Components/CombinedForUser&Admin/AllActivities.jsx';
