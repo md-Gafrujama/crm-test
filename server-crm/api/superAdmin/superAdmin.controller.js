@@ -274,7 +274,7 @@ const superAdmin = {
 
  async updateCompanyStatus(req, res) {
   const { userType } = req.user;
-  const companyId = req.params.id;
+  const companyId = req.params.id.startsWith(':') ? req.params.id.slice(1) : req.params.id;
   const {status} = req.body;
 
   try {
@@ -293,8 +293,9 @@ const superAdmin = {
 
     const updatedCompany = await prisma.company.update({
       where: { id: companyId },
-      data :{status},
+      data: { status },
     });
+
 
     return res.status(200).json({
       success: true,
