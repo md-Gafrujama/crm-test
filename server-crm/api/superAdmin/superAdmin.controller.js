@@ -293,7 +293,7 @@ const superAdmin = {
 
     const updatedCompany = await prisma.company.update({
       where: { id: companyId },
-      updateCompany,
+      data :{status},
     });
 
     return res.status(200).json({
@@ -314,12 +314,22 @@ const superAdmin = {
 
   async deleteCompany(req, res) {
     const { userType, uid } = req.user;
-    const companyId = req.parasms.id;
+    const companyId = req.params.id;
     checkSuperAdmin(userType);
     try {
-      await prisma.user.delete({
+
+      await prisma.user.deleteMany({
+      where: {
+        companyId: companyId,
+        userType: "admin",
+      },
+    });
+
+      await prisma.company.delete({
         where: { id: req.params.id },
       });
+      
+      
       res.json({ message: "Company has been deleted successfully" });
     } catch (error) {
       res.status(500).json({
