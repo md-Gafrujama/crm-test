@@ -42,8 +42,8 @@ const AddAnalytics=()=>{
     try {
       const token = localStorage.getItem("token");
       if (token) {
-        await axios.post(
-          `${API_BASE_URL}/api/analytics/custom`,
+        await axios.put(
+          `${API_BASE_URL}/api/registerComp/`,
           {
             companyId: getCompanyIdFromToken(),
             keyFile: parsed,
@@ -52,15 +52,15 @@ const AddAnalytics=()=>{
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        toast.success("Analytics added successfully", { position: "top-right" });
+        toast.success("Analytics updated successfully", { position: "top-right" });
       } else {
         console.log("Parsed analytics JSON:", { keyFile: parsed, gaPropertyId, APISecretKey: apiSecretKey });
         toast.success("JSON parsed (no token) — check console", { position: "top-right" });
       }
       closeAddAnalyticsForm();
     } catch (err) {
-      console.error("Failed to add analytics:", err);
-      toast.error(err?.response?.data?.message || err.message || "Failed to add analytics", {
+      console.error("Failed to update analytics:", err);
+      toast.error(err?.response?.data?.message || err.message || "Failed to update analytics", {
         position: "top-right",
       });
     } finally {
