@@ -111,11 +111,14 @@ model company {
   subscription   Boolean @default(false)
 
   // Google Analytics Integration
-  gaPropertyId   String?
   gaAccessToken  String?
   gaRefreshToken String?
   gaTokenExpiry  DateTime?
 
+
+  //important for GA4...
+  gaPropertyId   String?
+  APISecretKey   String?
   // Add keyFile field for storing JSON key file (optional)
   keyFile        Json?
 

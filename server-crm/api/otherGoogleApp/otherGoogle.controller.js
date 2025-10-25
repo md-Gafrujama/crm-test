@@ -1,25 +1,49 @@
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
+import prisma from "../../prisma/prismaClient.js";
 import path from "path";
-import dotenv from "dotenv";
-
-dotenv.config();
-
-const KEY_FILE = process.env.GA4_KEY_FILE;
-const PROPERTY_ID = process.env.GA4_PROPERTY_ID;
-
-if (!KEY_FILE || !PROPERTY_ID) {
-  console.error("Missing GA4_KEY_FILE or GA4_PROPERTY_ID in .env file");
-  process.exit(1);
-}
-
-const analyticsClient = new BetaAnalyticsDataClient({
-  keyFilename: path.resolve(KEY_FILE),
-});
 
 export const getAllEvents = async (req, res) => {
   try {
+    const companyId = req.user.companyId; 
+    if (!companyId) {
+      return res.status(400).json({ error: "companyId is required" });
+    }
+
+    // Fetch company credentials from DB
+    const company = await prisma.company.findUnique({
+      where: { id: companyId },
+      select: {
+        keyFile: true,       // JSON key file stored in DB
+        gaPropertyId: true,  // GA4 Property ID
+      },
+    });
+
+    if (!company || !company.keyFile || !company.gaPropertyId) {
+      return res.status(404).json({ error: "GA4 credentials not found for this company" });
+    }
+
+    // Sanitize GA4 Property ID: remove "properties/" prefix and trim spaces
+    const rawPropertyId = company.gaPropertyId.toString().trim();
+    const numericPropertyId = rawPropertyId.replace(/^properties\//i, '');
+    
+    if (!/^\d+$/.test(numericPropertyId)) {
+      return res.status(400).json({ 
+        error: `Invalid GA4 Property ID: ${company.gaPropertyId}. Must be numeric.` 
+      });
+    }
+
+    // Prepare credentials
+    const credentials = typeof company.keyFile === "object" ? company.keyFile : undefined;
+    const keyFilePath = typeof company.keyFile === "string" ? path.resolve(company.keyFile) : undefined;
+
+    const analyticsClient = new BetaAnalyticsDataClient({
+      keyFilename: keyFilePath,
+      credentials: credentials,
+    });
+
+    // Run GA4 report
     const [response] = await analyticsClient.runReport({
-      property: PROPERTY_ID,
+      property: `properties/${numericPropertyId}`,
       dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
       dimensions: [
         { name: "eventName" },
@@ -35,7 +59,8 @@ export const getAllEvents = async (req, res) => {
       limit: 1000,
     });
 
-    const formatted = response.rows?.map((row) => ({
+    // Format response
+    const data = response.rows?.map((row) => ({
       eventName: row.dimensionValues?.[0]?.value || "unknown_event",
       country: row.dimensionValues?.[1]?.value || "N/A",
       city: row.dimensionValues?.[2]?.value || "N/A",
@@ -43,22 +68,24 @@ export const getAllEvents = async (req, res) => {
       eventCount: row.metricValues?.[0]?.value || "0",
       sessions: row.metricValues?.[1]?.value || "0",
       totalUsers: row.metricValues?.[2]?.value || "0",
-    }));
+    })) || [];
 
-    const totals = response.totals?.[0]?.metricValues;
+    const totals = response.totals?.[0]?.metricValues || [];
     const summary = {
-      eventCount: totals?.[0]?.value || "0",
-      sessions: totals?.[1]?.value || "0",
-      totalUsers: totals?.[2]?.value || "0",
+      eventCount: totals[0]?.value || "0",
+      sessions: totals[1]?.value || "0",
+      totalUsers: totals[2]?.value || "0",
     };
 
+    // Send a clean, single response
     res.json({
-      company: "qb2b",
-      propertyId: PROPERTY_ID,
-      totalRows: formatted?.length || 0,
+      companyId,
+      propertyId: numericPropertyId,
+      totalRows: data.length,
       summary,
-      data: formatted || [],
+      data,
     });
+
   } catch (err) {
     console.error("GA4 Data API Error:", err);
     res.status(500).json({

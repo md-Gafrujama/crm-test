@@ -26,17 +26,34 @@ class GoogleAnalyticsService {
     return tokens;
   }
 
-  // Create authenticated GA4 client
-  createAnalyticsClient(accessToken, refreshToken) {
-    this.oauth2Client.setCredentials({
-      access_token: accessToken,
-      refresh_token: refreshToken
+  
+  createAnalyticsClient(accessToken, refreshToken, keyFile = null) {
+  if (keyFile) {
+    const auth = new GoogleAuth({
+      credentials: keyFile,
+      scopes: ['https://www.googleapis.com/auth/analytics.readonly'],
     });
-
-    return new BetaAnalyticsDataClient({
-      auth: this.oauth2Client
-    });
+    return new BetaAnalyticsDataClient({ auth });
   }
+
+  // ✅ Fallback to OAuth2 (user tokens)
+  this.oauth2Client.setCredentials({
+    access_token: accessToken,
+    refresh_token: refreshToken,
+  });
+
+  // Use REST API instead of BetaAnalyticsDataClient to avoid gRPC crash
+  return {
+    runReport: async (request) => {
+      const { google } = await import('googleapis');
+      const analyticsData = google.analyticsdata('v1beta');
+      const res = await analyticsData.properties.runReport({
+        ...request,
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      return [res.data];
+    },
+  };}
 
   // Fetch active users data
   async getActiveUsers(propertyId, accessToken, refreshToken, dateRange = '7daysAgo') {
@@ -108,25 +125,30 @@ class GoogleAnalyticsService {
 
   // Get comprehensive analytics data
   async getAnalyticsData(propertyId, accessToken, refreshToken, dateRange = '7daysAgo') {
-    try {
-      const [activeUsers, sessions, trafficSources, conversions] = await Promise.all([
-        this.getActiveUsers(propertyId, accessToken, refreshToken, dateRange),
-        this.getSessions(propertyId, accessToken, refreshToken, dateRange),
-        this.getTrafficSources(propertyId, accessToken, refreshToken, dateRange),
-        this.getConversions(propertyId, accessToken, refreshToken, dateRange)
-      ]);
-
-      return {
-        activeUsers,
-        sessions,
-        trafficSources,
-        conversions,
-        lastUpdated: new Date().toISOString()
-      };
-    } catch (error) {
-      throw new Error(`Failed to fetch analytics data: ${error.message}`);
-    }
+  if (!propertyId || !accessToken) {
+    throw new Error('Missing required GA credentials or property ID.');
   }
+
+  try {
+    const [activeUsers, sessions, trafficSources, conversions] = await Promise.all([
+      this.getActiveUsers(propertyId, accessToken, refreshToken, dateRange).catch(() => []),
+      this.getSessions(propertyId, accessToken, refreshToken, dateRange).catch(() => []),
+      this.getTrafficSources(propertyId, accessToken, refreshToken, dateRange).catch(() => []),
+      this.getConversions(propertyId, accessToken, refreshToken, dateRange).catch(() => [])
+    ]);
+
+    return {
+      activeUsers,
+      sessions,
+      trafficSources,
+      conversions,
+      lastUpdated: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error('GA fetch error:', error);
+    throw new Error(`Failed to fetch analytics data: ${error.message}`);
+  }
+}
 }
 
 export default new GoogleAnalyticsService();

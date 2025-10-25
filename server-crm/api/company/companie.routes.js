@@ -9,5 +9,6 @@ router.use(express.json());
 
 router.post("/",   upload.single('profilePhoto'),   uploadToCloudinary,   company.fillCompany);
 router.get("/",jwtTokenMiddleware, company.getDetail);
+router.put("/",jwtTokenMiddleware,company.updateCompany);
 
 export default router;

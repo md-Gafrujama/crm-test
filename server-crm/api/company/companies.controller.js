@@ -176,6 +176,42 @@ const company = {
         message: "Failed to fetch company details"
       });
     }
+  },
+
+  async updateCompany(req,res){
+      try {
+    const id  = req.user.companyId; 
+    const {
+      gaPropertyId,
+      gaAccessToken,
+      gaRefreshToken,
+      gaTokenExpiry,
+      keyFile
+    } = req.body;
+
+    const updatedCompany = await prisma.company.update({
+      where: { id },
+      data: {
+        gaPropertyId,
+        gaAccessToken,
+        gaRefreshToken,
+        gaTokenExpiry: gaTokenExpiry ? new Date(gaTokenExpiry) : null,
+       keyFile:  typeof keyFile === "string"    ? JSON.parse(keyFile)    : keyFile,
+      },
+    });
+
+    res.status(200).json({
+      message: "Company updated successfully",
+      company: updatedCompany,
+    });
+  } 
+    catch(error){
+      console.error("Error updating company details:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update company details"
+      });
+    }
   }
 };
 
